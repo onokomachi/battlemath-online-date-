@@ -1,238 +1,54 @@
 
-// types.ts
+export type EffectType = 'DIRECT_DAMAGE' | 'HEAL_PLAYER' | 'DRAW_CARD' | 'SHIELD' | 'LIFE_DRAIN' | 'BERSERK' | 'PIERCING' | 'REFLECT' | 'RECOIL' | 'DISCARD_HAND' | 'NONE';
+export type BattleOutcome = 'win' | 'lose' | 'draw' | null;
+export type Attribute = 'passion' | 'calm' | 'harmony';
 
-// --- Graphing Problem Types ---
-export interface VisualHint {
-  type: 'highlight-rect';
-  x_range: [number, number];
-  y_range: [number, number];
-  color: 'blue' | 'green' | 'red';
-}
-
-export interface GraphLineData {
-    m: number;
-    c: number;
-    color?: string;
-    label?: string;
-}
-
-export interface GraphPolygonData {
-    points: {x: number, y: number}[];
-    color?: string;
-}
-
-export interface GraphingProblemData {
-  question: string;
-}
-
-export interface GraphingWithTableProblemData {
-    question: string;
-    equation: string;
-    table: {x: number, y: number}[];
-}
-
-export interface GraphToEquationProblemData {
-    question: string;
-    points: {x: number, y: number}[];
-}
-
-export interface GraphWithDomainProblemData {
-    question: string;
-    equation: {m: number, c: number};
-    x_range: [number, number];
-    visualHints: VisualHint[];
-    keypadLayout?: string[][];
-}
-
-export interface GraphWithAreaProblemData {
-    question: string;
-    graphLines: GraphLineData[];
-    polygon: GraphPolygonData;
-    keypadLayout?: string[][];
-}
-
-
-// --- New Problem Data Types ---
-export interface VerticalCalculationData {
-    operator: '+' | '-';
-    lines: [string, string];
-    question: string;
-}
-
-export interface ProofProblemData {
-    assumption: string;
-    conclusion: string;
-    imageUrl?: string;
-    svg?: string;
-}
-
-export interface SimultaneousEquationData {
-    eq1: { a: number, b: number, c: number };
-    eq2: { a: number, b: number, c: number };
-}
-
-export interface AngleData {
-    value: number | string;
-    position: 'base_left' | 'base_right' | 'base_right_exterior' | 'top_vertex' | 'top_exterior_left' | 'top_exterior_right';
-}
-
-export interface TriangleInParallelLinesData {
-    angles: AngleData[];
-    unknown: { label: string; position: 'base_left' | 'base_right' | 'top_vertex' };
-    questionText?: string;
-}
-
-export interface Transversal {
-    p1: { x: number, y: number };
-    p2: { x: number, y: number };
-}
-export interface AngleInfo {
-    value: string;
-    transversalIndex: number;
-    parallelLineIndex: number;
-    position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-    isUnknown: boolean;
-    isIntersectionAngle?: boolean;
-}
-export interface MultiTransversalAngleData {
-    parallelLines: { y: number, label: string }[];
-    transversals: Transversal[];
-    angles: AngleInfo[];
-    questionText?: string;
-}
-
-// AngleDiagram
-export interface Angle {
-    position: number;
-    value: number;
-    name: string;
-}
-export interface AngleDiagramData {
-    config: {
-        known: Omit<Angle, 'name'>[];
-        unknown: Omit<Angle, 'value'>;
-    };
-    question: string;
-}
-
-// BentTransversal
-export interface BentAngle {
-    value: number | string;
-    placement: string; // 'interior_left', 'exterior_right', etc.
-}
-export interface BentTransversalDiagramData {
-    topAngle: BentAngle;
-    bottomAngle: BentAngle;
-    unknownAngle: { label: string };
-    question: string;
-}
-
-// FillInProof
-export type ProofPart = string | null | { options: string[] };
-export interface ProofStep {
-    parts: ProofPart[];
-}
-export interface FillInProofProblemData {
-    question: string;
-    steps: ProofStep[];
-    imageUrl?: string;
-    svg?: string;
-}
-
-// GuidedEquation
-export interface GuidedEquationData {
-    question?: string;
-    initial_equations?: [string, string];
-    steps: { parts: (string | null)[] }[];
-    final_answer_prompt?: string;
-    hint?: string | string[];
-}
-
-// IntersectionGuidedEquation
-export interface IntersectionGuidedEquationData {
-    question: string;
-    graphLines: GraphLineData[];
-    guidedEquation: GuidedEquationData;
-}
-
-
-// --- Core Game Types ---
-
-export type AbilityType = 'DEFENSIVE_STANCE' | 'TIME_PRESSURE' | 'SCORE_BOOST';
-
-export interface Ability {
-  type: AbilityType;
-  value?: number;
+export interface CardData {
+  id: number; // Unique instance ID for this specific card in a game
+  definitionId: number; // The ID of the card's template in CARD_DEFINITIONS
+  baseDefinitionId: number; // The definitionId of the original Lv.1 card in an evolution line
+  name: string;
+  attack: number;
+  defense: number;
+  image: string;
   description: string;
+  effect: EffectType;
+  effectValue?: number;
+  attribute: Attribute;
+  level?: number;
+  unlocks?: number; // The definitionId of the card it can unlock
 }
 
-// The user's data structure
-export interface Problem {
-  type: string;
-  data: {
-    question: string;
-    // other fields like svg, options, hint might exist
-    [key: string]: any;
-  } | AngleDiagramData 
-    | BentTransversalDiagramData 
-    | FillInProofProblemData
-    | GraphingProblemData
-    | GraphingWithTableProblemData
-    | GraphToEquationProblemData
-    | GraphWithDomainProblemData
-    | GraphWithAreaProblemData
-    | GuidedEquationData
-    | IntersectionGuidedEquationData
-    | VerticalCalculationData
-    | ProofProblemData
-    | SimultaneousEquationData
-    | TriangleInParallelLinesData
-    | MultiTransversalAngleData;
-  answer: string;
-}
+export type TurnPhase = 'player_turn' | 'waiting_for_opponent' | 'pc_turn' | 'resolution_phase' | 'battle_animation';
+// Add 'matchmaking' and 'gamemaster' state
+export type GameState = 'login_screen' | 'deck_building' | 'matchmaking' | 'in_game' | 'end' | 'gamemaster';
+export type AttributeCounts = { [key in Attribute]: number };
 
-export type ProblemSet = Record<string, Problem[]>;
+// New Interface for PvP Room
+export interface Room {
+  roomId: string;
+  status: 'waiting' | 'playing' | 'finished';
+  hostId: string;
+  hostName: string;
+  guestId: string | null;
+  guestName: string | null;
+  createdAt: any; // Firestore Timestamp
+  
+  // Heartbeat / Connection check
+  hostLastActive?: any; // Firestore Timestamp
+  guestLastActive?: any; // Firestore Timestamp
 
-// Replaces the old CardData
-export interface ProblemCard {
-  id: number;
-  mainCategory: string; // "式の計算", "図形の性質", etc.
-  category: string; // The sub-topic like "式の次数"
-  difficulty: number; // e.g., 1, 2, 3
-  problem: Problem;
-  ability?: Ability;
-}
-
-export type TurnPhase = 'selecting_card' | 'solving_problem' | 'round_end' | 'game_over';
-export type GameState = 'main_menu' | 'deck_building' | 'in_game' | 'end' | 'practice_mode' | 'card_shop';
-export type TurnInitiative = 'player' | 'pc';
-
-// For FillInProofProblemView to connect with a virtual keypad in the future
-export interface ProblemViewRef {
-    handleKeyClick: (key: string) => void;
-}
-
-// --- Practice Mode Types ---
-export interface SubCategoryGroup {
-    name: string;
-    subtopics: string[];
-}
-export interface Category {
-    name: string;
-    groups: SubCategoryGroup[];
-}
-
-export interface SessionStats {
-  correct: number;
-  incorrect: number;
-  totalScore: number;
-  problemCount: number;
-}
-
-export interface LearningRecord {
-    id: string;
-    date: string;
-    category: string;
-    subTopic: string;
-    stats: SessionStats;
+  // Initial Sync check
+  hostReady: boolean;
+  guestReady: boolean;
+  
+  // Phase 2: Game State Sync
+  round: number; // Current round number. Increments to reset turns.
+  p1Move: CardData | null; // Host's played card
+  p2Move: CardData | null; // Guest's played card
+  
+  // Phase 3: HP & Result Sync
+  p1Hp: number;
+  p2Hp: number;
+  winnerId: string | null; // 'host', 'guest', or 'draw'
 }

@@ -1,56 +1,30 @@
 
-import React from 'react';
-import type { ProblemCard } from '../types';
-import { StarIcon } from './Icons';
+import React, { useState } from 'react';
+import type { BattleOutcome, CardData } from '../types';
+import { AttackIcon, DefenseIcon } from './Icons';
+
+// Responsive size definitions
+// Mobile: w-20 h-28 (Smallest)
+// Small Tablet: w-24 h-36
+// Tablet/Laptop: w-32 h-48
+// Desktop: w-40 h-60
+// Large Desktop: w-48 h-72
+const CARD_SIZE_CLASSES = "w-20 h-28 xs:w-24 xs:h-36 sm:w-32 sm:h-48 md:w-36 md:h-52 lg:w-40 lg:h-60 2xl:w-48 2xl:h-72";
+const CARD_TEXT_CLASSES = "text-[10px] sm:text-xs lg:text-sm";
+const ICON_SIZE_CLASSES = "w-3 h-3 sm:w-4 sm:h-4";
 
 interface CardProps {
-  card: ProblemCard;
+  card: CardData;
   onClick?: () => void;
   isPlayable?: boolean;
   inHand?: boolean;
   isSelected?: boolean;
-  isFaceDown?: boolean;
-  isDisabled?: boolean;
+  isCastingEffect?: boolean;
+  isBattling?: boolean;
+  battleOutcome?: BattleOutcome;
+  owner?: 'player' | 'pc';
+  className?: string; // Allow overriding dimensions if needed
 }
-
-const categoryStyles: { [key: string]: { border: string, glow: string, header: string, accent: string } } = {
-  "式の計算": {
-    border: 'border-blue-500/40',
-    glow: 'shadow-blue-500/20',
-    header: 'from-blue-900/60 to-transparent',
-    accent: 'text-blue-300'
-  },
-  "連立方程式": {
-    border: 'border-cyan-500/40',
-    glow: 'shadow-cyan-500/20',
-    header: 'from-cyan-900/60 to-transparent',
-    accent: 'text-cyan-300'
-  },
-  "図形の性質": {
-    border: 'border-sky-400/40',
-    glow: 'shadow-sky-400/20',
-    header: 'from-sky-900/60 to-transparent',
-    accent: 'text-sky-200'
-  },
-  "一次関数": {
-    border: 'border-indigo-500/40',
-    glow: 'shadow-indigo-500/20',
-    header: 'from-indigo-900/60 to-transparent',
-    accent: 'text-indigo-300'
-  },
-  "確率": {
-    border: 'border-teal-500/40',
-    glow: 'shadow-teal-500/20',
-    header: 'from-teal-900/60 to-transparent',
-    accent: 'text-teal-300'
-  },
-  "default": {
-    border: 'border-slate-500/40',
-    glow: 'shadow-slate-500/20',
-    header: 'from-slate-800/60 to-transparent',
-    accent: 'text-slate-300'
-  }
-};
 
 const Card: React.FC<CardProps> = ({ 
   card, 
@@ -58,103 +32,112 @@ const Card: React.FC<CardProps> = ({
   isPlayable = false, 
   inHand = false,
   isSelected = false,
-  isFaceDown = false,
-  isDisabled = false
+  isCastingEffect = false,
+  isBattling = false,
+  battleOutcome = null,
+  owner = 'player',
+  className
 }) => {
-  if (isFaceDown || !card) {
-    return <CardBack />;
-  }
+  const [imageError, setImageError] = useState(false);
   
-  const styles = categoryStyles[card.mainCategory] || categoryStyles.default;
+  const isExternalOrData = card.image.startsWith('http') || card.image.startsWith('data:');
+  const imageUrl = isExternalOrData ? card.image : `/Image2/${card.image}`;
 
-  // 安全に問題文を取得する
-  const getCardDisplayText = () => {
-    const data = card.problem?.data as any;
-    if (!data) return "DATA_MISSING";
-    
-    // プロパティ候補を順に探す
-    const text = data.question || data.questionText || data.assumption;
-    if (text) return text;
-
-    // 連立方程式などの場合は形式を表示
-    if (card.problem.type === 'simultaneous_equation') return "連立方程式を解け";
-    if (card.problem.type === 'graphing') return "グラフを作成せよ";
-    
-    return card.category || "数式を解析せよ";
+  const handleImageError = () => {
+    setImageError(true);
   };
 
+  const attributeStyles = {
+    passion: 'border-red-500 hover:shadow-red-500/50',
+    calm: 'border-blue-500 hover:shadow-blue-500/50',
+    harmony: 'border-green-500 hover:shadow-green-500/50',
+  };
+
+  let battleAnimationClass = '';
+  if (isBattling) {
+    if (battleOutcome === 'win') {
+      battleAnimationClass = owner === 'player' ? 'animate-attack-win-player' : 'animate-attack-win-pc';
+    } else if (battleOutcome === 'lose') {
+      battleAnimationClass = 'animate-lose-battle';
+    } else if (battleOutcome === 'draw') {
+      battleAnimationClass = 'animate-shake';
+    }
+  }
+
+  // Use provided className or default responsive sizes
+  const sizeClasses = className || CARD_SIZE_CLASSES;
+
   const cardClasses = `
-    w-48 h-72 border ${styles.border} rounded-xl shadow-2xl flex flex-col justify-between p-4 transition-all duration-500 transform relative overflow-hidden group
-    bg-slate-950/80 backdrop-blur-xl ${styles.glow}
-    ${isPlayable && !isDisabled ? 'cursor-pointer' : ''}
-    ${isDisabled ? 'opacity-40 saturate-0 scale-95 grayscale' : ''}
-    ${isSelected ? 'scale-110 -translate-y-6 z-50 ring-2 ring-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.5)]' : inHand && !isDisabled ? 'hover:scale-105 hover:-translate-y-2' : ''}
+    ${sizeClasses}
+    bg-gray-800 border-2 rounded-lg shadow-lg flex flex-col justify-between p-1 sm:p-2 transition-all duration-300 transform relative
+    ${attributeStyles[card.attribute]}
+    ${isPlayable ? 'cursor-pointer hover:shadow-amber-400/50' : ''}
+    ${isSelected ? 'scale-125 -translate-y-4 sm:-translate-y-8 z-50 shadow-amber-400/50' : inHand ? 'hover:scale-125 hover:-translate-y-4 sm:hover:-translate-y-8 hover:z-50' : ''}
+    ${isCastingEffect ? 'animate-glow-gold z-10' : ''}
+    ${battleAnimationClass}
   `;
-  
+
   return (
-    <div className={cardClasses} onClick={(isPlayable && !isDisabled) ? onClick : undefined}>
-      {/* Dynamic Scanline */}
-      <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[linear-gradient(rgba(34,211,238,0.1)_1px,transparent_1px)] [background-size:100%_4px]"></div>
-      
-      {/* Star Shine Effect */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="absolute top-[-100%] left-[-100%] w-[300%] h-[300%] bg-[radial-gradient(circle,rgba(255,255,255,0.05)_0%,transparent_50%)] translate-x-[var(--mouse-x,0)] translate-y-[var(--mouse-y,0)] transition-transform duration-75"></div>
-      </div>
-
-      <div className={`absolute top-0 left-0 right-0 p-3 text-center text-cyan-50 text-[10px] font-bold uppercase tracking-[0.3em] bg-gradient-to-b ${styles.header} border-b border-cyan-400/20`}>
-          {card.category}
-      </div>
-
-      <div className="flex-grow flex flex-col items-center justify-center text-center mt-6 px-1 relative z-10">
-        <p className="text-slate-100 text-[11px] font-bold leading-relaxed drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-['JetBrains_Mono'] overflow-hidden line-clamp-6">
-          {getCardDisplayText()}
-        </p>
-        {card.ability && (
-          <div className="mt-4 p-2 bg-blue-950/50 rounded-lg border border-cyan-500/30 w-full backdrop-blur-sm shadow-inner">
-            <p className="text-cyan-300 text-[9px] font-black tracking-tighter uppercase leading-tight">{card.ability.description}</p>
+    <div className={cardClasses} onClick={isPlayable ? onClick : undefined}>
+      {card.level && card.level > 1 && (
+        <div className="absolute top-0 right-0 sm:top-1 sm:right-1 bg-gradient-to-br from-yellow-400 to-amber-600 text-white text-[8px] sm:text-xs font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white/50 z-10" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.5)' }}>
+          Lv.{card.level}
+        </div>
+      )}
+      <div className={`text-center text-white font-bold truncate ${CARD_TEXT_CLASSES}`}>{card.name}</div>
+      <div className="flex-grow my-0.5 sm:my-1 bg-gray-900 rounded-sm sm:rounded-md flex items-center justify-center overflow-hidden relative group">
+        {imageError ? (
+          <div className="flex flex-col items-center justify-center w-full h-full bg-gray-800 text-gray-500">
+             <svg className="w-8 h-8 sm:w-12 sm:h-12 opacity-50 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+             </svg>
+             <span className="text-[8px] sm:text-[10px]">No Image</span>
           </div>
+        ) : (
+          <img 
+            src={imageUrl} 
+            alt={card.name} 
+            className="w-full h-full object-cover" 
+            onError={handleImageError} 
+          />
         )}
       </div>
-
-      <div className="flex justify-center items-center gap-1.5 h-8 relative z-10">
-        {[...Array(card.difficulty)].map((_, i) => (
-            <StarIcon key={i} className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-        ))}
+       <div className="h-8 sm:h-12 flex items-center justify-center p-0.5">
+        <p className={`text-gray-300 text-center italic leading-tight line-clamp-3 ${CARD_TEXT_CLASSES} opacity-90 scale-90 sm:scale-100 origin-center`}>{card.description}</p>
       </div>
-
-      <div className="absolute top-2 left-2 w-1.5 h-1.5 border-t border-l border-cyan-400/40"></div>
-      <div className="absolute top-2 right-2 w-1.5 h-1.5 border-t border-r border-cyan-400/40"></div>
-      <div className="absolute bottom-2 left-2 w-1.5 h-1.5 border-b border-l border-cyan-400/40"></div>
-      <div className="absolute bottom-2 right-2 w-1.5 h-1.5 border-b border-r border-cyan-400/40"></div>
-      
-      {isDisabled && (
-         <div className="absolute inset-0 flex items-center justify-center bg-black/40 pointer-events-none">
-            <div className="border border-white/20 px-3 py-1 bg-black/80 rounded-sm">
-                <span className="text-[10px] font-black tracking-[0.2em] text-white/50 uppercase">Sync_Locked</span>
-            </div>
-         </div>
-      )}
+      <div className="flex justify-around items-center text-white">
+        <div className="flex items-center space-x-0.5 sm:space-x-1 bg-red-500/50 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full">
+          <AttackIcon className={ICON_SIZE_CLASSES} />
+          <span className={`font-bold ${CARD_TEXT_CLASSES}`}>{card.attack}</span>
+        </div>
+        <div className="flex items-center space-x-0.5 sm:space-x-1 bg-blue-500/50 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full">
+          <DefenseIcon className={ICON_SIZE_CLASSES} />
+          <span className={`font-bold ${CARD_TEXT_CLASSES}`}>{card.defense}</span>
+        </div>
+      </div>
     </div>
   );
 };
 
-export const CardBack: React.FC = () => {
+export const CardBack: React.FC<{ className?: string }> = ({ className }) => {
+  const [imageError, setImageError] = useState(false);
+  const imageUrl = `/Image2/11.jpg`;
+
+  const handleError = () => {
+    setImageError(true);
+  };
+  
+  const sizeClasses = className || CARD_SIZE_CLASSES;
+  
   return (
-    <div className="w-48 h-72 bg-slate-950 border border-blue-500/40 rounded-xl shadow-2xl flex items-center justify-center p-2 overflow-hidden relative group">
-       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(30,58,138,0.3)_0%,transparent_70%)]"></div>
-       <div className="w-full h-full border border-blue-400/20 rounded-lg flex items-center justify-center bg-slate-900/40 relative overflow-hidden">
-            <div className="text-center z-10">
-                <h3 className="font-['Cinzel_Decorative'] font-bold text-2xl text-cyan-200 tracking-[0.25em] mb-1 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]">
-                    MATH
-                </h3>
-                <div className="h-[1px] w-20 bg-cyan-500/40 mx-auto my-2 shadow-[0_0_10px_cyan]"></div>
-                <h3 className="font-['Cinzel_Decorative'] font-bold text-[10px] text-cyan-400/60 tracking-[0.15em]">
-                    COSMIC_DECK
-                </h3>
-            </div>
-            {/* Cyber Grid */}
-            <div className="absolute inset-0 opacity-[0.08] pointer-events-none bg-[linear-gradient(to_right,#22d3ee_1px,transparent_1px),linear-gradient(to_bottom,#22d3ee_1px,transparent_1px)] [background-size:20px_20px]"></div>
-       </div>
+    <div className={`${sizeClasses} bg-gray-800 border-2 border-purple-500 rounded-lg shadow-lg flex items-center justify-center p-1 overflow-hidden`}>
+       {imageError ? (
+         <div className="w-full h-full border-2 border-purple-400/50 bg-gray-800 rounded-md flex items-center justify-center">
+            <div className="text-purple-500 font-bold text-lg sm:text-2xl opacity-50 text-center leading-tight">AI<br/>CARD</div>
+         </div>
+       ) : (
+         <img src={imageUrl} alt="Card Back" className="w-full h-full object-cover rounded-md" onError={handleError} />
+       )}
     </div>
   );
 }

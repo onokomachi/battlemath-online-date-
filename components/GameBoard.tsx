@@ -1,368 +1,202 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { ProblemCard, TurnPhase, ProblemViewRef, TurnInitiative } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import type { CardData, TurnPhase, BattleOutcome, AttributeCounts } from '../types';
 import Card, { CardBack } from './Card';
 import GameLog from './GameLog';
-import AngleDiagramView from './AngleDiagramView';
-import BentTransversalDiagramView from './BentTransversalDiagramView';
-import FillInProofProblemView from './FillInProofProblemView';
-import DrawingCanvas from './DrawingCanvas';
-import { PencilIcon } from './Icons';
-import GraphingProblemView from './GraphingProblemView';
-import GraphingWithTableProblemView from './GraphingWithTableProblemView';
-import GraphToEquationProblemView from './GraphToEquationProblemView';
-import GraphWithDomainProblemView from './GraphWithDomainProblemView';
-import GraphProblemView from './GraphProblemView';
-import Keypad from './Keypad';
+import { PassionIcon, CalmIcon, HarmonyIcon } from './Icons';
 
-
-// --- ProblemSolver Component ---
-interface ProblemSolverProps {
-  problemCard: ProblemCard;
-  onAnswerSubmit: (answer: string) => void;
-  isSolving: boolean;
+interface GameBoardProps {
   turnPhase: TurnPhase;
+  playerHP: number;
+  pcHP: number;
+  playerHand: CardData[];
+  pcHandSize: number;
+  pcAttributeCount: AttributeCounts;
+  playerDeckSize: number;
+  pcDeckSize: number;
+  playerPlayedCard: CardData | null;
+  pcPlayedCard: CardData | null;
+  onCardSelect: (card: CardData) => void;
+  onBoardClick: () => void;
+  selectedCardId: number | null;
+  gameLog: string[];
+  playerIsCasting: boolean;
+  pcIsCasting: boolean;
+  battleOutcome: { player: BattleOutcome; pc: BattleOutcome } | null;
 }
 
-const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubmit, isSolving, turnPhase }) => {
-  const [answer, setAnswer] = useState('');
-  const problemViewRef = useRef<ProblemViewRef>(null);
+const usePrevious = <T,>(value: T): T | undefined => {
+    const ref = useRef<T | undefined>(undefined);
+    useEffect(() => {
+        ref.current = value;
+    });
+    return ref.current;
+};
 
-  useEffect(() => {
-    if (isSolving) {
-      setAnswer('');
-    }
-  }, [isSolving, problemCard]);
 
-  const handleSubmit = useCallback((e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (answer.trim() || problemCard.problem.type === 'graphing') {
-      onAnswerSubmit(answer.trim());
-    }
-  }, [answer, onAnswerSubmit, problemCard]);
+const HealthBar: React.FC<{ current: number; max: number; label: string }> = ({ current, max, label }) => {
+    const percentage = Math.max(0, (current / max) * 100);
+    const [animationClass, setAnimationClass] = useState('');
+    const prevHp = usePrevious(current);
 
-  const handleKeypadClick = useCallback((key: string) => {
-    if (!isSolving || turnPhase !== 'solving_problem') return;
-    
-    const problemType = problemCard?.problem?.type;
-    const interactiveTypes = ['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'simultaneous_equation'];
+    useEffect(() => {
+        if (prevHp === undefined) return;
+        if (current < prevHp) {
+            setAnimationClass('animate-glow-red animate-shake');
+        } else if (current > prevHp) {
+            setAnimationClass('animate-glow-green');
+        }
 
-    if (interactiveTypes.includes(problemType)) {
-       problemViewRef.current?.handleKeyClick(key);
-       return;
-    }
+        if (animationClass) {
+            const timer = setTimeout(() => setAnimationClass(''), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [current, prevHp]);
 
-    if (key === 'BACKSPACE') {
-      setAnswer(prev => prev.slice(0, -1));
-    } else if (key === 'CLEAR') {
-      setAnswer('');
-    } else {
-      setAnswer(prev => prev + key);
-    }
-  }, [isSolving, turnPhase, problemCard]);
-
-  // Physical keyboard support for Battle Mode
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isSolving || turnPhase !== 'solving_problem') return;
-
-      const keyMap: Record<string, string> = {
-        'Backspace': 'BACKSPACE',
-        'Escape': 'CLEAR',
-        'Delete': 'CLEAR',
-        '*': '×',
-        'p': 'π',
-        '^': '²',
-        'd': '°',
-        '<': '<',
-        '>': '>',
-      };
-
-      if (keyMap[e.key]) {
-        handleKeypadClick(keyMap[e.key]);
-      } else if (/^[0-9xya b=+\-/,().]$/.test(e.key)) {
-        handleKeypadClick(e.key);
-      } else if (e.key === 'Enter') {
-        handleSubmit();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeypadClick, isSolving, turnPhase, handleSubmit]);
-
-  const getOptimizedKeypadLayout = (): string[][] => {
-    const type = problemCard.problem.type;
-    const ans = problemCard.problem.answer || "";
-
-    if (['angle_diagram', 'bent_transversal_diagram', 'triangle_in_parallel_lines', 'multi_transversal_angle'].includes(type)) {
-      return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '°']];
-    }
-    if (type === 'graph_with_domain') {
-       return [['7', '8', '9', 'y'], ['4', '5', '6', '≤', '≥'], ['1', '2', '3', '<', '>'], ['0', '.', '-', ' ']];
-    }
-
-    // Dynamic detection
-    let varKeys: string[] = [];
-    if (ans.includes('x')) varKeys.push('x');
-    if (ans.includes('y')) varKeys.push('y');
-    if (ans.includes('a')) varKeys.push('a');
-    if (ans.includes('b')) varKeys.push('b');
-
-    let symbolKeys: string[] = [];
-    if (ans.includes('π') || ans.toLowerCase().includes('pi')) symbolKeys.push('π');
-    if (ans.includes('²') || ans.includes('^')) symbolKeys.push('²');
-    if (ans.includes('=')) symbolKeys.push('=');
-    if (ans.includes('+')) symbolKeys.push('+');
-    if (ans.includes('/')) symbolKeys.push('/');
-    if (ans.includes('(')) symbolKeys.push('(');
-    if (ans.includes(')')) symbolKeys.push(')');
-    if (ans.includes(',')) symbolKeys.push(',');
-
-    const allUnique = [...new Set([...varKeys, ...symbolKeys])];
-    const layout: string[][] = [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '-']];
-    allUnique.forEach((k, i) => layout[i % 4].push(k));
-    return layout;
-  };
-
-  const problemType = problemCard.problem.type;
-  const problemData = problemCard.problem.data as any;
-
-  return (
-    <div className="w-full max-w-4xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl p-8 flex flex-col items-center shadow-[0_0_80px_rgba(0,0,0,0.8)] relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
-      <h3 className="text-cyan-400 font-black text-xs tracking-[0.4em] uppercase mb-6 opacity-60">Intercepted_Transmission</h3>
-
-      <div className="w-full">
-      {problemType === 'angle_diagram' && <AngleDiagramView data={problemData} userAnswer={answer} isSubmitted={false} />}
-      {problemType === 'bent_transversal_diagram' && <BentTransversalDiagramView data={problemData} userAnswer={answer} isSubmitted={false} />}
-      {problemType === 'fill_in_proof' && <FillInProofProblemView data={problemData} onAnswerChange={setAnswer} isSubmitted={false} submittedAnswer="" correctAnswer={problemCard.problem.answer} ref={problemViewRef} />}
-      {problemType === 'graphing' && <GraphingProblemView data={problemData} onAnswerChange={setAnswer} ref={problemViewRef} />}
-      {problemType === 'graphing_with_table' && <GraphingWithTableProblemView data={problemData} onAnswerChange={setAnswer} ref={problemViewRef} />}
-      {problemType === 'graph_to_equation' && <GraphToEquationProblemView data={problemData} />}
-      {problemType === 'graph_with_domain' && <GraphWithDomainProblemView data={problemData} isVisualHintVisible={false} />}
-      {problemType === 'graph_with_area' && 
-          <div className="text-center w-full">
-            <p className="text-2xl mb-4 font-mono">{problemData?.question || "面積を求めよ"}</p>
-            <div className="w-full max-w-sm mx-auto aspect-square bg-slate-900 rounded-xl p-2 border border-cyan-500/10">
-             <GraphProblemView lines={problemData?.graphLines || []} polygon={problemData?.polygon} />
-            </div>
-          </div>
-      }
-      {(problemType === 'text' || !problemType) && (
-        <div className="w-full min-h-[12rem] bg-slate-900/50 border border-cyan-500/5 rounded-xl p-6 mb-6 flex flex-col items-center justify-center text-center text-white text-3xl font-mono tracking-tight">
-          <p>{problemData?.question || problemData?.questionText || "数式を解析せよ"}</p>
-          {problemData?.svg && (
-            <div className="w-full max-w-md h-auto my-6 p-4 bg-slate-950 rounded-lg border border-cyan-500/10" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
-          )}
-        </div>
-      )}
-      </div>
-
-      <form onSubmit={handleSubmit} className="w-full">
-        {!['proof'].includes(problemType) && (
-          <div className="w-full flex flex-col items-center mt-6">
-             {!['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'simultaneous_equation'].includes(problemType) && (
-                 <div className="w-full max-w-xl mb-4">
-                    <div className={`min-h-[4rem] p-4 border-b-4 bg-slate-950 flex items-center border-cyan-500 shadow-inner`}>
-                        <span className="text-2xl font-mono text-cyan-900 mr-4 font-black">A_STREAM:</span>
-                        <span className="text-4xl font-mono text-cyan-300 flex-grow font-black drop-shadow-[0_0_10px_cyan]" style={{ wordBreak: 'break-all' }}>{answer}</span>
-                    </div>
+    return (
+        <div className={`w-32 h-6 sm:w-48 sm:h-7 lg:w-64 lg:h-8 bg-gray-700 rounded-full border-2 border-gray-600 shadow-inner p-0.5 ${animationClass}`}>
+            <div className="relative h-full">
+                <div
+                    className="bg-gradient-to-r from-red-500 to-red-700 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${percentage}%` }}
+                ></div>
+                <div className="absolute inset-0 flex justify-between items-center px-2 sm:px-4">
+                    <span className="font-bold text-white text-[10px] sm:text-xs lg:text-sm drop-shadow-md">{label}</span>
+                    <span className="font-bold text-white text-xs sm:text-sm lg:text-lg drop-shadow-md">{current} / {max}</span>
                 </div>
-             )}
-            <Keypad onKeyClick={handleKeypadClick} layout={getOptimizedKeypadLayout()} disabled={turnPhase !== 'solving_problem'} />
-             <button
-              type="submit"
-              disabled={!isSolving || turnPhase !== 'solving_problem'}
-              className="w-full mt-8 bg-blue-700 text-white font-black py-4 px-10 rounded-xl hover:bg-blue-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-xl tracking-[0.4em] border border-blue-400/30 shadow-2xl"
-            >
-              COMMIT_SEQUENCE
-            </button>
-          </div>
-        )}
-      </form>
+            </div>
+        </div>
+    );
+};
+
+const AttributeTracker: React.FC<{ counts: AttributeCounts }> = ({ counts }) => {
+  return (
+    <div className="flex items-center space-x-2 sm:space-x-3 bg-black/30 px-2 sm:px-3 py-1 rounded-full border border-gray-600 h-6 sm:h-8 scale-90 sm:scale-100 origin-left">
+      <div className="flex items-center space-x-1" title={`Passion: ${counts.passion}`}>
+        <PassionIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+        <span className="text-white font-bold text-xs sm:text-sm">{counts.passion}</span>
+      </div>
+      <div className="flex items-center space-x-1" title={`Calm: ${counts.calm}`}>
+        <CalmIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+        <span className="text-white font-bold text-xs sm:text-sm">{counts.calm}</span>
+      </div>
+      <div className="flex items-center space-x-1" title={`Harmony: ${counts.harmony}`}>
+        <HarmonyIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+        <span className="text-white font-bold text-xs sm:text-sm">{counts.harmony}</span>
+      </div>
     </div>
   );
 };
 
-// --- GameBoard Component ---
-interface GameBoardProps {
-  turnPhase: TurnPhase;
-  playerScore: number;
-  pcScore: number;
-  playerHand: ProblemCard[];
-  pcHandSize: number;
-  playerDeckSize: number;
-  pcDeckSize: number;
-  playerPlayedCard: ProblemCard | null;
-  pcPlayedCard: ProblemCard | null;
-  onCardSelect: (card: ProblemCard) => void;
-  onAnswerSubmit: (answer: string) => void;
-  selectedCardId: number | null;
-  gameLog: string[];
-  roundResult: string | null;
-  maxScore: number;
-  initiative: TurnInitiative;
-}
 
-const ScoreDisplay: React.FC<{ score: number; label: string; maxScore: number; isPlayer: boolean }> = ({ score, label, maxScore, isPlayer }) => (
-  <div className={`p-5 rounded-2xl border-2 flex items-center justify-between gap-6 w-80 shadow-2xl backdrop-blur-md ${isPlayer ? 'bg-blue-900/20 border-cyan-500/40' : 'bg-slate-900/40 border-slate-700'}`}>
-    <div className="flex flex-col">
-      <span className={`text-[10px] font-black uppercase tracking-widest ${isPlayer ? 'text-cyan-400' : 'text-gray-500'}`}>{label}</span>
-      <span className="text-3xl font-black font-mono text-white leading-none mt-1">{score} <span className="text-sm opacity-30">/ {maxScore}</span></span>
+const DeckCounter: React.FC<{ count: number }> = ({ count }) => (
+    <div className="absolute bottom-0 right-0 bg-black/50 text-white text-[10px] sm:text-sm font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-tl-lg z-10">
+        山札: {count}
     </div>
-    <div className="flex-grow bg-slate-950/80 h-3 rounded-full overflow-hidden p-[1px] border border-white/5">
-        <div 
-          className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(34,211,238,0.5)] ${isPlayer ? 'bg-cyan-400' : 'bg-slate-600'}`}
-          style={{ width: `${(score / maxScore) * 100}%` }}
-        ></div>
-    </div>
-  </div>
 );
+
 
 const GameBoard: React.FC<GameBoardProps> = ({
   turnPhase,
-  playerScore,
-  pcScore,
+  playerHP,
+  pcHP,
   playerHand,
   pcHandSize,
+  pcAttributeCount,
   playerDeckSize,
   pcDeckSize,
   playerPlayedCard,
   pcPlayedCard,
   onCardSelect,
-  onAnswerSubmit,
+  onBoardClick,
   selectedCardId,
   gameLog,
-  roundResult,
-  maxScore,
-  initiative
+  playerIsCasting,
+  pcIsCasting,
+  battleOutcome
 }) => {
-  const [isDrawing, setIsDrawing] = useState(false);
-
-  const isPlayerSecond = initiative === 'pc';
-  const playerMustMatchLevel = isPlayerSecond && pcPlayedCard !== null && playerPlayedCard === null;
-
   return (
-    <div className="w-full h-full flex flex-col justify-between items-center p-6 relative overflow-hidden">
-      {/* Star Field Decorations */}
-      <div className="absolute top-10 left-10 w-20 h-20 bg-blue-500/5 blur-[60px] rounded-full"></div>
-      <div className="absolute bottom-20 right-20 w-32 h-32 bg-cyan-500/5 blur-[80px] rounded-full"></div>
+    <div className="w-full h-full max-h-screen flex flex-col justify-between items-center p-2 sm:p-4 relative overflow-hidden" onClick={onBoardClick}>
+      
+      {/* Waiting Indicator */}
+      {turnPhase === 'waiting_for_opponent' && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
+            <div className="bg-black/70 px-6 py-4 rounded-xl border border-amber-500/50 flex flex-col items-center gap-2 backdrop-blur-sm">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+                <div className="text-amber-200 font-bold text-lg animate-pulse shadow-black drop-shadow-md">
+                   対戦相手のカード選択を<br/>待っています...
+                </div>
+            </div>
+        </div>
+      )}
 
       {/* PC Area */}
-      <div className="w-full flex justify-center items-center flex-col space-y-6">
-        <ScoreDisplay score={pcScore} label="Target_Efficiency" maxScore={maxScore} isPlayer={false} />
-        <div className="flex justify-center items-center h-48 space-x-2">
-          {[...Array(pcHandSize)].map((_, i) => (
-            <div key={i} className="opacity-40 hover:opacity-60 transition-opacity relative group transform -translate-y-4">
-              <CardBack />
-              {i === 0 && <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-slate-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Stack: {pcDeckSize}</div>}
-            </div>
-          ))}
+      <div className="w-full flex justify-center items-center flex-col space-y-1 sm:space-y-4 pt-8 sm:pt-0">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+            <HealthBar current={pcHP} max={20} label="相手" />
+            <AttributeTracker counts={pcAttributeCount} />
+        </div>
+        {/* PC Hand Container - Responsive Height */}
+        <div className="flex justify-center items-center h-28 xs:h-36 sm:h-48 md:h-52 lg:h-60 space-x-[-1.5rem] sm:space-x-[-1rem] md:space-x-1 lg:space-x-2">
+            {[...Array(pcHandSize)].map((_, i) => (
+              <div key={i} className="opacity-70 relative transform scale-90 sm:scale-100">
+                <CardBack />
+                {i === 0 && <DeckCounter count={pcDeckSize} />}
+              </div>
+            ))}
         </div>
       </div>
 
       {/* Battle Field */}
-      <div className="w-full flex justify-center items-center h-[28rem] gap-12 relative">
-        <div className="w-56 h-80 flex items-center justify-center relative">
-          {playerPlayedCard ? (
-            <div className="animate-math-fade-in"><Card card={playerPlayedCard} isSelected={true} /></div>
-          ) : (
-            <div className="w-full h-full rounded-2xl border-2 border-dashed border-cyan-500/10 flex items-center justify-center">
-                <span className="text-cyan-900 text-xs font-black uppercase tracking-[0.5em] animate-pulse">
-                    {initiative === 'player' ? 'Pick Protocol' : 'Sync Awaiting'}
-                </span>
-            </div>
-          )}
-          {playerPlayedCard && <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-cyan-400 text-[10px] font-black tracking-widest uppercase">Deployed</div>}
+      <div className="w-full flex-grow flex justify-center items-center min-h-0 space-x-2 sm:space-x-8">
+        <div className="flex items-center justify-center">
+            {playerPlayedCard && (
+              <Card 
+                card={playerPlayedCard} 
+                isCastingEffect={playerIsCasting}
+                isBattling={turnPhase === 'battle_animation'}
+                battleOutcome={battleOutcome?.player ?? null}
+                owner='player'
+              />
+            )}
         </div>
-
-        <div className="flex-grow flex flex-col items-center justify-center max-w-4xl z-20">
-          {turnPhase === 'solving_problem' && pcPlayedCard ? (
-            <ProblemSolver 
-              problemCard={pcPlayedCard} 
-              onAnswerSubmit={onAnswerSubmit}
-              isSolving={turnPhase === 'solving_problem'}
-              turnPhase={turnPhase}
-            />
-          ) : (
-             <div className="text-center bg-slate-950/40 backdrop-blur-md p-10 rounded-full border border-cyan-500/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative">
-                {turnPhase === 'selecting_card' ? (
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></div>
-                        <p className="text-cyan-200 text-3xl font-black tracking-[0.3em] uppercase italic">
-                            {initiative === 'player' ? (playerPlayedCard ? 'PC SYNCING...' : 'YOUR INITIATIVE') : (pcPlayedCard ? 'SYNC YOUR MODULE' : 'PC INITIATIVE')}
-                        </p>
-                        {playerMustMatchLevel && (
-                             <div className="bg-amber-500/20 border border-amber-500/40 px-4 py-1 rounded text-[10px] text-amber-300 font-black uppercase tracking-widest animate-pulse">
-                                Required Level: {pcPlayedCard.difficulty}
-                             </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="text-cyan-500 text-6xl font-black tracking-widest animate-pulse font-['Cinzel_Decorative']">VS</div>
-                )}
-            </div>
-          )}
-          {roundResult && <div className={`mt-8 text-5xl font-black text-center animate-math-fade-in tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] ${roundResult.includes('VICTORY') ? 'text-cyan-300' : 'text-red-500'}`}>{roundResult}</div>}
-        </div>
-
-        <div className="w-56 h-80 flex items-center justify-center relative">
-          {pcPlayedCard ? (
-            <div className="animate-math-fade-in"><Card card={pcPlayedCard} isSelected={true} /></div>
-          ) : (
-            <div className="w-full h-full rounded-2xl border-2 border-dashed border-slate-700/30 flex items-center justify-center">
-                <span className="text-slate-800 text-xs font-black uppercase tracking-[0.5em]">
-                    {initiative === 'pc' ? 'Analyzing...' : 'Standby'}
-                </span>
-            </div>
-          )}
-          {pcPlayedCard && <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-slate-500 text-[10px] font-black tracking-widest uppercase">Detected</div>}
+        <div className="text-amber-400 text-xl sm:text-3xl lg:text-4xl font-black">VS</div>
+        <div className="flex items-center justify-center">
+            {pcPlayedCard && (
+              <Card 
+                card={pcPlayedCard} 
+                isCastingEffect={pcIsCasting}
+                isBattling={turnPhase === 'battle_animation'}
+                battleOutcome={battleOutcome?.pc ?? null}
+                owner='pc'
+              />
+            )}
         </div>
       </div>
 
       {/* Player Area */}
-      <div className="w-full flex justify-center items-center flex-col space-y-6">
-       <div className="h-80 flex justify-center items-end space-x-[-3rem] pb-6" onClick={(e) => e.stopPropagation()}>
-          {turnPhase === 'selecting_card' && (
-            <>
-              <div className="relative mr-8 group transform translate-y-4">
+      <div className="w-full flex justify-center items-center flex-col space-y-1 sm:space-y-4 pb-2">
+         {/* Player Hand Container - Responsive Height and Spacing */}
+         <div className="h-28 xs:h-36 sm:h-48 md:h-52 lg:h-60 2xl:h-72 flex justify-center items-end space-x-[-2.5rem] sm:space-x-[-3rem] md:space-x-[-3.5rem] lg:space-x-[-4rem] pb-2 sm:pb-4" onClick={(e) => e.stopPropagation()}>
+            <div className="relative mr-2 sm:mr-4 transform scale-90 sm:scale-100 origin-bottom">
                 <CardBack />
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-blue-900 border border-cyan-500/40 text-cyan-200 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Memory: {playerDeckSize}</div>
-              </div>
-              {playerHand.map(card => {
-                const isForbidden = playerMustMatchLevel && card.difficulty !== pcPlayedCard.difficulty;
-                return (
-                  <Card
-                    key={card.id}
-                    card={card}
-                    onClick={() => onCardSelect(card)}
-                    isPlayable={turnPhase === 'selecting_card'}
-                    inHand={true}
-                    isSelected={selectedCardId === card.id}
-                    isDisabled={isForbidden}
-                  />
-                );
-              })}
-            </>
-          )}
+                <DeckCounter count={playerDeckSize} />
+            </div>
+            {playerHand.map(card => (
+              <Card 
+                key={card.id} 
+                card={card}
+                onClick={() => onCardSelect(card)}
+                isPlayable={turnPhase === 'player_turn'}
+                inHand={true}
+                isSelected={selectedCardId === card.id}
+              />
+            ))}
         </div>
-        <ScoreDisplay score={playerScore} label="Universal_Auth_Level" maxScore={maxScore} isPlayer={true} />
+        <HealthBar current={playerHP} max={20} label="あなた" />
       </div>
 
-      <DrawingCanvas isVisible={isDrawing} />
-      
-      <button 
-        onClick={() => setIsDrawing(prev => !prev)}
-        className={`fixed top-8 right-8 p-5 rounded-full shadow-2xl transition-all transform hover:scale-110 z-30 backdrop-blur-md ${isDrawing ? 'bg-cyan-500 text-slate-950 border-white border-4' : 'bg-slate-900/80 text-cyan-400 border border-cyan-500/40'}`}
-        aria-label="Toggle Drawing Memo"
-      >
-        <PencilIcon className="w-8 h-8" />
-      </button>
-
-      <div className="fixed bottom-8 right-8">
-        <GameLog messages={gameLog} />
-      </div>
+      <GameLog messages={gameLog} />
     </div>
   );
 };

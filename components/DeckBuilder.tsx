@@ -1,70 +1,184 @@
 
 import React, { useState, useMemo } from 'react';
-import type { ProblemCard } from '../types';
+import type { CardData } from '../types';
 import Card from './Card';
-import { DECK_SIZE, MAX_DUPLICATES, DECK_CONSTRAINTS } from '../constants';
-import { BackIcon } from './Icons';
+import { DECK_SIZE, MAX_DUPLICATES } from '../constants';
 
 interface DeckBuilderProps {
-  ownedCards: ProblemCard[];
-  onDeckSubmit: (deck: ProblemCard[]) => void;
-  onBack: () => void;
+  unlockedCards: CardData[];
+  onDeckSubmit: (deck: CardData[], mode: 'cpu' | 'pvp') => void;
+  isGuest: boolean;
+  savedDecks: Record<string, number[]>;
+  onSaveDeck: (slotId: string, deck: CardData[]) => void;
+  cardCatalog: Record<number, CardData>;
+  coins: number; // Added
 }
 
-const DeckBuilder: React.FC<DeckBuilderProps> = ({ ownedCards, onDeckSubmit, onBack }) => {
-  const [deck, setDeck] = useState<ProblemCard[]>([]);
+const DeckBuilder: React.FC<DeckBuilderProps> = ({ unlockedCards, onDeckSubmit, isGuest, savedDecks, onSaveDeck, cardCatalog, coins }) => {
+  const [deck, setDeck] = useState<CardData[]>([]);
+  const [activeSlot, setActiveSlot] = useState<string>('slot1');
   
   const deckCardCounts = useMemo(() => {
     return deck.reduce((acc, card) => {
-      acc[card.id] = (acc[card.id] || 0) + 1;
+      acc[card.definitionId] = (acc[card.definitionId] || 0) + 1;
       return acc;
     }, {} as Record<number, number>);
   }, [deck]);
+  
+  const poolCardCounts = useMemo(() => {
+    const counts: Record<number, number> = {};
+    for (const card of unlockedCards) {
+         // Determine max allowed for this specific card
+         const isHighLevel = (card.level || 1) > 1;
+         const maxAllowed = isHighLevel ? 1 : MAX_DUPLICATES;
+         
+         const currentInDeck = deckCardCounts[card.definitionId] || 0;
+         counts[card.definitionId] = Math.max(0, maxAllowed - currentInDeck);
+    }
+    return counts;
+  }, [unlockedCards, deckCardCounts]);
 
-  const addCardToDeck = (cardDef: ProblemCard) => {
-    if (deck.length >= DECK_SIZE) return;
-    if ((deckCardCounts[cardDef.id] || 0) >= MAX_DUPLICATES) return;
-
-    const constraint = DECK_CONSTRAINTS[cardDef.difficulty];
-    if(constraint) {
-        const count = deck.filter(c => c.difficulty === cardDef.difficulty).length;
-        if (count >= constraint) return;
+  const addCardToDeck = (cardDef: CardData) => {
+    if (deck.length >= DECK_SIZE) {
+      alert(`デッキは${DECK_SIZE}枚までです。`);
+      return;
+    }
+    
+    const isHighLevel = (cardDef.level || 1) > 1;
+    const maxAllowed = isHighLevel ? 1 : MAX_DUPLICATES;
+    
+    if ((deckCardCounts[cardDef.definitionId] || 0) >= maxAllowed) {
+      alert(isHighLevel 
+        ? `Lv.2以上のカードはデッキに1枚しか入れられません。` 
+        : `同じカードは${MAX_DUPLICATES}枚までしか入れられません。`
+      );
+      return;
     }
     setDeck(prev => [...prev, cardDef]);
   };
 
-  const removeCardFromDeck = (index: number) => {
+  const removeCardFromDeck = (cardToRemove: CardData, index: number) => {
     setDeck(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleLoadDeck = () => {
+      const savedIds = savedDecks[activeSlot];
+      if (!savedIds || savedIds.length === 0) {
+          alert('このスロットにはデッキが保存されていません。');
+          return;
+      }
+      if (!confirm('現在のデッキを破棄して、保存されたデッキを読み込みますか？')) return;
+
+      const loadedDeck: CardData[] = [];
+      let missingCards = false;
+
+      savedIds.forEach(id => {
+          const cardDef = cardCatalog[id]; // Use Prop instead of imported constant
+          if (cardDef) {
+              // unlocked check (optional but recommended)
+              // We skip strictly checking "unlockedCards" prop because data sync might lag, 
+              // and if they saved it, they likely had it. 
+              loadedDeck.push(cardDef);
+          } else {
+              missingCards = true;
+          }
+      });
+
+      if (missingCards) alert('一部のカードデータが見つかりませんでした。');
+      setDeck(loadedDeck);
+  };
+
+  const handleSaveDeckClick = () => {
+      if (deck.length !== DECK_SIZE) {
+          alert(`デッキは${DECK_SIZE}枚揃っていないと保存できません。`);
+          return;
+      }
+      if (confirm(`現在のデッキを ${activeSlot.replace('slot', 'Slot ')} に上書き保存しますか？`)) {
+          onSaveDeck(activeSlot, deck);
+      }
   };
   
   const isDeckValid = deck.length === DECK_SIZE;
 
+  // Helper to get tooltip text including evolution info
+  const getCardTooltip = (card: CardData) => {
+      let text = `${card.name}\nATK:${card.attack} DEF:${card.defense}\n${card.description}`;
+      if (card.unlocks !== undefined) {
+          const nextCard = cardCatalog[card.unlocks];
+          if (nextCard) {
+              text += `\n\n【進化可能】\n勝利時、一定確率で「${nextCard.name}」に進化！`;
+          } else {
+              text += `\n\n【進化可能】\n(データ未定義: ID ${card.unlocks})`;
+          }
+      }
+      return text;
+  };
+
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-white font-['Inter']">
-      <header className="text-center mb-10">
-        <h1 className="text-5xl md:text-7xl font-black font-['Cinzel_Decorative'] text-hologram tracking-[0.1em] mb-2">ARMORY_SYNC</h1>
-        <p className="text-[10px] text-cyan-500 font-bold tracking-[0.5em] uppercase">Configure your Protocol: {deck.length} / {DECK_SIZE}</p>
-      </header>
+    <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white">
+      <div className="flex flex-col items-center mb-2">
+         <h1 className="text-4xl font-bold text-amber-300 drop-shadow-lg">デッキ構築</h1>
+         <div className="text-sm text-gray-400 mt-1 flex gap-4">
+             <span>Lv.2以上の強力なカードは1枚制限</span>
+             <span className="text-amber-400 font-bold">所持コイン: {coins} G</span>
+         </div>
+      </div>
       
+      {/* Save/Load Controls */}
+      <div className="bg-gray-800/80 p-2 rounded-lg border border-gray-600 mb-4 flex gap-4 items-center shadow-lg">
+          <div className="flex bg-gray-900 rounded-md overflow-hidden">
+              {['slot1', 'slot2', 'slot3'].map(slot => (
+                  <button
+                    key={slot}
+                    onClick={() => setActiveSlot(slot)}
+                    className={`px-4 py-2 text-sm font-bold transition-colors ${activeSlot === slot ? 'bg-amber-600 text-white' : 'hover:bg-gray-700 text-gray-400'}`}
+                  >
+                      {slot.replace('slot', 'Slot ')}
+                      <span className="ml-1 text-xs opacity-70">
+                        {savedDecks[slot] ? '💾' : '(空)'}
+                      </span>
+                  </button>
+              ))}
+          </div>
+          <div className="h-6 w-px bg-gray-600 mx-2"></div>
+          <button 
+            onClick={handleLoadDeck}
+            className="bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!savedDecks[activeSlot]}
+          >
+              読込
+          </button>
+          <button 
+             onClick={handleSaveDeckClick}
+             className="bg-green-700 hover:bg-green-600 px-3 py-1 rounded text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+             disabled={!isDeckValid}
+          >
+              保存
+          </button>
+      </div>
+
       <div className="w-full max-w-7xl flex-grow flex gap-6 overflow-hidden">
-        {/* Pool */}
-        <div className="w-1/2 flex flex-col hud-panel rounded-2xl p-6 border-cyan-500/20 shadow-2xl relative">
-          <div className="corner-accent lt"></div>
-          <h2 className="text-xs font-black text-cyan-400 mb-6 tracking-widest uppercase italic">Salvaged_Database ({ownedCards.length})</h2>
-          <div className="flex-grow grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-4 p-2 overflow-y-auto custom-scrollbar">
-            {ownedCards.map((cardDef) => {
-              const countInDeck = deckCardCounts[cardDef.id] || 0;
-              const isDimmed = countInDeck >= MAX_DUPLICATES;
+        {/* Card Pool */}
+        <div className="w-1/2 flex flex-col bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+          <h2 className="text-xl font-bold text-amber-400 mb-2 text-center">カードプール ({unlockedCards.length}種類)</h2>
+          <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2 custom-scrollbar">
+            {unlockedCards.map((cardDef) => {
+              const count = poolCardCounts[cardDef.definitionId] || 0;
+              const isDimmed = count <= 0;
+              const isHighLevel = (cardDef.level || 1) > 1;
               return (
-                 <div key={cardDef.id} className="relative group" onClick={() => !isDimmed && addCardToDeck(cardDef)}>
-                   <div className={`${isDimmed ? 'opacity-20 saturate-0 scale-95' : 'cursor-pointer transition-transform hover:scale-105 active:scale-95'}`}>
-                      <div className="transform scale-90 origin-top">
-                        <Card card={cardDef} />
-                      </div>
+                 <div 
+                    key={cardDef.definitionId} 
+                    className="relative transform hover:scale-105 transition-transform group" 
+                    onClick={() => !isDimmed && addCardToDeck(cardDef)}
+                    title={getCardTooltip(cardDef)}
+                 >
+                   <div className={`${isDimmed ? 'opacity-30' : 'cursor-pointer'}`}>
+                      <Card card={cardDef} />
                    </div>
                    {!isDimmed && (
-                     <div className="absolute top-0 right-2 bg-cyan-600 text-slate-950 text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-white/20 shadow-lg">
-                       {MAX_DUPLICATES - countInDeck}
+                     <div className={`absolute -top-2 -right-2 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white ${isHighLevel ? 'bg-red-600' : 'bg-blue-600'}`}>
+                       {count}
                      </div>
                    )}
                  </div>
@@ -73,45 +187,44 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ ownedCards, onDeckSubmit, onB
           </div>
         </div>
         
-        {/* Active Deck */}
-        <div className="w-1/2 flex flex-col hud-panel rounded-2xl p-6 border-cyan-400/20 shadow-2xl relative bg-blue-900/5">
-          <div className="corner-accent rt"></div>
-          <h2 className="text-xs font-black text-cyan-100 mb-6 tracking-widest uppercase italic">Active_Sequence ({deck.length}/{DECK_SIZE})</h2>
-           <div className="flex-grow grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-4 p-2 overflow-y-auto custom-scrollbar">
+        {/* Current Deck */}
+        <div className="w-1/2 flex flex-col bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+          <h2 className="text-xl font-bold text-amber-400 mb-2 text-center">あなたのデッキ ({deck.length}/{DECK_SIZE})</h2>
+          <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2 custom-scrollbar">
              {deck.map((card, index) => (
-                <div key={index} className="relative cursor-pointer transition-all hover:scale-105 active:scale-95 group" onClick={() => removeCardFromDeck(index)}>
-                    <div className="transform scale-90 origin-top">
+                <div 
+                    key={index} 
+                    className="relative transform hover:scale-105 transition-transform" 
+                    onClick={() => removeCardFromDeck(card, index)}
+                    title={getCardTooltip(card)}
+                >
+                    <div className="cursor-pointer">
                         <Card card={card} />
                     </div>
-                    <div className="absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 rounded-xl flex items-center justify-center transition-opacity">
-                       <span className="text-red-400 text-[10px] font-black tracking-widest">REMOVE</span>
-                    </div>
                 </div>
-             ))}
-             {Array.from({ length: DECK_SIZE - deck.length }).map((_, i) => (
-               <div key={`empty-${i}`} className="w-full aspect-[48/72] rounded-xl border border-dashed border-cyan-900/30 flex items-center justify-center bg-slate-950/20">
-                 <span className="text-[10px] text-cyan-950 font-black tracking-widest font-mono">EMPTY_SLOT</span>
-               </div>
              ))}
           </div>
         </div>
       </div>
       
-       <div className="flex items-center gap-6 mt-8">
-         <button
-          onClick={onBack}
-          className="btn-tactical px-8 py-3 rounded-lg text-sm font-bold tracking-widest flex items-center gap-2"
-        >
-          <BackIcon className="w-4 h-4" /> TERMINATE_CONFIG
-        </button>
-        <button
-          onClick={() => onDeckSubmit(deck)}
-          disabled={!isDeckValid}
-          className={`px-12 py-4 rounded-xl text-xl font-black transition-all transform hover:scale-105 tracking-[0.3em] shadow-[0_0_40px_rgba(34,211,238,0.2)]
-            ${!isDeckValid ? 'opacity-20 cursor-not-allowed bg-slate-800 text-gray-500 border border-slate-700' : 'bg-blue-700 text-white border-cyan-400/50 hover:bg-blue-600'}`}
-        >
-          {isDeckValid ? 'INITIATE_DUEL' : `WAITING_FOR_${DECK_SIZE - deck.length}_NODES`}
-        </button>
+       <div className="flex gap-4 mt-4">
+          <button
+            onClick={() => onDeckSubmit(deck, 'cpu')}
+            disabled={!isDeckValid}
+            className={`bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-all transform hover:scale-105 border border-gray-500
+              ${!isDeckValid ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-600'}`}
+          >
+            {isDeckValid ? 'CPU対戦 (練習)' : `あと ${DECK_SIZE - deck.length} 枚`}
+          </button>
+
+          <button
+            onClick={() => onDeckSubmit(deck, 'pvp')}
+            disabled={!isDeckValid || isGuest}
+            className={`bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold py-3 px-8 rounded-lg text-xl transition-all transform hover:scale-105 shadow-lg
+              ${!isDeckValid || isGuest ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-amber-500/50'}`}
+          >
+            {isGuest ? '対人戦 (ログイン必須)' : isDeckValid ? 'ランクマッチ (対人戦)' : `あと ${DECK_SIZE - deck.length} 枚`}
+          </button>
        </div>
     </div>
   );

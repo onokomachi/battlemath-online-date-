@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-// FIX: Changed CardData to ProblemCard as CardData is deprecated.
-import type { ProblemCard } from '../types';
+import type { CardData } from '../types';
 import Card from './Card';
 
 interface LevelUpAnimationProps {
-  fromCard: ProblemCard;
-  toCard: ProblemCard;
+  fromCard: CardData;
+  toCard: CardData;
   onAnimationComplete: () => void;
 }
 
