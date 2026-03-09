@@ -185,11 +185,34 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
   );
 };
 
+// --- HP Bar Component (aicardbattle2 integration) ---
+const HpBar: React.FC<{ hp: number; maxHp: number; label: string; isPlayer: boolean }> = ({ hp, maxHp, label, isPlayer }) => {
+  const pct = Math.max(0, (hp / maxHp) * 100);
+  const color = pct > 50 ? (isPlayer ? 'bg-cyan-400' : 'bg-red-500') : pct > 25 ? 'bg-amber-400' : 'bg-red-600';
+  return (
+    <div className={`p-4 rounded-2xl border-2 flex flex-col gap-2 w-80 shadow-2xl backdrop-blur-md ${isPlayer ? 'bg-blue-900/20 border-cyan-500/40' : 'bg-slate-900/40 border-slate-700'}`}>
+      <div className="flex justify-between items-center">
+        <span className={`text-[10px] font-black uppercase tracking-widest ${isPlayer ? 'text-cyan-400' : 'text-gray-500'}`}>{label}</span>
+        <span className="text-xl font-black font-mono text-white">{hp} <span className="text-sm opacity-30">/ {maxHp} HP</span></span>
+      </div>
+      <div className="bg-slate-950/80 h-3 rounded-full overflow-hidden p-[1px] border border-white/5">
+        <div
+          className={`h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(34,211,238,0.4)] ${color}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+};
+
 // --- GameBoard Component ---
 interface GameBoardProps {
   turnPhase: TurnPhase;
   playerScore: number;
   pcScore: number;
+  playerHP: number;
+  pcHP: number;
+  initialHP: number;
   playerHand: ProblemCard[];
   pcHandSize: number;
   playerDeckSize: number;
@@ -224,6 +247,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
   turnPhase,
   playerScore,
   pcScore,
+  playerHP,
+  pcHP,
+  initialHP,
   playerHand,
   pcHandSize,
   playerDeckSize,
@@ -251,7 +277,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
       {/* PC Area */}
       <div className="w-full flex justify-center items-center flex-col space-y-6">
-        <ScoreDisplay score={pcScore} label="Target_Efficiency" maxScore={maxScore} isPlayer={false} />
+        <HpBar hp={pcHP} maxHp={initialHP} label={`Enemy_HP  |  正解: ${pcScore}`} isPlayer={false} />
         <div className="flex justify-center items-center h-48 space-x-2">
           {[...Array(pcHandSize)].map((_, i) => (
             <div key={i} className="opacity-40 hover:opacity-60 transition-opacity relative group transform -translate-y-4">
@@ -347,7 +373,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             </>
           )}
         </div>
-        <ScoreDisplay score={playerScore} label="Universal_Auth_Level" maxScore={maxScore} isPlayer={true} />
+        <HpBar hp={playerHP} maxHp={initialHP} label={`Player_HP  |  正解: ${playerScore}`} isPlayer={true} />
       </div>
 
       <DrawingCanvas isVisible={isDrawing} />

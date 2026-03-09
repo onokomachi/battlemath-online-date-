@@ -7,7 +7,7 @@ import { BackIcon } from './Icons';
 
 interface DeckBuilderProps {
   ownedCards: ProblemCard[];
-  onDeckSubmit: (deck: ProblemCard[]) => void;
+  onDeckSubmit: (deck: ProblemCard[], mode: 'cpu' | 'pvp') => void;
   onBack: () => void;
 }
 
@@ -97,7 +97,7 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ ownedCards, onDeckSubmit, onB
         </div>
       </div>
       
-       <div className="flex items-center gap-6 mt-8">
+       <div className="flex items-center gap-4 mt-8 flex-wrap justify-center">
          <button
           onClick={onBack}
           className="btn-tactical px-8 py-3 rounded-lg text-sm font-bold tracking-widest flex items-center gap-2"
@@ -105,12 +105,20 @@ const DeckBuilder: React.FC<DeckBuilderProps> = ({ ownedCards, onDeckSubmit, onB
           <BackIcon className="w-4 h-4" /> TERMINATE_CONFIG
         </button>
         <button
-          onClick={() => onDeckSubmit(deck)}
+          onClick={() => onDeckSubmit(deck, 'cpu')}
           disabled={!isDeckValid}
-          className={`px-12 py-4 rounded-xl text-xl font-black transition-all transform hover:scale-105 tracking-[0.3em] shadow-[0_0_40px_rgba(34,211,238,0.2)]
+          className={`px-10 py-4 rounded-xl text-lg font-black transition-all transform hover:scale-105 tracking-[0.2em] shadow-[0_0_40px_rgba(34,211,238,0.2)]
             ${!isDeckValid ? 'opacity-20 cursor-not-allowed bg-slate-800 text-gray-500 border border-slate-700' : 'bg-blue-700 text-white border-cyan-400/50 hover:bg-blue-600'}`}
         >
-          {isDeckValid ? 'INITIATE_DUEL' : `WAITING_FOR_${DECK_SIZE - deck.length}_NODES`}
+          {isDeckValid ? 'VS CPU' : `あと${DECK_SIZE - deck.length}枚`}
+        </button>
+        <button
+          onClick={() => onDeckSubmit(deck, 'pvp')}
+          disabled={!isDeckValid}
+          className={`px-10 py-4 rounded-xl text-lg font-black transition-all transform hover:scale-105 tracking-[0.2em]
+            ${!isDeckValid ? 'opacity-20 cursor-not-allowed bg-slate-800 text-gray-500 border border-slate-700' : 'bg-amber-600 text-white border-amber-400/50 hover:bg-amber-500'}`}
+        >
+          {isDeckValid ? 'VS PLAYER (PvP)' : `あと${DECK_SIZE - deck.length}枚`}
         </button>
        </div>
     </div>

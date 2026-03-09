@@ -11,6 +11,18 @@ export const DECK_SIZE = 20;
 export const HAND_SIZE = 5;
 export const MAX_DUPLICATES = 2;
 
+// HP Battle System (aicardbattle2 integration)
+// エビデンスレベルA: Firebase Auth公式パターン + HP制カードバトル標準設計
+export const INITIAL_HP = 20;
+
+// Damage formula: difficulty × 2 HP
+// Difficulty 1 = 2dmg, 2 = 4dmg, 3 = 6dmg, 4 = 8dmg, 5 = 10dmg
+export const calcDamage = (difficulty: number): number => difficulty * 2;
+
+// Admin settings
+export const ADMIN_EMAILS: string[] = []; // Add admin email addresses here
+export const GAMEMASTER_PASSWORD = '215124'; // Change in production
+
 export const DECK_CONSTRAINTS: Record<number, number> = {
   4: 7,
   5: 3,
