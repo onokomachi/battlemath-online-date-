@@ -1,300 +1,212 @@
 
-import type { CardData } from './types';
+import type { Problem, ProblemCard, Category, Ability, AbilityType } from './types';
+import { geometryProblems } from './data/geometryProblems';
+import { linearFunctionsProblems } from './data/linearFunctionsProblems';
+import { polynomialProblems } from './data/polynomialProblems';
+import { probabilityProblems } from './data/probabilityProblems';
+import { simultaneousEquationsProblems } from './data/simultaneousEquations';
 
-export const INITIAL_HP = 20;
-export const HAND_SIZE = 5;
+export const MAX_SCORE = 5;
 export const DECK_SIZE = 20;
-export const MAX_DUPLICATES = 4;
-export const INITIAL_UNLOCKED_CARDS: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 17, 19, 20, 21, 22, 23, 24];
+export const HAND_SIZE = 5;
+export const MAX_DUPLICATES = 2;
 
-// 管理者のメールアドレスリスト。ここにメールアドレスを追加すると、そのユーザーだけがGameMasterボタンを見ることができます。
-export const ADMIN_EMAILS: string[] = [];
+export const DECK_CONSTRAINTS: Record<number, number> = {
+  4: 7,
+  5: 3,
+};
 
-export const GAMEMASTER_PASSWORD = '215124';
+// 要望に基づき、細かい単元を維持しつつ、学習目的別にグループ化して構造化
+export const MATH_CATEGORIES: Category[] = [
+    {
+        name: "式の計算",
+        groups: [
+            {
+                name: "基本と次数",
+                subtopics: ["式の次数", "同類項の加減(基)", "数値代入(基)"]
+            },
+            {
+                name: "加法・減法",
+                subtopics: ["同類項の加減(標1)", "同類項の加減(標2)", "(#+#)+(#+#)", "(#+#)-(#+#)", "(#+#)±#(#+#)", "縦書きの加法", "減法"]
+            },
+            {
+                name: "乗法・除法",
+                subtopics: ["式の乗法(基)", "式の乗法(標)", "式の二乗(基)", "式の三乗(基)", "式の除法(初1)", "式の除法(基1)", "式の除法(基2)", "式の除法(標1)", "式の除法(標2)"]
+            },
+            {
+                name: "分数・混合計算",
+                subtopics: ["分数式の加減(基礎)", "分数式の加減(標準1)", "分数式の加減(標準2)", "乗除の混合型1", "乗除の混合型2", "乗除の混合型3"]
+            },
+            {
+                name: "応用とまとめ",
+                subtopics: ["数値代入(標1)", "数値代入(標2)", "等式の変形(基)", "等式の変形(標1)", "等式の変形(標2)", "式の変形(完)", "文字式(完成1)", "文字式(完成2)", "文字式の値(完)"]
+            }
+        ]
+    },
+    {
+        name: "連立方程式",
+        groups: [
+            {
+                name: "計算の基本",
+                subtopics: ["加減法（ガイド付き）", "代入法（ガイド付き）", "加減法（計算練習）①", "代入法（計算練習）①"]
+            },
+            {
+                name: "複雑な計算",
+                subtopics: ["加減法（計算練習）②", "代入法（計算練習）②", "()付きの方程式", "分数係数の方程式", "小数係数の方程式", "連立方程式（統合）"]
+            },
+            {
+                name: "文章題演習",
+                subtopics: ["金銭問題(基)", "数の問題(基)", "割合(準備)", "割合(標準)", "濃度(準備)", "食塩濃度(標)", "速度(準備)", "速度問題(標1)", "速度問題(標2)", "速度問題(標3)"]
+            }
+        ]
+    },
+    {
+        name: "図形の性質",
+        groups: [
+            {
+                name: "角度の計算",
+                subtopics: ["角度 基礎", "平行線の錯角・同位角（基本）", "三角形と角（基本）", "三角形と角（標）", "角度（基本）", "角度（応用）", "二等辺三角形(角度)", "三・四角形(角度)"]
+            },
+            {
+                name: "合同と証明の基礎",
+                subtopics: ["合同条件(基)", "合同の証明(基)", "合同の証明(標)", "二等辺三角形(準)", "直角三角形(準)"]
+            },
+            {
+                name: "図形の証明(発展)",
+                subtopics: ["二等辺三角形(証)", "直角三角形(証)", "正三角形(証)", "平行四辺形(証)", "三・四角形(証明)", "証明（応用）", "証明（EX）"]
+            },
+            {
+                name: "四角形の性質",
+                subtopics: ["四角形の性質(基)", "四角形の関係"]
+            }
+        ]
+    },
+    {
+        name: "一次関数",
+        groups: [
+            {
+                name: "グラフの作成",
+                subtopics: ["表からｸﾞﾗﾌを書く", "2点でｸﾞﾗﾌを書く", "2点でｸﾞﾗﾌを書く2", "切片と傾きで書く"]
+            },
+            {
+                name: "式の決定",
+                subtopics: ["切片を求める", "傾きを求める", "ｸﾞﾗﾌの式を求める", "ｸﾞﾗﾌから式1", "ｸﾞﾗﾌから式2", "ｸﾞﾗﾌから式3(発展)", "1点と傾きから(基)", "1点と切片から(基)", "2点から式を(基)", "1次関数の式1", "1次関数の式2", "1次関数の式3"]
+            },
+            {
+                name: "関数の特徴と応用",
+                subtopics: ["1次関数の変化の割合", "グラフの変域", "2直線の交点", "グラフと面積1", "グラフと面積2", "1次関数の利用(基)"]
+            }
+        ]
+    },
+    {
+        name: "確率",
+        groups: [
+            {
+                name: "基本演習",
+                subtopics: ["サイコロ1個の確率(基)", "1個の確率問題", "ボール1個の確率(基)"]
+            },
+            {
+                name: "2つの事象",
+                subtopics: ["サイコロ2個の確率(基)", "サイコロ2個の確率(標)", "サイコロ2個の確率(応)", "ボール2個の確率(標)"]
+            },
+            {
+                name: "数え上げと応用",
+                subtopics: ["樹形図に表す", "樹形図に表す(標)", "区別できない時"]
+            }
+        ]
+    }
+];
 
-// This catalog contains all possible card DEFINITIONS.
-export const CARD_DEFINITIONS: CardData[] = ([
-  // --- Base Cards (Definition IDs 0-9) ---
-  {
-    name: "エレガントな貴族",
-    attack: 7,
-    defense: 7,
-    image: "1.jpeg",
-    description: "非の打ち所がないスタイルを持つ、バランスの取れた戦士。",
-    effect: 'NONE',
-    attribute: 'passion',
-    level: 1,
-    unlocks: 10,
-    baseDefinitionId: 0,
-  },
-  {
-    name: "輝く花嫁",
-    attack: 2,
-    defense: 6,
-    image: "2.jpeg",
-    description: "場に出した時、その誓いがあなたのHPを3回復する。",
-    effect: 'HEAL_PLAYER',
-    effectValue: 3,
-    attribute: 'harmony',
-    level: 1,
-    unlocks: 11,
-    baseDefinitionId: 1,
-  },
-  {
-    name: "ステージアイドル",
-    attack: 5,
-    defense: 5,
-    image: "3.jpeg",
-    description: "ステージ上で輝く、万能なパフォーマー。",
-    effect: 'NONE',
-    attribute: 'harmony',
-    level: 1,
-    unlocks: 12,
-    baseDefinitionId: 2,
-  },
-  {
-    name: "バレーのエース",
-    attack: 10,
-    defense: 1,
-    image: "4.jpeg",
-    description: "ブロックすることがほぼ不可能な、全力のスパイク。",
-    effect: 'NONE',
-    attribute: 'passion',
-    baseDefinitionId: 3,
-  },
-  {
-    name: "怜悧な探偵",
-    attack: 4,
-    defense: 4,
-    image: "5.jpeg",
-    description: "場に出した時、その鋭い知性がカードを1枚引かせる。",
-    effect: 'DRAW_CARD',
-    effectValue: 1,
-    attribute: 'calm',
-    baseDefinitionId: 4,
-  },
-  {
-    name: "陽気なマスコット",
-    attack: 3,
-    defense: 3,
-    image: "6.jpeg",
-    description: "場に出した時、その元気な応援がHPを2回復する。",
-    effect: 'HEAL_PLAYER',
-    effectValue: 2,
-    attribute: 'harmony',
-    baseDefinitionId: 5,
-  },
-  {
-    name: "屈強なチャンピオン",
-    attack: 9,
-    defense: 4,
-    image: "7.jpeg",
-    description: "厳しいトレーニングで磨かれた、圧倒的なパワー。",
-    effect: 'NONE',
-    attribute: 'passion',
-    baseDefinitionId: 6,
-  },
-  {
-    name: "サッカーのストライカー",
-    attack: 7,
-    defense: 2,
-    image: "8.jpeg",
-    description: "場に出した時、2ダメージのシュートを放つ。",
-    effect: 'DIRECT_DAMAGE',
-    effectValue: 2,
-    attribute: 'passion',
-    baseDefinitionId: 7,
-  },
-  {
-    name: "忠実な執事",
-    attack: 1,
-    defense: 11,
-    image: "9.jpeg",
-    description: "あらゆる動きを先読みする完璧な防御。",
-    effect: 'NONE',
-    attribute: 'calm',
-    baseDefinitionId: 8,
-  },
-  {
-    name: "マイクドロップ・ラッパー",
-    attack: 4,
-    defense: 3,
-    image: "10.jpeg",
-    description: "場に出した時、そのリリックが3ダメージを与える。",
-    effect: 'DIRECT_DAMAGE',
-    effectValue: 3,
-    attribute: 'calm',
-    baseDefinitionId: 9,
-  },
-  // --- Leveled Cards (Definition IDs 10-15) ---
-  {
-    name: "至高の貴族",
-    attack: 8,
-    defense: 8,
-    image: "12.jpeg",
-    description: "更に高められた品格。場に出た時、1ダメージを与える。",
-    effect: 'DIRECT_DAMAGE',
-    effectValue: 1,
-    attribute: 'passion',
-    level: 2,
-    unlocks: 13,
-    baseDefinitionId: 0,
-  },
-  {
-    name: "永遠の花嫁",
-    attack: 3,
-    defense: 8,
-    image: "14.jpeg",
-    description: "永遠の愛を誓い、HPを5回復する。",
-    effect: 'HEAL_PLAYER',
-    effectValue: 5,
-    attribute: 'harmony',
-    level: 2,
-    unlocks: 14,
-    baseDefinitionId: 1,
-  },
-  {
-    name: "センターアイドル",
-    attack: 6,
-    defense: 6,
-    image: "16.jpeg",
-    description: "ファンの声援に応え、カードを1枚引く。",
-    effect: 'DRAW_CARD',
-    effectValue: 1,
-    attribute: 'harmony',
-    level: 2,
-    unlocks: 15,
-    baseDefinitionId: 2,
-  },
-  {
-    name: "気高き皇帝",
-    attack: 10,
-    defense: 10,
-    image: "13.jpeg",
-    description: "絶対的な風格。場に出た時、3ダメージを与える。",
-    effect: 'DIRECT_DAMAGE',
-    effectValue: 3,
-    attribute: 'passion',
-    level: 3,
-    baseDefinitionId: 0,
-  },
-  {
-    name: "女神の花嫁",
-    attack: 5,
-    defense: 10,
-    image: "15.jpeg",
-    description: "女神の祝福がHPを8回復させる。",
-    effect: 'HEAL_PLAYER',
-    effectValue: 8,
-    attribute: 'harmony',
-    level: 3,
-    baseDefinitionId: 1,
-  },
-  {
-    name: "伝説のアイドル",
-    attack: 7,
-    defense: 7,
-    image: "17.jpeg",
-    description: "伝説のステージ。カードを2枚引かせる。",
-    effect: 'DRAW_CARD',
-    effectValue: 2,
-    attribute: 'harmony',
-    level: 3,
-    baseDefinitionId: 2,
-  },
-  // --- Special Effect Cards (Definition IDs 16-24) ---
-  {
-    name: "怪盗ブラック・ルナ",
-    attack: 5,
-    defense: 3,
-    image: "1.jpeg",
-    description: "相手の手札を1枚奪い去る。",
-    effect: 'DISCARD_HAND',
-    effectValue: 1,
-    attribute: 'calm',
-    baseDefinitionId: 16,
-  },
-  {
-    name: "禁忌の魔術師",
-    attack: 4,
-    defense: 4,
-    image: "5.jpeg",
-    description: "相手の手札を1枚捨てさせる。",
-    effect: 'DISCARD_HAND',
-    effectValue: 1,
-    attribute: 'passion',
-    baseDefinitionId: 17,
-  },
-  {
-    name: "運命の裁定者",
-    attack: 6,
-    defense: 2,
-    image: "12.jpeg",
-    description: "相手の手札を2枚破棄させる。",
-    effect: 'DISCARD_HAND',
-    effectValue: 2,
-    attribute: 'calm',
-    level: 2,
-    baseDefinitionId: 19,
-  },
-  {
-    name: "紅蓮の吸血鬼",
-    attack: 6,
-    defense: 4,
-    image: "7.jpeg",
-    description: "ライフドレイン！相手から2HPを吸収する。",
-    effect: 'LIFE_DRAIN',
-    effectValue: 2,
-    attribute: 'passion',
-    baseDefinitionId: 20,
-  },
-  {
-    name: "聖なる守護者",
-    attack: 3,
-    defense: 6,
-    image: "9.jpeg",
-    description: "シールド！発動時、防御力を+4する。",
-    effect: 'SHIELD',
-    effectValue: 4,
-    attribute: 'harmony',
-    baseDefinitionId: 21,
-  },
-  {
-    name: "虚飾の鏡",
-    attack: 2,
-    defense: 10,
-    image: "5.jpeg",
-    description: "反射！ダメージを受けた時、相手に3ダメージ返す。",
-    effect: 'REFLECT',
-    effectValue: 3,
-    attribute: 'calm',
-    baseDefinitionId: 22,
-  },
-  {
-    name: "狂乱の戦士",
-    attack: 5,
-    defense: 3,
-    image: "13.jpeg",
-    description: "バーサク！自分のHPが10以下なら、攻撃力が+5される。",
-    effect: 'BERSERK',
-    effectValue: 5,
-    attribute: 'passion',
-    baseDefinitionId: 23,
-  },
-  {
-    name: "漆黒の騎士",
-    attack: 12,
-    defense: 0,
-    image: "1.jpeg",
-    description: "反動！絶大な攻撃力を持つが、自分も2ダメージ受ける。",
-    effect: 'RECOIL',
-    effectValue: 2,
-    attribute: 'calm',
-    baseDefinitionId: 24,
-  }
-] as Omit<CardData, 'id' | 'definitionId'>[]).map((card, index) => ({ ...card, definitionId: index, id: index }));
+export const difficultyMap: Record<string, number> = {
+    // --- 式の計算 ---
+    "式の次数": 1, "同類項の加減(基)": 1, "数値代入(基)": 1, "式の乗法(基)": 1, "式の二乗(基)": 1, "式の除法(初1)": 1,
+    "同類項の加減(標1)": 2, "(#+#)+(#+#)": 2, "(#+#)-(#+#)": 2, "数値代入(標1)": 2, "等式の変形(基)": 2, "式の除法(基1)": 2,
+    "縦書きの加法": 3, "減法": 3, "分数式の加減(基礎)": 3, "#(#+#)±#(#+#)": 3, "等式の変形(標1)": 3, "式の乗法(標)": 3, "式の除法(標1)": 3, "乗除の混合型1": 3,
+    "等式の変形(標2)": 4, "文字式(完成1)": 4, "文字式の値(完)": 4, "分数式の加減(標準1)": 4,
+    "式の変形(完)": 5, "文字式(完成2)": 5,
 
-export const CardCatalogById = CARD_DEFINITIONS.reduce((acc, card) => {
-  acc[card.definitionId] = card;
-  return acc;
-}, {} as Record<number, CardData>);
+    // --- 連立方程式 ---
+    "加減法（ガイド付き）": 2, "代入法（ガイド付き）": 2,
+    "加減法（計算練習）①": 3, "代入法（計算練習）①": 3, "()付きの方程式": 3,
+    "連立方程式（統合）": 4, "金銭問題(基)": 4, "数の問題(基)": 4, "割合(準備)": 4, "速度(準備)": 4,
+    "割合(標準)": 5, "食塩濃度(標)": 5, "速度問題(標3)": 5,
+
+    // --- 図形の性質 ---
+    "角度 基礎": 1, "平行線の錯角・同位角（基本）": 1, "三角形と角（基本）": 1, "合同条件(基)": 1,
+    "角度（基本）": 2, "二等辺三角形(角度)": 2, "三・四角形(角度)": 2, "四角形の性質(基)": 2,
+    "角度（応用）": 3, "合同の証明(基)": 3, "二等辺三角形(準)": 3, "四角形の関係": 3,
+    "二等辺三角形(証)": 4, "直角三角形(証)": 4, "正三角形(証)": 4, "平行四辺形(証)": 4,
+    "証明（応用）": 5, "証明（EX）": 5, "三・四角形(証明)": 5,
+
+    // --- 一次関数 ---
+    "表からｸﾞﾗﾌを書く": 2, "切片を求める": 2, "傾きを求める": 2,
+    "2点でｸﾞﾗﾌを書く": 3, "切片と傾きで書く": 3, "ｸﾞﾗﾌから式1": 3, "1次関数の変化の割合": 3,
+    "2直線の交点": 4, "グラフの変域": 4, "1次関数の利用(基)": 4,
+    "グラフと面積1": 5, "グラフと面積2": 5,
+
+    // --- 確率 ---
+    "サイコロ1個の確率(基)": 1, "ボール1個の確率(基)": 1,
+    "サイコロ2個の確率(基)": 2, "樹形図に表す": 3,
+    "サイコロ1個の確率(標)": 3, "カード1枚の確率(標)": 3,
+    "サイコロ2個の確率(標)": 4, "区別できない時": 4,
+    "サイコロ2個の確率(応)": 5,
+};
+
+const getDifficulty = (category: string): number => {
+    return difficultyMap[category] || 3;
+};
+
+const ABILITIES: Ability[] = [
+    { type: 'DEFENSIVE_STANCE', description: '[防御] このラウンドで敗北しても失点しない。' },
+    { type: 'TIME_PRESSURE', value: 3, description: '[速攻] 相手の解答時間を3秒短縮する。' },
+    { type: 'SCORE_BOOST', value: 1, description: '[激励] このラウンドで勝利した場合、追加で1スコアを得る。' },
+];
+
+const assignAbility = (card: ProblemCard): Ability | undefined => {
+    if (card.difficulty < 3) return undefined;
+    const abilityMap: { [key: string]: AbilityType[] } = {
+        "図形の性質": ['DEFENSIVE_STANCE'],
+        "確率": ['DEFENSIVE_STANCE', 'SCORE_BOOST'],
+        "一次関数": ['TIME_PRESSURE', 'SCORE_BOOST'],
+        "連立方程式": ['TIME_PRESSURE'],
+        "式の計算": ['SCORE_BOOST'],
+    };
+    const possibleTypes = abilityMap[card.mainCategory];
+    if (!possibleTypes) return undefined;
+    if (Math.random() < 0.25) {
+        const randomType = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
+        return ABILITIES.find(a => a.type === randomType);
+    }
+    return undefined;
+}
+
+const processProblems = (): ProblemCard[] => {
+    const allProblems: ProblemCard[] = [];
+    let idCounter = 0;
+    const sets = [
+        { mainCat: "式の計算", problems: polynomialProblems },
+        { mainCat: "連立方程式", problems: simultaneousEquationsProblems },
+        { mainCat: "図形の性質", problems: geometryProblems },
+        { mainCat: "一次関数", problems: linearFunctionsProblems },
+        { mainCat: "確率", problems: probabilityProblems },
+    ];
+    for (const set of sets) {
+        for (const category in set.problems) {
+            const difficulty = getDifficulty(category);
+            for (const problem of (set.problems as any)[category]) {
+                const card: ProblemCard = {
+                    id: idCounter++,
+                    mainCategory: set.mainCat,
+                    category,
+                    difficulty,
+                    problem: problem as Problem,
+                };
+                card.ability = assignAbility(card);
+                allProblems.push(card);
+            }
+        }
+    }
+    return allProblems;
+}
+
+export const CARD_DEFINITIONS: ProblemCard[] = processProblems();
