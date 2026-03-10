@@ -156,6 +156,46 @@ export interface IntersectionGuidedEquationData {
 }
 
 
+// --- Auth / Online Types ---
+
+export interface UserProfile {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+  mathPoints: number;
+  playerLevel: number;
+  playerExp: number;
+  totalWins: number;
+  totalMatches: number;
+  ownedCardIds: number[];
+  createdAt?: any;
+}
+
+export type BattleMode = 'cpu' | 'pvp';
+
+export interface Room {
+  roomId: string;
+  status: 'waiting' | 'playing' | 'finished';
+  hostId: string;
+  hostName: string;
+  guestId: string | null;
+  guestName: string | null;
+  createdAt: any;
+  hostLastActive: any;
+  guestLastActive: any;
+  hostReady: boolean;
+  guestReady: boolean;
+  round: number;
+  // HP-based battle
+  p1Hp: number;
+  p2Hp: number;
+  // Moves: serialized card IDs (not full card objects for Firestore)
+  p1Move: { cardId: number; answeredCorrectly?: boolean } | null;
+  p2Move: { cardId: number; answeredCorrectly?: boolean } | null;
+  winnerId: 'host' | 'guest' | 'draw' | null;
+}
+
 // --- Core Game Types ---
 
 export type AbilityType = 'DEFENSIVE_STANCE' | 'TIME_PRESSURE' | 'SCORE_BOOST';
@@ -203,8 +243,8 @@ export interface ProblemCard {
   ability?: Ability;
 }
 
-export type TurnPhase = 'selecting_card' | 'solving_problem' | 'round_end' | 'game_over';
-export type GameState = 'main_menu' | 'deck_building' | 'in_game' | 'end' | 'practice_mode' | 'card_shop';
+export type TurnPhase = 'selecting_card' | 'solving_problem' | 'round_end' | 'game_over' | 'waiting_for_opponent';
+export type GameState = 'login_screen' | 'main_menu' | 'deck_building' | 'in_game' | 'end' | 'practice_mode' | 'card_shop' | 'matchmaking' | 'gamemaster';
 export type TurnInitiative = 'player' | 'pc';
 
 // For FillInProofProblemView to connect with a virtual keypad in the future

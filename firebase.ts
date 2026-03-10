@@ -1,23 +1,32 @@
-// Import the functions you need from the SDKs you need
-// FIX: Use Firebase v9 compat libraries to support v8 syntax. The errors indicate
-// that Firebase v9+ is installed, but the code uses the older, namespaced v8 API.
-import firebase from "firebase/compat/app";
-import "firebase/compat/firestore";
+// Firebase v9 modular SDK
+import { initializeApp } from 'firebase/app';
+import { getAnalytics } from 'firebase/analytics';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
-// Your web app's Firebase configuration from the screenshot
+// battlemath-online Firebase project config (from Firebase console)
 const firebaseConfig = {
-  apiKey: "AIzaSyGW-cHwQBwgXFxdHyA",
-  authDomain: "aicardbattle-online.firebaseapp.com",
-  projectId: "aicardbattle-online",
-  storageBucket: "aicardbattle-online.appspot.com",
-  messagingSenderId: "891142351983",
-  appId: "1:891142351983:web:b5bd260df8b3d4d97392a"
+  apiKey: "AIzaSyDfz022IMbBXCJT_wM2UCmZqexv-KKMtEM",
+  authDomain: "battlemath-online.firebaseapp.com",
+  projectId: "battlemath-online",
+  storageBucket: "battlemath-online.firebasestorage.app",
+  messagingSenderId: "492702213499",
+  appId: "1:492702213499:web:7680fa2a44be90a77b89de",
+  measurementId: "G-19MQYHJJN9"
 };
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+let app: any, auth: any, db: any, storage: any, googleProvider: any, analytics: any;
+
+try {
+  app = initializeApp(firebaseConfig);
+  analytics = getAnalytics(app);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+  googleProvider = new GoogleAuthProvider();
+} catch (error) {
+  console.warn("Firebase initialization error:", error);
 }
 
-// Get a reference to the Firestore database service and export it
-export const db = firebase.firestore();
+export { app, auth, db, storage, googleProvider, analytics };
