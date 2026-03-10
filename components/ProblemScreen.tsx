@@ -391,6 +391,9 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
                       <div className="w-full text-center">
                         <p className="text-3xl leading-snug mb-8 font-mono tracking-tight">{problemData?.question || problemData?.questionText || "問題文の解析に失敗しました"}</p>
                         {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-64 mx-auto rounded-lg shadow-xl border border-cyan-500/10 p-1 bg-slate-900 mb-6" />}
+                        {problemData?.svg && (
+                          <div className="w-full max-w-md mx-auto my-4 p-2 bg-slate-950 rounded-lg border border-cyan-500/10" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
+                        )}
                         {problemData?.options && (
                           <div className="grid gap-3 max-w-lg mx-auto mt-4">
                             {(problemData.options as string[]).map((opt: string, i: number) => {
