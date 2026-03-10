@@ -23,6 +23,11 @@ const ProofProblemView = forwardRef<ProblemViewRef, ProofProblemViewProps>(({ da
         <p className="text-white text-base font-mono">{data.assumption}</p>
         <h3 className="font-bold text-purple-400 text-lg mt-4 mb-2 font-['Playfair_Display']">結論</h3>
         <p className="text-white text-base font-mono">{data.conclusion}</p>
+        {(data as any).imageUrl && (
+          <div className="mt-4 flex justify-center">
+            <img src={(data as any).imageUrl} alt="問題図" className="max-w-full max-h-48 object-contain rounded-md bg-white p-1" />
+          </div>
+        )}
       </div>
 
       <textarea

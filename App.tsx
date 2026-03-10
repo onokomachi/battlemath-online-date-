@@ -11,7 +11,8 @@
  */
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
-  onAuthStateChanged, signInWithPopup, signOut,
+  onAuthStateChanged, signInWithPopup, signInWithRedirect,
+  getRedirectResult, signOut,
   type User
 } from 'firebase/auth';
 import {
@@ -43,6 +44,8 @@ import GameMaster from './components/GameMaster';
 const shuffleDeck = (deck: ProblemCard[]): ProblemCard[] =>
   [...deck].sort(() => Math.random() - 0.5);
 
+const SUPERSCRIPT_MAP: Record<string, string> = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '+': '⁺', '-': '⁻', 'n': 'ⁿ', 'm': 'ᵐ' };
+
 const normalizeAnswer = (str: string): string => {
   if (!str) return '';
   return str
@@ -53,8 +56,7 @@ const normalizeAnswer = (str: string): string => {
     .replace(/／/g, '/')
     .replace(/（/g, '(')
     .replace(/）/g, ')')
-    .replace(/\^2/g, '²')
-    .replace(/\^3/g, '³')
+    .replace(/\^([0-9+\-nm]+)/g, (_, digits: string) => digits.split('').map(c => SUPERSCRIPT_MAP[c] || c).join(''))
     .replace(/pi/gi, 'π')
     .replace(/0\.5x/g, '1/2x')
     .replace(/([+-])0\.5x/g, '$11/2x')
@@ -164,6 +166,12 @@ const App: React.FC = () => {
   // ============================
   useEffect(() => {
     if (!auth) { setAuthLoading(false); return; }
+
+    // Handle redirect result (for mobile/popup-blocked environments)
+    getRedirectResult(auth).catch((e) => {
+      console.warn('Redirect result check:', e);
+    });
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setAuthLoading(false);
@@ -211,10 +219,23 @@ const App: React.FC = () => {
   // Auth Handlers
   // ============================
   const handleLogin = async () => {
-    if (!auth || !googleProvider) return;
+    if (!auth || !googleProvider) {
+      console.error('Firebase auth not initialized. auth:', !!auth, 'provider:', !!googleProvider);
+      return;
+    }
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (e) { console.error('Login failed:', e); }
+    } catch (e: any) {
+      console.warn('Popup login failed, trying redirect:', e?.code || e);
+      // Fallback to redirect for mobile/popup-blocked environments
+      if (e?.code === 'auth/popup-blocked' || e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch (redirectError) {
+          console.error('Redirect login also failed:', redirectError);
+        }
+      }
+    }
   };
 
   const handleLogout = async () => {

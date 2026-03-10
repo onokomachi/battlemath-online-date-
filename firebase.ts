@@ -1,6 +1,6 @@
 // Firebase v9 modular SDK
 import { initializeApp } from 'firebase/app';
-import { getAnalytics } from 'firebase/analytics';
+import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
@@ -18,15 +18,26 @@ const firebaseConfig = {
 
 let app: any, auth: any, db: any, storage: any, googleProvider: any, analytics: any;
 
+// Core services (auth, db, storage) - must not fail
 try {
   app = initializeApp(firebaseConfig);
-  analytics = getAnalytics(app);
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
   googleProvider = new GoogleAuthProvider();
 } catch (error) {
-  console.warn("Firebase initialization error:", error);
+  console.error("Firebase core initialization error:", error);
 }
+
+// Analytics - optional, should not block auth
+isAnalyticsSupported().then(supported => {
+  if (supported && app) {
+    try {
+      analytics = getAnalytics(app);
+    } catch (e) {
+      console.warn("Analytics init skipped:", e);
+    }
+  }
+}).catch(() => {});
 
 export { app, auth, db, storage, googleProvider, analytics };

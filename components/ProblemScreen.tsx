@@ -171,10 +171,19 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
       return;
     }
 
-    const cleanUser = userAnswer.trim().replace(/[°度]/g, '').replace(/\^2/g, '²').replace(/\^3/g, '³').replace(/pi/gi, 'π');
-    const cleanTarget = currentProblem.answer.replace(/[°度]/g, '').replace(/\^2/g, '²').replace(/\^3/g, '³').replace(/pi/gi, 'π');
-    
-    if (cleanUser === cleanTarget) {
+    // Normalize power notation: ^N → superscript for all digits
+    const superscriptMap: Record<string, string> = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '+': '⁺', '-': '⁻', 'n': 'ⁿ', 'm': 'ᵐ' };
+    const normalizePowers = (s: string) => s.replace(/\^([0-9+\-nm]+)/g, (_, digits: string) => digits.split('').map(c => superscriptMap[c] || c).join(''));
+    const normalizeAnswer = (s: string) => normalizePowers(s.trim().replace(/[°度]/g, '').replace(/pi/gi, 'π').replace(/\s+/g, ''));
+    const cleanUser = normalizeAnswer(userAnswer);
+    const cleanTarget = normalizeAnswer(currentProblem.answer);
+
+    // For multiple-choice questions, compare as sorted sets
+    const isCorrect = problemData?.multiple
+      ? cleanUser.split(',').sort().join(',') === cleanTarget.split(',').sort().join(',')
+      : cleanUser === cleanTarget;
+
+    if (isCorrect) {
       setResult('correct');
       setVfxClass('vfx-success ring-2 ring-cyan-500');
       const points = Math.max(5, Math.floor(25 - duration));
@@ -228,7 +237,7 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
         'Delete': 'CLEAR',
         '*': '×',
         'p': 'π',
-        '^': '²',
+        '^': '^',
         'd': '°',
         '<': '<',
         '>': '>',
@@ -250,39 +259,58 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
   const getOptimizedKeypadLayout = (): string[][] => {
     if (!currentProblem) return [[]];
     const type = currentProblem.type;
-    const ans = currentProblem.answer || "";
 
+    // Geometry angle problems - consistent layout
     if (['angle_diagram', 'bent_transversal_diagram', 'triangle_in_parallel_lines', 'multi_transversal_angle'].includes(type)) {
       return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '°']];
     }
+
+    // Probability - consistent layout with fraction support
     if (category === '確率') {
       return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '/', ' ']];
     }
+
+    // Graph with domain
     if (type === 'graph_with_domain') {
-       return [['7', '8', '9', 'y'], ['4', '5', '6', '≤', '≥'], ['1', '2', '3', '<', '>'], ['0', '.', '-', ' ']];
+      return [['7', '8', '9', 'y'], ['4', '5', '6', '≤', '≥'], ['1', '2', '3', '<', '>'], ['0', '.', '-', ' ']];
     }
 
-    let varKeys: string[] = [];
-    if (ans.includes('x')) varKeys.push('x');
-    if (ans.includes('y')) varKeys.push('y');
-    if (ans.includes('a')) varKeys.push('a');
-    if (ans.includes('b')) varKeys.push('b');
+    // Category-based layouts (don't leak answer info)
+    if (category === '式の計算') {
+      // Always show full set of variables and operators for expressions
+      return [
+        ['7', '8', '9', 'x', 'y'],
+        ['4', '5', '6', 'a', 'b'],
+        ['1', '2', '3', '^', '/'],
+        ['0', '.', '-', '(', ')']
+      ];
+    }
 
-    let symbolKeys: string[] = [];
-    if (ans.includes('π') || ans.toLowerCase().includes('pi')) symbolKeys.push('π');
-    if (ans.includes('²') || ans.includes('^')) symbolKeys.push('²');
-    if (ans.includes('³')) symbolKeys.push('³');
-    if (ans.includes('=')) symbolKeys.push('=');
-    if (ans.includes('+')) symbolKeys.push('+');
-    if (ans.includes('/')) symbolKeys.push('/');
-    if (ans.includes('(')) symbolKeys.push('(');
-    if (ans.includes(')')) symbolKeys.push(')');
-    if (ans.includes(',')) symbolKeys.push(',');
+    if (category === '連立方程式') {
+      return [
+        ['7', '8', '9', 'x', 'y'],
+        ['4', '5', '6', '=', ','],
+        ['1', '2', '3', '+', '/'],
+        ['0', '.', '-', '(', ')']
+      ];
+    }
 
-    const allUnique = [...new Set([...varKeys, ...symbolKeys])];
-    const layout: string[][] = [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '-']];
-    allUnique.forEach((k, i) => layout[i % 4].push(k));
-    return layout;
+    if (category === '一次関数') {
+      return [
+        ['7', '8', '9', 'x', 'y'],
+        ['4', '5', '6', '=', '/'],
+        ['1', '2', '3', '+', '-'],
+        ['0', '.', ' ', '(', ')']
+      ];
+    }
+
+    // Default algebraic layout
+    return [
+      ['7', '8', '9', 'x', 'y'],
+      ['4', '5', '6', '+', '-'],
+      ['1', '2', '3', '/', '^'],
+      ['0', '.', '=', '(', ')']
+    ];
   };
 
   if (isLoading) {
@@ -362,13 +390,49 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
                     {(currentProblem?.type === 'text' || !currentProblem?.type) && (
                       <div className="w-full text-center">
                         <p className="text-3xl leading-snug mb-8 font-mono tracking-tight">{problemData?.question || problemData?.questionText || "問題文の解析に失敗しました"}</p>
-                        {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-64 mx-auto rounded-lg shadow-xl border border-cyan-500/10 p-1 bg-slate-900" />}
+                        {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-64 mx-auto rounded-lg shadow-xl border border-cyan-500/10 p-1 bg-slate-900 mb-6" />}
+                        {problemData?.options && (
+                          <div className="grid gap-3 max-w-lg mx-auto mt-4">
+                            {(problemData.options as string[]).map((opt: string, i: number) => {
+                              const isSelected = problemData.multiple
+                                ? userAnswer.split(',').map((s: string) => s.trim()).includes(opt)
+                                : userAnswer === opt;
+                              return (
+                                <button
+                                  key={i}
+                                  onClick={() => {
+                                    if (showAnswer) return;
+                                    if (problemData.multiple) {
+                                      const current = userAnswer ? userAnswer.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+                                      if (current.includes(opt)) {
+                                        setUserAnswer(current.filter((s: string) => s !== opt).join(','));
+                                      } else {
+                                        setUserAnswer([...current, opt].join(','));
+                                      }
+                                    } else {
+                                      setUserAnswer(opt);
+                                    }
+                                  }}
+                                  disabled={showAnswer}
+                                  className={`w-full text-left px-6 py-4 rounded-xl border-2 transition-all text-lg font-mono
+                                    ${isSelected
+                                      ? 'border-cyan-400 bg-cyan-900/30 text-cyan-200 shadow-[0_0_15px_rgba(34,211,238,0.2)]'
+                                      : 'border-cyan-900/30 bg-slate-900/60 text-white hover:border-cyan-600/50 hover:bg-slate-800/60'}
+                                    ${showAnswer ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                >
+                                  <span className="text-cyan-500 mr-3 font-bold">{String.fromCharCode(65 + i)}.</span>
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                     </div>
                 </div>
 
-                {!['proof'].includes(currentProblem?.type || '') && (
+                {!['proof'].includes(currentProblem?.type || '') && !problemData?.options && (
                   <div className='flex flex-col items-center gap-6'>
                     {!['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'intersection_guided_equation', 'simultaneous_equation'].includes(currentProblem?.type || '') && (
                         <div className='w-full max-w-lg'>
