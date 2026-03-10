@@ -331,7 +331,7 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
   }
 
   return (
-    <div className="min-h-screen w-full p-4 sm:p-6 flex items-center justify-center relative overflow-hidden font-['Inter'] text-white">
+    <div className="min-h-screen w-full p-4 sm:p-6 flex items-start justify-center relative overflow-y-auto font-['Inter'] text-white">
       {isHintVisible && problemHint && <HintModal hint={problemHint} onClose={() => setIsHintVisible(false)} />}
       <DrawingCanvas isVisible={isMemoVisible} />
       
@@ -363,7 +363,7 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
 
            <main className='grid lg:grid-cols-[1fr_280px] gap-10'>
               <div className='space-y-8'>
-                <div className='w-full min-h-[18rem] flex items-center justify-center bg-slate-950/40 rounded-xl p-8 border border-cyan-500/5 shadow-inner relative'>
+                <div className='w-full min-h-[18rem] flex items-center justify-center bg-slate-950/40 rounded-xl p-8 border border-cyan-500/5 shadow-inner relative overflow-y-auto'>
                     <div className="w-full">
                     {currentProblem?.type === 'angle_diagram' && <AngleDiagramView data={problemData} userAnswer={userAnswer} isSubmitted={showAnswer} />}
                     {currentProblem?.type === 'bent_transversal_diagram' && <BentTransversalDiagramView data={problemData} userAnswer={userAnswer} isSubmitted={showAnswer} />}
@@ -392,7 +392,7 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
                         <p className="text-3xl leading-snug mb-8 font-mono tracking-tight">{problemData?.question || problemData?.questionText || "問題文の解析に失敗しました"}</p>
                         {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-64 mx-auto rounded-lg shadow-xl border border-cyan-500/10 p-1 bg-slate-900 mb-6" />}
                         {problemData?.svg && (
-                          <div className="w-full max-w-md mx-auto my-4 p-2 bg-slate-950 rounded-lg border border-cyan-500/10" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
+                          <div className="svg-container w-full max-w-sm mx-auto my-4 p-2 bg-slate-950 rounded-lg border border-cyan-500/10 max-h-[240px] flex items-center justify-center" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
                         )}
                         {problemData?.options && (
                           <div className="grid gap-3 max-w-lg mx-auto mt-4">

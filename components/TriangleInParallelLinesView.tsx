@@ -157,7 +157,7 @@ const TriangleInParallelLinesView: React.FC<TriangleInParallelLinesViewProps> = 
     return (
         <div className="flex flex-col items-center">
             <p className="text-2xl mb-4 font-mono">{questionText || `直線 a と b が平行なとき、∠${unknown.label}の角度を求めなさい。`}</p>
-            <svg width="100%" viewBox={viewBox}>
+            <svg width="100%" style={{ maxHeight: '240px' }} viewBox={viewBox}>
                  <defs>
                     <style>{`
                         .angle-known-text { font: bold 16px 'Roboto Mono', monospace; fill: white; }
