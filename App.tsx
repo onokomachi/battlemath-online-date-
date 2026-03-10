@@ -18,7 +18,7 @@ import {
 import {
   doc, getDoc, setDoc, updateDoc, increment, arrayUnion,
   collection, onSnapshot, query, addDoc, serverTimestamp,
-  runTransaction
+  runTransaction, where, orderBy, limit, Timestamp, deleteDoc
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
 import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode } from './types';
@@ -135,15 +135,20 @@ const App: React.FC = () => {
   const [isHost, setIsHost] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [currentRound, setCurrentRound] = useState(1);
+  const [opponentDisconnected, setOpponentDisconnected] = useState(false);
   const unsubscribeRoomRef = useRef<(() => void) | null>(null);
   const isHostRef = useRef(isHost);
   const processedMatchIdRef = useRef<string | null>(null);
+  const currentRoomIdRef = useRef<string | null>(null);
+  const gameModeRef = useRef<BattleMode>('cpu');
 
   // --- UI Overlays ---
   const [showRanking, setShowRanking] = useState(false);
 
   // Sync refs
   useEffect(() => { isHostRef.current = isHost; }, [isHost]);
+  useEffect(() => { currentRoomIdRef.current = currentRoomId; }, [currentRoomId]);
+  useEffect(() => { gameModeRef.current = gameMode; }, [gameMode]);
 
   // ============================
   // localStorage sync
@@ -241,6 +246,7 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     if (!auth) return;
     try {
+      await leaveRoom(currentRoomId, isHost);
       await signOut(auth);
       setGameState('login_screen');
       cleanupGameSession();
@@ -296,25 +302,65 @@ const App: React.FC = () => {
   // ============================
   // Room / PvP watch
   // ============================
+  // エビデンスA: Firestore query最適化 - finishedルームを除外
   useEffect(() => {
     if (gameState !== 'matchmaking' || !db) return;
-    const q = query(collection(db, 'rooms'));
+    const q = query(
+      collection(db, 'rooms'),
+      where('status', 'in', ['waiting', 'playing']),
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    );
     return onSnapshot(q, snap => {
       const list: Room[] = [];
+      const now = Date.now();
       snap.forEach(d => {
         const data = d.data() as Room;
         if (!data.roomId) data.roomId = d.id;
+        // クライアント側: 10分以上前のwaitingルームをフィルタ（ゾンビ除去）
+        if (data.status === 'waiting' && data.createdAt) {
+          const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : 0;
+          if (createdMs > 0 && now - createdMs > 10 * 60 * 1000) {
+            // 古いwaitingルームを自動クリーンアップ
+            updateDoc(doc(db, 'rooms', d.id), { status: 'finished', winnerId: 'abandoned' }).catch(() => {});
+            return;
+          }
+        }
         list.push(data);
       });
       setRooms(list);
     });
   }, [gameState]);
 
+  // エビデンスA: Firebase公式 - ドキュメントライフサイクル管理
+  // ルーム離脱時にFirestoreステータスを更新し、ゾンビルームを防止
+  const leaveRoom = useCallback(async (roomId: string | null, wasHost: boolean) => {
+    if (!roomId || !db) return;
+    try {
+      const roomRef = doc(db, 'rooms', roomId);
+      const snap = await getDoc(roomRef);
+      if (!snap.exists()) return;
+      const data = snap.data() as Room;
+      if (data.status === 'finished') return;
+      if (data.status === 'waiting' && wasHost) {
+        // ホストが待機中に離脱 → ルームを終了
+        await updateDoc(roomRef, { status: 'finished', winnerId: 'abandoned' });
+      } else if (data.status === 'playing') {
+        // 対戦中に離脱 → 相手の勝利
+        await updateDoc(roomRef, {
+          status: 'finished',
+          winnerId: wasHost ? 'guest' : 'host',
+        });
+      }
+    } catch (e) { console.error('leaveRoom error:', e); }
+  }, []);
+
   const cleanupGameSession = useCallback((keepConn = false) => {
     if (!keepConn) {
       if (unsubscribeRoomRef.current) unsubscribeRoomRef.current();
       setCurrentRoomId(null);
       setIsHost(false);
+      setOpponentDisconnected(false);
     }
     processedMatchIdRef.current = null;
     setWinner(null);
@@ -323,13 +369,56 @@ const App: React.FC = () => {
     setTurnPhase('selecting_card');
   }, []);
 
+  // エビデンスA: MDN beforeunload + visibilitychange
+  // ブラウザ閉じ/タブ閉じ時にルームをクリーンアップ
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const rid = currentRoomIdRef.current;
+      if (!rid || !db) return;
+      // sendBeacon で非同期的にクリーンアップ（信頼性は低いが最善策）
+      // Firestore REST APIへのbeaconは複雑なため、updateDocを試みる
+      const roomRef = doc(db, 'rooms', rid);
+      updateDoc(roomRef, {
+        status: 'finished',
+        winnerId: isHostRef.current ? 'guest' : 'host',
+      }).catch(() => {});
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   const listenToRoom = (roomId: string) => {
     if (!db) return;
     if (unsubscribeRoomRef.current) unsubscribeRoomRef.current();
     unsubscribeRoomRef.current = onSnapshot(doc(db, 'rooms', roomId), snap => {
-      if (!snap.exists()) return;
+      if (!snap.exists()) {
+        // ルームが削除された場合
+        setOpponentDisconnected(true);
+        return;
+      }
       const data = snap.data() as Room;
       const isHostVal = isHostRef.current;
+
+      // エビデンスB: 相手の切断検知（lastActiveが90秒以上古い場合）
+      if (data.status === 'playing') {
+        const opponentLastActive = isHostVal ? data.guestLastActive : data.hostLastActive;
+        if (opponentLastActive) {
+          const lastActiveMs = opponentLastActive.toDate ? opponentLastActive.toDate().getTime() : 0;
+          const staleThreshold = 90000; // 90秒
+          if (lastActiveMs > 0 && Date.now() - lastActiveMs > staleThreshold) {
+            setOpponentDisconnected(true);
+          } else {
+            setOpponentDisconnected(false);
+          }
+        }
+      }
+
+      // ルームが外部要因で finished になった場合（相手離脱・管理者終了等）
+      if (data.status === 'finished' && data.winnerId === 'abandoned') {
+        cleanupGameSession();
+        setGameState('deck_building');
+        return;
+      }
 
       if (data.status === 'playing' && gameState === 'matchmaking') {
         setCurrentRound(1);
@@ -347,12 +436,17 @@ const App: React.FC = () => {
         if (data.winnerId && processedMatchIdRef.current !== roomId) {
           processedMatchIdRef.current = roomId;
           const isWinner = (data.winnerId === 'host' && isHostVal) || (data.winnerId === 'guest' && !isHostVal);
-          setWinner(data.winnerId === 'draw' ? '引き分け' : isWinner ? 'VICTORY' : 'DEFEAT');
-          if (isWinner) {
+          const isAbandoned = data.winnerId === 'abandoned' || data.winnerId === 'admin_terminated';
+          if (isAbandoned) {
+            setWinner('中断されました');
+          } else {
+            setWinner(data.winnerId === 'draw' ? '引き分け' : isWinner ? 'VICTORY' : 'DEFEAT');
+          }
+          if (isWinner && !isAbandoned) {
             addExp(500);
             setMathPoints(p => p + 300);
             saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1) });
-          } else {
+          } else if (!isAbandoned) {
             addExp(100);
             saveUserToFirestore({ totalMatches: increment(1) });
           }
@@ -408,6 +502,22 @@ const App: React.FC = () => {
   };
 
   useEffect(() => { if (currentRoomId) listenToRoom(currentRoomId); }, [currentRoomId]);
+
+  // エビデンスB: ハートビートパターン - 30秒ごとにlastActiveを更新
+  useEffect(() => {
+    if (!currentRoomId || !db || !user) return;
+    const field = isHostRef.current ? 'hostLastActive' : 'guestLastActive';
+    const interval = setInterval(() => {
+      updateDoc(doc(db, 'rooms', currentRoomId), {
+        [field]: serverTimestamp(),
+      }).catch(() => {});
+    }, 30000);
+    // 初回も即時更新
+    updateDoc(doc(db, 'rooms', currentRoomId), {
+      [field]: serverTimestamp(),
+    }).catch(() => {});
+    return () => clearInterval(interval);
+  }, [currentRoomId, user]);
 
   // ============================
   // Game Start
@@ -746,7 +856,11 @@ const App: React.FC = () => {
           <Matchmaking
             rooms={rooms}
             onJoinRoom={handleJoinRoom}
-            onCancel={() => { cleanupGameSession(); setGameState('deck_building'); }}
+            onCancel={async () => {
+              await leaveRoom(currentRoomId, isHost);
+              cleanupGameSession();
+              setGameState('deck_building');
+            }}
             currentRoomId={currentRoomId}
             user={user}
           />
@@ -778,27 +892,49 @@ const App: React.FC = () => {
 
       case 'in_game':
         return (
-          <GameBoard
-            turnPhase={turnPhase}
-            playerScore={playerScore}
-            pcScore={pcScore}
-            playerHP={playerHP}
-            pcHP={pcHP}
-            initialHP={INITIAL_HP}
-            playerHand={playerHand}
-            pcHandSize={pcHand.length}
-            playerDeckSize={playerDeck.length}
-            pcDeckSize={pcDeck.length}
-            playerPlayedCard={playerPlayedCard}
-            pcPlayedCard={pcPlayedCard}
-            onCardSelect={handleCardClickInHand}
-            onAnswerSubmit={handlePlayerAnswer}
-            selectedCardId={selectedCardId}
-            gameLog={gameLog}
-            roundResult={roundResult}
-            maxScore={INITIAL_HP}
-            initiative={initiative}
-          />
+          <>
+            <GameBoard
+              turnPhase={turnPhase}
+              playerScore={playerScore}
+              pcScore={pcScore}
+              playerHP={playerHP}
+              pcHP={pcHP}
+              initialHP={INITIAL_HP}
+              playerHand={playerHand}
+              pcHandSize={pcHand.length}
+              playerDeckSize={playerDeck.length}
+              pcDeckSize={pcDeck.length}
+              playerPlayedCard={playerPlayedCard}
+              pcPlayedCard={pcPlayedCard}
+              onCardSelect={handleCardClickInHand}
+              onAnswerSubmit={handlePlayerAnswer}
+              selectedCardId={selectedCardId}
+              gameLog={gameLog}
+              roundResult={roundResult}
+              maxScore={INITIAL_HP}
+              initiative={initiative}
+            />
+            {/* 相手切断通知バナー */}
+            {opponentDisconnected && gameMode === 'pvp' && (
+              <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-900/90 border border-red-500 rounded-xl px-6 py-3 flex items-center gap-4 shadow-2xl">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-red-200 text-sm font-bold">相手の接続が切れました</span>
+                <button
+                  onClick={async () => {
+                    if (currentRoomId && db) {
+                      await updateDoc(doc(db, 'rooms', currentRoomId), {
+                        status: 'finished',
+                        winnerId: isHost ? 'host' : 'guest',
+                      }).catch(() => {});
+                    }
+                  }}
+                  className="bg-red-700 hover:bg-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-colors"
+                >
+                  勝利を宣言
+                </button>
+              </div>
+            )}
+          </>
         );
 
       case 'end':

@@ -193,7 +193,7 @@ export interface Room {
   // Moves: serialized card IDs (not full card objects for Firestore)
   p1Move: { cardId: number; answeredCorrectly?: boolean } | null;
   p2Move: { cardId: number; answeredCorrectly?: boolean } | null;
-  winnerId: 'host' | 'guest' | 'draw' | null;
+  winnerId: 'host' | 'guest' | 'draw' | 'abandoned' | 'admin_terminated' | null;
 }
 
 // --- Core Game Types ---
