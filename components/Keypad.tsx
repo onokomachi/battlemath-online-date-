@@ -31,7 +31,7 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
           disabled:opacity-10 disabled:cursor-not-allowed disabled:transform-none shadow-lg
         `}
       >
-        {key}
+        {key === '^' ? <span className="text-sm">x<sup>n</sup></span> : key}
       </button>
     );
   };

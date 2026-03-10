@@ -166,6 +166,28 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
     } catch (e) { console.error(e); alert('エラー'); }
   };
 
+  // エビデンスA: ゾンビルーム一括クリーンアップ
+  const handleCleanupZombieRooms = async () => {
+    const zombies = rooms.filter(r => {
+      if (r.status === 'finished') return true;
+      if (r.status === 'waiting' && r.createdAt) {
+        const createdMs = r.createdAt.toDate ? r.createdAt.toDate().getTime() : 0;
+        return createdMs > 0 && Date.now() - createdMs > 10 * 60 * 1000;
+      }
+      return false;
+    });
+    if (zombies.length === 0) { alert('クリーンアップ対象のルームはありません。'); return; }
+    if (!confirm(`${zombies.length}件のルームを削除しますか？（finished + 10分以上前のwaiting）`)) return;
+    let deleted = 0;
+    for (const room of zombies) {
+      try {
+        await deleteDoc(doc(db, 'rooms', room.roomId));
+        deleted++;
+      } catch (e) { console.error('Delete failed:', room.roomId, e); }
+    }
+    alert(`${deleted}/${zombies.length}件を削除しました。`);
+  };
+
   // --- Config Actions ---
   const handleSaveConfig = async () => {
     if (!configDraft || !db) return;
@@ -289,10 +311,18 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
               <h2 className="font-bold text-green-400">
                 ルーム ({rooms.filter(r => r.status !== 'finished').length} アクティブ / {rooms.length} 総計)
               </h2>
-              <div className="flex gap-3 text-xs font-mono">
-                <span className="text-green-400">待機: {rooms.filter(r => r.status === 'waiting').length}</span>
-                <span className="text-red-400">対戦中: {rooms.filter(r => r.status === 'playing').length}</span>
-                <span className="text-gray-500">終了: {rooms.filter(r => r.status === 'finished').length}</span>
+              <div className="flex items-center gap-4">
+                <div className="flex gap-3 text-xs font-mono">
+                  <span className="text-green-400">待機: {rooms.filter(r => r.status === 'waiting').length}</span>
+                  <span className="text-red-400">対戦中: {rooms.filter(r => r.status === 'playing').length}</span>
+                  <span className="text-gray-500">終了: {rooms.filter(r => r.status === 'finished').length}</span>
+                </div>
+                <button
+                  onClick={handleCleanupZombieRooms}
+                  className="text-xs bg-yellow-900/50 text-yellow-300 border border-yellow-800 px-3 py-1 rounded hover:bg-yellow-800/50"
+                >
+                  ゾンビ一括削除
+                </button>
               </div>
             </div>
             <div className="flex-grow overflow-auto">

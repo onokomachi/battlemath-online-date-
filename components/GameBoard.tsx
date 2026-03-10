@@ -72,7 +72,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
         'Delete': 'CLEAR',
         '*': '×',
         'p': 'π',
-        '^': '²',
+        '^': '^',
         'd': '°',
         '<': '<',
         '>': '>',
@@ -93,36 +93,22 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
 
   const getOptimizedKeypadLayout = (): string[][] => {
     const type = problemCard.problem.type;
-    const ans = problemCard.problem.answer || "";
 
+    // Geometry angle problems
     if (['angle_diagram', 'bent_transversal_diagram', 'triangle_in_parallel_lines', 'multi_transversal_angle'].includes(type)) {
       return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '°']];
     }
     if (type === 'graph_with_domain') {
-       return [['7', '8', '9', 'y'], ['4', '5', '6', '≤', '≥'], ['1', '2', '3', '<', '>'], ['0', '.', '-', ' ']];
+      return [['7', '8', '9', 'y'], ['4', '5', '6', '≤', '≥'], ['1', '2', '3', '<', '>'], ['0', '.', '-', ' ']];
     }
 
-    // Dynamic detection
-    let varKeys: string[] = [];
-    if (ans.includes('x')) varKeys.push('x');
-    if (ans.includes('y')) varKeys.push('y');
-    if (ans.includes('a')) varKeys.push('a');
-    if (ans.includes('b')) varKeys.push('b');
-
-    let symbolKeys: string[] = [];
-    if (ans.includes('π') || ans.toLowerCase().includes('pi')) symbolKeys.push('π');
-    if (ans.includes('²') || ans.includes('^')) symbolKeys.push('²');
-    if (ans.includes('=')) symbolKeys.push('=');
-    if (ans.includes('+')) symbolKeys.push('+');
-    if (ans.includes('/')) symbolKeys.push('/');
-    if (ans.includes('(')) symbolKeys.push('(');
-    if (ans.includes(')')) symbolKeys.push(')');
-    if (ans.includes(',')) symbolKeys.push(',');
-
-    const allUnique = [...new Set([...varKeys, ...symbolKeys])];
-    const layout: string[][] = [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '-']];
-    allUnique.forEach((k, i) => layout[i % 4].push(k));
-    return layout;
+    // Default algebraic layout for battle mode (consistent, doesn't leak answer)
+    return [
+      ['7', '8', '9', 'x', 'y'],
+      ['4', '5', '6', '+', '-'],
+      ['1', '2', '3', '/', '^'],
+      ['0', '.', '=', '(', ')']
+    ];
   };
 
   const problemType = problemCard.problem.type;
@@ -152,8 +138,46 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
       {(problemType === 'text' || !problemType) && (
         <div className="w-full min-h-[12rem] bg-slate-900/50 border border-cyan-500/5 rounded-xl p-6 mb-6 flex flex-col items-center justify-center text-center text-white text-3xl font-mono tracking-tight">
           <p>{problemData?.question || problemData?.questionText || "数式を解析せよ"}</p>
+          {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-48 mx-auto rounded-lg border border-cyan-500/10 p-1 bg-slate-900 my-4" />}
           {problemData?.svg && (
             <div className="w-full max-w-md h-auto my-6 p-4 bg-slate-950 rounded-lg border border-cyan-500/10" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
+          )}
+          {problemData?.options && (
+            <div className="grid gap-2 w-full max-w-lg mt-4 text-lg">
+              {(problemData.options as string[]).map((opt: string, i: number) => {
+                const isSelected = problemData.multiple
+                  ? answer.split(',').map((s: string) => s.trim()).includes(opt)
+                  : answer === opt;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      if (turnPhase !== 'solving_problem') return;
+                      if (problemData.multiple) {
+                        const current = answer ? answer.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+                        if (current.includes(opt)) {
+                          setAnswer(current.filter((s: string) => s !== opt).join(','));
+                        } else {
+                          setAnswer([...current, opt].join(','));
+                        }
+                      } else {
+                        setAnswer(opt);
+                      }
+                    }}
+                    disabled={turnPhase !== 'solving_problem'}
+                    className={`w-full text-left px-4 py-3 rounded-lg border transition-all
+                      ${isSelected
+                        ? 'border-cyan-400 bg-cyan-900/30 text-cyan-200'
+                        : 'border-cyan-900/30 bg-slate-900/60 text-white hover:border-cyan-600/50'}
+                      disabled:opacity-50`}
+                  >
+                    <span className="text-cyan-500 mr-2 font-bold">{String.fromCharCode(65 + i)}.</span>
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
@@ -162,7 +186,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
       <form onSubmit={handleSubmit} className="w-full">
         {!['proof'].includes(problemType) && (
           <div className="w-full flex flex-col items-center mt-6">
-             {!['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'simultaneous_equation'].includes(problemType) && (
+             {!problemData?.options && !['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'simultaneous_equation'].includes(problemType) && (
                  <div className="w-full max-w-xl mb-4">
                     <div className={`min-h-[4rem] p-4 border-b-4 bg-slate-950 flex items-center border-cyan-500 shadow-inner`}>
                         <span className="text-2xl font-mono text-cyan-900 mr-4 font-black">A_STREAM:</span>
@@ -170,7 +194,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
                     </div>
                 </div>
              )}
-            <Keypad onKeyClick={handleKeypadClick} layout={getOptimizedKeypadLayout()} disabled={turnPhase !== 'solving_problem'} />
+            {!problemData?.options && <Keypad onKeyClick={handleKeypadClick} layout={getOptimizedKeypadLayout()} disabled={turnPhase !== 'solving_problem'} />}
              <button
               type="submit"
               disabled={!isSolving || turnPhase !== 'solving_problem'}
