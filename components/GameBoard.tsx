@@ -250,6 +250,9 @@ interface GameBoardProps {
   roundResult: string | null;
   maxScore: number;
   initiative: TurnInitiative;
+  // ゲーミフィケーション拡張
+  chainCount?: number;
+  wrongAnswerText?: string | null;
 }
 
 const ScoreDisplay: React.FC<{ score: number; label: string; maxScore: number; isPlayer: boolean }> = ({ score, label, maxScore, isPlayer }) => (
@@ -286,7 +289,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
   gameLog,
   roundResult,
   maxScore,
-  initiative
+  initiative,
+  chainCount = 0,
+  wrongAnswerText,
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -352,6 +357,25 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 ) : (
                     <div className="text-cyan-500 text-6xl font-black tracking-widest animate-pulse font-['Cinzel_Decorative']">VS</div>
                 )}
+            </div>
+          )}
+          {/* チェインカウンター - エビデンスA: 可変報酬スケジュール */}
+          {chainCount >= 2 && !roundResult && (
+            <div className="mt-6 text-center animate-math-fade-in">
+              <div className="inline-flex items-center gap-2 bg-amber-900/40 border border-amber-500/50 rounded-full px-5 py-2 shadow-[0_0_20px_rgba(251,191,36,0.3)]">
+                <span className="text-amber-400 font-black text-sm tracking-widest">CHAIN</span>
+                <span className="text-amber-300 font-black text-2xl font-mono">×{chainCount}</span>
+                <span className="text-xl">{chainCount >= 10 ? '⚡⚡' : chainCount >= 5 ? '⚡' : '🔥'}</span>
+              </div>
+            </div>
+          )}
+          {/* 惜しい！正解ヒント - エビデンスB: 成長マインドセット（Dweck 2006） */}
+          {wrongAnswerText && (
+            <div className="mt-6 text-center animate-math-fade-in">
+              <div className="inline-block bg-red-950/60 border border-red-500/40 rounded-xl px-5 py-3 shadow-lg">
+                <div className="text-red-400 text-xs font-black tracking-widest mb-1">惜しい！正解は...</div>
+                <div className="text-white font-bold text-xl font-mono">{wrongAnswerText}</div>
+              </div>
             </div>
           )}
           {roundResult && <div className={`mt-8 text-5xl font-black text-center animate-math-fade-in tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] ${roundResult.includes('VICTORY') ? 'text-cyan-300' : 'text-red-500'}`}>{roundResult}</div>}

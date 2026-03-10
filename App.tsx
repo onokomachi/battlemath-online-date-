@@ -21,10 +21,11 @@ import {
   runTransaction, where, orderBy, limit, Timestamp, deleteDoc
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
-import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode } from './types';
+import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode, ClassInfo, BadgeDef } from './types';
 import {
   CARD_DEFINITIONS, HAND_SIZE, DECK_SIZE,
-  INITIAL_HP, calcDamage, ADMIN_EMAILS, GAMEMASTER_PASSWORD
+  INITIAL_HP, calcDamage, ADMIN_EMAILS, GAMEMASTER_PASSWORD,
+  BADGE_DEFS, DAILY_QUEST_DEFS, WEEKLY_QUEST_DEFS, getTodayStr, getWeekStart,
 } from './constants';
 import GameBoard from './components/GameBoard';
 import DeckBuilder from './components/DeckBuilder';
@@ -37,6 +38,9 @@ import LoginScreen from './components/LoginScreen';
 import Matchmaking from './components/Matchmaking';
 import RankingBoard from './components/RankingBoard';
 import GameMaster from './components/GameMaster';
+import QuestPanel from './components/QuestPanel';
+import ClassPanel from './components/ClassPanel';
+import BadgeNotification from './components/BadgeNotification';
 
 // ============================
 // Helpers
@@ -145,6 +149,30 @@ const App: React.FC = () => {
   // --- UI Overlays ---
   const [showRanking, setShowRanking] = useState(false);
 
+  // --- ゲーミフィケーション State ---
+  // エビデンスA: ログイン連続日数 × ストリーク喪失回避（Kahneman 1979）
+  const [loginStreak, setLoginStreak] = useState(0);
+  // エビデンスA: チェインカウンター × 可変報酬スケジュール（Skinner 1938）
+  const [chainCount, setChainCount] = useState(0);
+  const [wrongAnswerText, setWrongAnswerText] = useState<string | null>(null);
+  // エビデンスB: バッジ × 自己決定理論（Deci & Ryan 1985）
+  const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
+  const [pendingBadge, setPendingBadge] = useState<BadgeDef | null>(null);
+  const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0);
+  // エビデンスB: クラスチーム × オキシトシン系（Zak 2012）
+  const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
+  // パネル表示
+  const [showQuestPanel, setShowQuestPanel] = useState(false);
+  const [showClassPanel, setShowClassPanel] = useState(false);
+  // クエスト進捗 (localStorage管理でFirestoreクォータ節約)
+  const [dailyQuestProgress, setDailyQuestProgress] = useState<Record<string, number>>({});
+  const [dailyQuestDone, setDailyQuestDone] = useState<Set<string>>(new Set());
+  const [weeklyQuestProgress, setWeeklyQuestProgress] = useState<Record<string, number>>({});
+  const [weeklyQuestDone, setWeeklyQuestDone] = useState<Set<string>>(new Set());
+  // セッション蓄積 refs (書き込み最小化)
+  const sessionCorrectRef = useRef(0);
+  const classScoreAccumRef = useRef(0);
+
   // Sync refs
   useEffect(() => { isHostRef.current = isHost; }, [isHost]);
   useEffect(() => { currentRoomIdRef.current = currentRoomId; }, [currentRoomId]);
@@ -191,6 +219,27 @@ const App: React.FC = () => {
             if (d.playerLevel !== undefined) setPlayerLevel(d.playerLevel);
             if (d.playerExp !== undefined) setPlayerExp(d.playerExp);
             if (d.ownedCardIds) setOwnedCardIds(new Set(d.ownedCardIds));
+            // ゲーミフィケーションデータ読み込み
+            if (d.earnedBadgeIds) setEarnedBadgeIds(new Set(d.earnedBadgeIds));
+            if (d.totalCorrectAnswers !== undefined) setTotalCorrectAnswers(d.totalCorrectAnswers);
+            // ログインストリーク計算
+            const today = getTodayStr();
+            const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().slice(0, 10);
+            const lastLogin: string = d.lastLoginDate || '';
+            let newStreak: number = d.loginStreak || 0;
+            if (lastLogin !== today) {
+              newStreak = lastLogin === yesterdayStr ? newStreak + 1 : 1;
+              await updateDoc(ref, { loginStreak: newStreak, lastLoginDate: today }).catch(() => {});
+            }
+            setLoginStreak(newStreak);
+            // クラス情報読み込み
+            if (d.classId && db) {
+              try {
+                const classSnap = await getDoc(doc(db, 'classes', d.classId));
+                if (classSnap.exists()) setClassInfo(classSnap.data() as ClassInfo);
+              } catch {}
+            }
           } else {
             // First login: initialize user doc
             await setDoc(ref, {
@@ -204,9 +253,23 @@ const App: React.FC = () => {
               totalWins: 0,
               totalMatches: 0,
               ownedCardIds: Array.from(ownedCardIds),
+              earnedBadgeIds: [],
+              totalCorrectAnswers: 0,
+              loginStreak: 1,
+              lastLoginDate: getTodayStr(),
               createdAt: serverTimestamp(),
             });
+            setLoginStreak(1);
           }
+          // クエスト進捗をlocalStorageから復元
+          const dqKey = `bm_dq_${getTodayStr()}`;
+          const wqKey = `bm_wq_${getWeekStart()}`;
+          try {
+            setDailyQuestProgress(JSON.parse(localStorage.getItem(dqKey) || '{}'));
+            setWeeklyQuestProgress(JSON.parse(localStorage.getItem(wqKey) || '{}'));
+            setDailyQuestDone(new Set(JSON.parse(localStorage.getItem(`${dqKey}_done`) || '[]')));
+            setWeeklyQuestDone(new Set(JSON.parse(localStorage.getItem(`${wqKey}_done`) || '[]')));
+          } catch {}
         } catch (e) { console.error('User sync error:', e); }
       }
     });
@@ -219,6 +282,221 @@ const App: React.FC = () => {
       await updateDoc(doc(db, 'users', user.uid), updates);
     } catch (e) { console.error('Firestore update error:', e); }
   }, [user]);
+
+  // ============================
+  // バッジ獲得
+  // エビデンスB: 自己決定理論 × 有能感フィードバック（Deci & Ryan 1985）
+  // ============================
+  const earnBadge = useCallback((badgeId: string) => {
+    setEarnedBadgeIds(prev => {
+      if (prev.has(badgeId)) return prev;
+      const badge = BADGE_DEFS.find(b => b.id === badgeId);
+      if (!badge) return prev;
+      setPendingBadge(badge);
+      setMathPoints(p => p + 100);
+      // Firestore にバッジ追加 (arrayUnion で冪等性確保)
+      if (user && db) {
+        updateDoc(doc(db, 'users', user.uid), {
+          earnedBadgeIds: arrayUnion(badgeId),
+          mathPoints: increment(100),
+        }).catch(() => {});
+      }
+      return new Set(prev).add(badgeId);
+    });
+  }, [user]);
+
+  // ============================
+  // クエスト進捗更新
+  // エビデンスA: 目標設定理論（Locke & Latham 1990）
+  // ============================
+  const handleQuestProgress = useCallback((type: 'correct' | 'pvp_match') => {
+    const dqKey = `bm_dq_${getTodayStr()}`;
+    const wqKey = `bm_wq_${getWeekStart()}`;
+
+    setDailyQuestProgress(prev => {
+      const next = { ...prev };
+      if (type === 'correct') {
+        next['dq_3'] = (next['dq_3'] || 0) + 1;
+        next['dq_10'] = (next['dq_10'] || 0) + 1;
+      } else if (type === 'pvp_match') {
+        next['dq_pvp'] = (next['dq_pvp'] || 0) + 1;
+      }
+      localStorage.setItem(dqKey, JSON.stringify(next));
+      // クエスト達成チェック
+      setDailyQuestDone(prevDone => {
+        const newDone = new Set(prevDone);
+        DAILY_QUEST_DEFS.forEach(q => {
+          if (!newDone.has(q.id) && (next[q.id] || 0) >= q.target) {
+            newDone.add(q.id);
+            setMathPoints(p => p + q.reward.mp);
+            if (user && db) {
+              updateDoc(doc(db, 'users', user.uid), { mathPoints: increment(q.reward.mp) }).catch(() => {});
+            }
+          }
+        });
+        localStorage.setItem(`${dqKey}_done`, JSON.stringify([...newDone]));
+        return newDone;
+      });
+      return next;
+    });
+
+    setWeeklyQuestProgress(prev => {
+      const next = { ...prev };
+      if (type === 'correct') {
+        next['wq_30'] = (next['wq_30'] || 0) + 1;
+      } else if (type === 'pvp_match') {
+        next['wq_pvp3'] = (next['wq_pvp3'] || 0) + 1;
+      }
+      localStorage.setItem(wqKey, JSON.stringify(next));
+      setWeeklyQuestDone(prevDone => {
+        const newDone = new Set(prevDone);
+        WEEKLY_QUEST_DEFS.forEach(q => {
+          if (!newDone.has(q.id) && (next[q.id] || 0) >= q.target) {
+            newDone.add(q.id);
+            setMathPoints(p => p + q.reward.mp);
+            if (user && db) {
+              updateDoc(doc(db, 'users', user.uid), { mathPoints: increment(q.reward.mp) }).catch(() => {});
+            }
+          }
+        });
+        localStorage.setItem(`${wqKey}_done`, JSON.stringify([...newDone]));
+        return newDone;
+      });
+      return next;
+    });
+  }, [user]);
+
+  // ============================
+  // 正解イベント統合処理
+  // チェイン・バッジ・クエスト・クラス蓄積
+  // ============================
+  const onCorrectAnswerEvent = useCallback((isCorrect: boolean, correctAnswer: string) => {
+    if (isCorrect) {
+      // チェインカウンター更新
+      setChainCount(prev => {
+        const next = prev + 1;
+        if (next === 5) earnBadge('chain_5');
+        if (next === 10) earnBadge('chain_10');
+        return next;
+      });
+      setWrongAnswerText(null);
+      // 累積カウンター
+      sessionCorrectRef.current += 1;
+      classScoreAccumRef.current += 1;
+      setTotalCorrectAnswers(prev => {
+        const next = prev + 1;
+        if (next === 1) earnBadge('first_correct');
+        if (next === 50) earnBadge('correct_50');
+        if (next === 100) earnBadge('correct_100');
+        if (next === 500) earnBadge('correct_500');
+        return next;
+      });
+      // クエスト進捗
+      handleQuestProgress('correct');
+    } else {
+      // 不正解: チェインリセット、正解ヒント表示
+      setChainCount(0);
+      setWrongAnswerText(correctAnswer);
+    }
+  }, [earnBadge, handleQuestProgress]);
+
+  // 正解ヒント自動クリア（3秒後）
+  useEffect(() => {
+    if (!wrongAnswerText) return;
+    const t = setTimeout(() => setWrongAnswerText(null), 3000);
+    return () => clearTimeout(t);
+  }, [wrongAnswerText]);
+
+  // ============================
+  // セッションデータ書き込み (Firestore quota最小化)
+  // ============================
+  const flushSessionData = useCallback(async () => {
+    if (!user || !db) return;
+    const updates: Record<string, any> = {};
+    if (sessionCorrectRef.current > 0) {
+      updates.totalCorrectAnswers = increment(sessionCorrectRef.current);
+      sessionCorrectRef.current = 0;
+    }
+    if (Object.keys(updates).length > 0) {
+      await updateDoc(doc(db, 'users', user.uid), updates).catch(() => {});
+    }
+    // クラス週間スコア蓄積分をフラッシュ
+    if (classInfo && classScoreAccumRef.current > 0) {
+      const weekStart = getWeekStart();
+      const classRef = doc(db, 'classes', classInfo.classId);
+      const classSnap = await getDoc(classRef).catch(() => null);
+      if (classSnap?.exists()) {
+        const data = classSnap.data();
+        // 週が変わっていればリセット
+        if (data.weekStart !== weekStart) {
+          await updateDoc(classRef, {
+            weeklyScore: classScoreAccumRef.current,
+            weekStart,
+          }).catch(() => {});
+        } else {
+          await updateDoc(classRef, {
+            weeklyScore: increment(classScoreAccumRef.current),
+          }).catch(() => {});
+        }
+      }
+      classScoreAccumRef.current = 0;
+    }
+  }, [user, classInfo]);
+
+  // ============================
+  // クラス操作
+  // エビデンスB: 協力設計 × オキシトシン系（Zak 2012）
+  // ============================
+  const handleJoinClass = useCallback(async (code: string) => {
+    if (!user || !db) { alert('ログインが必要です'); return; }
+    try {
+      const classRef = doc(db, 'classes', code.toUpperCase());
+      const snap = await getDoc(classRef);
+      if (!snap.exists()) { alert('クラスコードが見つかりません'); return; }
+      const data = snap.data() as ClassInfo;
+      // 週リセットチェック
+      const weekStart = getWeekStart();
+      const updates: any = { memberCount: increment(1) };
+      if (data.weekStart !== weekStart) {
+        updates.weeklyScore = 0;
+        updates.weekStart = weekStart;
+      }
+      await updateDoc(classRef, updates);
+      await updateDoc(doc(db, 'users', user.uid), { classId: code.toUpperCase() });
+      setClassInfo({ ...data, memberCount: data.memberCount + 1 });
+    } catch (e) { console.error('Join class error:', e); alert('クラス参加に失敗しました'); }
+  }, [user]);
+
+  const handleCreateClass = useCallback(async (name: string) => {
+    if (!user || !db) { alert('ログインが必要です'); return; }
+    // ランダム6文字コード生成
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const code = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    try {
+      const newClass: ClassInfo = {
+        classId: code,
+        className: name,
+        teacherName: user.displayName || 'Teacher',
+        weeklyScore: 0,
+        weekStart: getWeekStart(),
+        memberCount: 1,
+      };
+      await setDoc(doc(db, 'classes', code), newClass);
+      await updateDoc(doc(db, 'users', user.uid), { classId: code });
+      setClassInfo(newClass);
+      alert(`クラスを作成しました！\nコード: ${code}\n生徒に共有してください`);
+    } catch (e) { console.error('Create class error:', e); alert('クラス作成に失敗しました'); }
+  }, [user]);
+
+  const handleLeaveClass = useCallback(async () => {
+    if (!user || !db || !classInfo) return;
+    await flushSessionData();
+    try {
+      await updateDoc(doc(db, 'classes', classInfo.classId), { memberCount: increment(-1) });
+      await updateDoc(doc(db, 'users', user.uid), { classId: null });
+      setClassInfo(null);
+    } catch (e) { console.error('Leave class error:', e); }
+  }, [user, classInfo, flushSessionData]);
 
   // ============================
   // Auth Handlers
@@ -247,6 +525,7 @@ const App: React.FC = () => {
     if (!auth) return;
     try {
       await leaveRoom(currentRoomId, isHost);
+      await flushSessionData();
       await signOut(auth);
       setGameState('login_screen');
       cleanupGameSession();
@@ -404,7 +683,7 @@ const App: React.FC = () => {
         const opponentLastActive = isHostVal ? data.guestLastActive : data.hostLastActive;
         if (opponentLastActive) {
           const lastActiveMs = opponentLastActive.toDate ? opponentLastActive.toDate().getTime() : 0;
-          const staleThreshold = 90000; // 90秒
+          const staleThreshold = 180000; // 180秒（ハートビート120秒に合わせて余裕を持たせる）
           if (lastActiveMs > 0 && Date.now() - lastActiveMs > staleThreshold) {
             setOpponentDisconnected(true);
           } else {
@@ -446,10 +725,15 @@ const App: React.FC = () => {
             addExp(500);
             setMathPoints(p => p + 300);
             saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1) });
+            earnBadge('first_pvp_win');
+            // PvP10勝バッジチェックはサーバー側totalWinsで判断できないので省略
           } else if (!isAbandoned) {
             addExp(100);
             saveUserToFirestore({ totalMatches: increment(1) });
           }
+          if (!isAbandoned) handleQuestProgress('pvp_match');
+          flushSessionData().catch(() => {}); // fire-and-forget
+          setChainCount(0);
           setGameState('end');
         }
       }
@@ -503,7 +787,7 @@ const App: React.FC = () => {
 
   useEffect(() => { if (currentRoomId) listenToRoom(currentRoomId); }, [currentRoomId]);
 
-  // エビデンスB: ハートビートパターン - 30秒ごとにlastActiveを更新
+  // エビデンスB: ハートビートパターン - 120秒ごとにlastActiveを更新（Firestore無料枠節約）
   useEffect(() => {
     if (!currentRoomId || !db || !user) return;
     const field = isHostRef.current ? 'hostLastActive' : 'guestLastActive';
@@ -511,7 +795,7 @@ const App: React.FC = () => {
       updateDoc(doc(db, 'rooms', currentRoomId), {
         [field]: serverTimestamp(),
       }).catch(() => {});
-    }, 30000);
+    }, 120000);
     // 初回も即時更新
     updateDoc(doc(db, 'rooms', currentRoomId), {
       [field]: serverTimestamp(),
@@ -621,6 +905,9 @@ const App: React.FC = () => {
         return { ...prev, [diff]: { avgTime: (s.avgTime * s.count + solveTime) / (s.count + 1), count: s.count + 1 } };
       });
     }
+
+    // ゲーミフィケーション: チェイン・バッジ・クエスト更新
+    onCorrectAnswerEvent(correct, pcPlayedCard.problem.answer);
 
     const outcome = resolveHpBattle(correct, playerPlayedCard, pcPlayedCard);
     setRoundResult(outcome === 'player_win' ? '== ROUND_VICTORY ==' : '>> ROUND_DEFEAT <<');
@@ -738,11 +1025,13 @@ const App: React.FC = () => {
           addExp(500);
           setMathPoints(p => p + 300);
           saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1) });
+          earnBadge('first_pvp_win');
         } else {
           setWinner('DEFEAT\nSYSTEM TERMINATED');
           addExp(100);
           saveUserToFirestore({ totalMatches: increment(1) });
         }
+        await flushSessionData();
         setGameState('end');
         return;
       }
@@ -823,6 +1112,10 @@ const App: React.FC = () => {
             mathPoints={mathPoints}
             onLogout={handleLogout}
             onOpenRanking={() => setShowRanking(true)}
+            loginStreak={loginStreak}
+            onOpenQuests={() => setShowQuestPanel(true)}
+            onOpenClass={() => setShowClassPanel(true)}
+            classInfo={classInfo}
           />
         );
 
@@ -873,7 +1166,11 @@ const App: React.FC = () => {
             onBuyPack={(m, cost, _t) => {
               const cards = CARD_DEFINITIONS.filter(c => !ownedCardIds.has(c.id) && c.mainCategory === m);
               if (mathPoints < cost || cards.length === 0) return cards.length === 0 ? [] : null;
-              const newCards = [...cards].sort(() => Math.random() - 0.5).slice(0, 3);
+              // エビデンスA: 可変報酬スケジュール — 3〜6枚ランダム + 20%でCRITICAL!（Skinner 1938）
+              const isCritical = Math.random() < 0.2;
+              const baseCount = 3 + Math.floor(Math.random() * 2); // 3 or 4
+              const packCount = Math.min(cards.length, isCritical ? baseCount + 2 : baseCount);
+              const newCards = [...cards].sort(() => Math.random() - 0.5).slice(0, packCount);
               setMathPoints(p => p - cost);
               setOwnedCardIds(prev => {
                 const next = new Set(prev);
@@ -913,6 +1210,8 @@ const App: React.FC = () => {
               roundResult={roundResult}
               maxScore={INITIAL_HP}
               initiative={initiative}
+              chainCount={chainCount}
+              wrongAnswerText={wrongAnswerText}
             />
             {/* 相手切断通知バナー */}
             {opponentDisconnected && gameMode === 'pvp' && (
@@ -945,13 +1244,13 @@ const App: React.FC = () => {
             </h1>
             <div className="flex gap-4 mt-12">
               <button
-                onClick={() => { cleanupGameSession(); setGameState('deck_building'); }}
+                onClick={() => { cleanupGameSession(); setChainCount(0); setGameState('deck_building'); }}
                 className="btn-tactical py-4 px-10 rounded-lg text-xl tracking-[0.4em]"
               >
                 RETRY
               </button>
               <button
-                onClick={() => { cleanupGameSession(); setGameState('main_menu'); }}
+                onClick={async () => { await flushSessionData(); cleanupGameSession(); setChainCount(0); setGameState('main_menu'); }}
                 className="border border-gray-600 text-gray-400 hover:text-white py-4 px-10 rounded-lg text-xl tracking-[0.4em] transition-colors"
               >
                 MENU
@@ -978,7 +1277,38 @@ const App: React.FC = () => {
       <div className="relative z-10 w-full h-full">
         {renderContent()}
         {levelUpInfo && <LevelUpModal {...levelUpInfo} onClose={() => setLevelUpInfo(null)} />}
-        {showRanking && db && <RankingBoard onClose={() => setShowRanking(false)} db={db} />}
+        {showRanking && db && (
+          <RankingBoard
+            onClose={() => setShowRanking(false)}
+            db={db}
+            currentUserId={user?.uid}
+          />
+        )}
+        {showQuestPanel && (
+          <QuestPanel
+            loginStreak={loginStreak}
+            dailyProgress={dailyQuestProgress}
+            dailyCompleted={Object.fromEntries([...dailyQuestDone].map(id => [id, true]))}
+            weeklyProgress={weeklyQuestProgress}
+            weeklyCompleted={Object.fromEntries([...weeklyQuestDone].map(id => [id, true]))}
+            onClose={() => setShowQuestPanel(false)}
+          />
+        )}
+        {showClassPanel && (
+          <ClassPanel
+            classInfo={classInfo}
+            onJoinClass={handleJoinClass}
+            onCreateClass={handleCreateClass}
+            onLeaveClass={handleLeaveClass}
+            onClose={() => setShowClassPanel(false)}
+          />
+        )}
+        {pendingBadge && (
+          <BadgeNotification
+            badge={pendingBadge}
+            onDismiss={() => setPendingBadge(null)}
+          />
+        )}
       </div>
     </main>
   );
