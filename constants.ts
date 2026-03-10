@@ -1,5 +1,5 @@
 
-import type { Problem, ProblemCard, Category, Ability, AbilityType } from './types';
+import type { Problem, ProblemCard, Category, Ability, AbilityType, DailyQuestDef, BadgeDef } from './types';
 import { geometryProblems } from './data/geometryProblems';
 import { linearFunctionsProblems } from './data/linearFunctionsProblems';
 import { polynomialProblems } from './data/polynomialProblems';
@@ -222,3 +222,48 @@ const processProblems = (): ProblemCard[] => {
 }
 
 export const CARD_DEFINITIONS: ProblemCard[] = processProblems();
+
+// ============================
+// Gamification Helpers
+// ============================
+export const getTodayStr = (): string => new Date().toISOString().slice(0, 10);
+
+export const getWeekStart = (): string => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday
+  return d.toISOString().slice(0, 10);
+};
+
+// ============================
+// Badge Definitions
+// エビデンスB: 達成バッジ × 自己決定理論（有能感欲求）
+// ============================
+export const BADGE_DEFS: BadgeDef[] = [
+  { id: 'first_correct', title: '初正解', description: 'はじめて問題に正解した', icon: '⭐' },
+  { id: 'first_pvp_win', title: '初勝利', description: 'はじめてPvPで勝利した', icon: '⚔️' },
+  { id: 'correct_50', title: '50問達成', description: '通算50問正解した', icon: '🎯' },
+  { id: 'correct_100', title: '100問達成', description: '通算100問正解した', icon: '💯' },
+  { id: 'correct_500', title: '500問達成', description: '通算500問正解した', icon: '🌟' },
+  { id: 'streak_3', title: '3日連続', description: '3日連続でログインした', icon: '🔥' },
+  { id: 'streak_7', title: '7日連続', description: '7日連続でログインした', icon: '🔥🔥' },
+  { id: 'streak_30', title: '30日連続', description: '30日連続でログインした', icon: '👑' },
+  { id: 'chain_5', title: '5連鎖', description: '5問連続正解した', icon: '⚡' },
+  { id: 'chain_10', title: '10連鎖', description: '10問連続正解した', icon: '⚡⚡' },
+  { id: 'pvp_10wins', title: 'PvP10勝', description: 'PvPで10勝した', icon: '🏆' },
+];
+
+// ============================
+// Quest Definitions
+// エビデンスA: 目標設定理論（Locke & Latham 1990） — 3層クエスト設計
+// ============================
+export const DAILY_QUEST_DEFS: DailyQuestDef[] = [
+  { id: 'dq_3', title: '今日の3問', description: '3問正解しよう', target: 3, reward: { mp: 100, exp: 50 }, icon: '⚡' },
+  { id: 'dq_10', title: '10問突破', description: '10問正解しよう', target: 10, reward: { mp: 300, exp: 150 }, icon: '🔥' },
+  { id: 'dq_pvp', title: 'PvP参戦', description: 'PvP対戦を1回行おう', target: 1, reward: { mp: 200, exp: 100 }, icon: '⚔️' },
+];
+
+export const WEEKLY_QUEST_DEFS: DailyQuestDef[] = [
+  { id: 'wq_30', title: '週30問チャレンジ', description: '今週30問正解しよう', target: 30, reward: { mp: 500, exp: 300 }, icon: '🌟' },
+  { id: 'wq_pvp3', title: '週3回PvP', description: '今週PvPを3回行おう', target: 3, reward: { mp: 800, exp: 400 }, icon: '🏆' },
+];

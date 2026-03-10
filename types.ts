@@ -158,6 +158,31 @@ export interface IntersectionGuidedEquationData {
 
 // --- Auth / Online Types ---
 
+export interface ClassInfo {
+  classId: string;
+  className: string;
+  teacherName: string;
+  weeklyScore: number;
+  weekStart: string;
+  memberCount: number;
+}
+
+export interface DailyQuestDef {
+  id: string;
+  title: string;
+  description: string;
+  target: number;
+  reward: { mp: number; exp: number };
+  icon: string;
+}
+
+export interface BadgeDef {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
 export interface UserProfile {
   uid: string;
   displayName: string | null;

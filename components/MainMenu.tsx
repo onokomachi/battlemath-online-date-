@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GameState } from '../types';
+import type { GameState, ClassInfo } from '../types';
 import type { User } from 'firebase/auth';
 
 interface MainMenuProps {
@@ -11,10 +11,15 @@ interface MainMenuProps {
   mathPoints?: number;
   onLogout?: () => void;
   onOpenRanking?: () => void;
+  // ゲーミフィケーション拡張
+  loginStreak?: number;
+  onOpenQuests?: () => void;
+  onOpenClass?: () => void;
+  classInfo?: ClassInfo | null;
 }
 
 const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
-  playerLevel, playerExp, expForNextLevel, user, mathPoints, onLogout, onOpenRanking
+  playerLevel, playerExp, expForNextLevel, user, mathPoints, onLogout, onOpenRanking, loginStreak
 }) => {
   const expPercentage = (playerExp / expForNextLevel) * 100;
 
@@ -32,6 +37,12 @@ const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
             <p className="text-xs text-white font-bold truncate">{user.displayName}</p>
             <p className="text-[10px] text-amber-400">MP: {mathPoints?.toLocaleString()}</p>
           </div>
+          {loginStreak !== undefined && loginStreak >= 2 && (
+            <div className="flex items-center gap-1 bg-amber-900/30 border border-amber-700/40 px-2 py-0.5 rounded-full">
+              <span className="text-sm">🔥</span>
+              <span className="text-[10px] text-amber-400 font-black">{loginStreak}日</span>
+            </div>
+          )}
           {onLogout && (
             <button
               onClick={onLogout}
@@ -68,7 +79,8 @@ const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
 
 const MainMenu: React.FC<MainMenuProps> = ({
   onSelectMode, playerLevel, playerExp, expForNextLevel,
-  user, mathPoints, onLogout, onOpenRanking
+  user, mathPoints, onLogout, onOpenRanking,
+  loginStreak, onOpenQuests, onOpenClass, classInfo,
 }) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
@@ -80,19 +92,41 @@ const MainMenu: React.FC<MainMenuProps> = ({
         mathPoints={mathPoints}
         onLogout={onLogout}
         onOpenRanking={onOpenRanking}
+        loginStreak={loginStreak}
       />
 
-      {/* Ranking button top-right */}
-      {onOpenRanking && (
-        <div className="absolute top-6 right-6">
+      {/* Top-right buttons: RANKING / QUEST / CLASS */}
+      <div className="absolute top-6 right-6 flex flex-col gap-2 items-end">
+        {onOpenRanking && (
           <button
             onClick={onOpenRanking}
             className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold tracking-[0.2em]"
           >
             RANKING
           </button>
-        </div>
-      )}
+        )}
+        {onOpenQuests && user && (
+          <button
+            onClick={onOpenQuests}
+            className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold tracking-[0.2em] flex items-center gap-2"
+          >
+            <span>⚡</span> QUEST
+          </button>
+        )}
+        {onOpenClass && user && (
+          <button
+            onClick={onOpenClass}
+            className={`px-5 py-2 rounded-lg text-sm font-bold tracking-[0.2em] transition-colors flex items-center gap-2 ${
+              classInfo
+                ? 'bg-blue-900/60 text-blue-300 border border-blue-600 hover:bg-blue-800/60'
+                : 'btn-tactical'
+            }`}
+          >
+            <span>🏫</span>
+            {classInfo ? classInfo.className : 'CLASS'}
+          </button>
+        )}
+      </div>
 
       <div className="text-center mb-16 relative">
         <div className="absolute -inset-20 bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
