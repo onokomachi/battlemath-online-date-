@@ -115,7 +115,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
   const problemData = problemCard.problem.data as any;
 
   return (
-    <div className="w-full max-w-4xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl p-8 flex flex-col items-center shadow-[0_0_80px_rgba(0,0,0,0.8)] relative overflow-hidden">
+    <div className="w-full max-w-4xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl p-8 flex flex-col items-center shadow-[0_0_80px_rgba(0,0,0,0.8)] relative overflow-y-auto max-h-[90vh]">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
       <h3 className="text-cyan-400 font-black text-xs tracking-[0.4em] uppercase mb-6 opacity-60">Intercepted_Transmission</h3>
 
@@ -140,7 +140,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
           <p>{problemData?.question || problemData?.questionText || "数式を解析せよ"}</p>
           {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-48 mx-auto rounded-lg border border-cyan-500/10 p-1 bg-slate-900 my-4" />}
           {problemData?.svg && (
-            <div className="w-full max-w-md h-auto my-6 p-4 bg-slate-950 rounded-lg border border-cyan-500/10" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
+            <div className="svg-container w-full max-w-sm h-auto my-6 p-4 bg-slate-950 rounded-lg border border-cyan-500/10 max-h-[240px] flex items-center justify-center" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
           )}
           {problemData?.options && (
             <div className="grid gap-2 w-full max-w-lg mt-4 text-lg">

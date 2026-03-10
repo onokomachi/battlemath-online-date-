@@ -102,7 +102,7 @@ const FillInProofProblemView = forwardRef<ProblemViewRef | null, FillInProofProb
                         <img src={data.imageUrl} alt="問題図" className="max-w-full max-h-48 object-contain rounded-md bg-white p-1" />
                     </div>
                 )}
-                {data.svg && <div className="w-full" dangerouslySetInnerHTML={{ __html: data.svg }} />}
+                {data.svg && <div className="svg-container w-full max-w-[200px] mx-auto" dangerouslySetInnerHTML={{ __html: data.svg }} />}
             </div>
             <div className="flex-grow space-y-2 text-sm sm:text-base md:text-lg">
                 {data.steps.map((step, stepIndex) => (

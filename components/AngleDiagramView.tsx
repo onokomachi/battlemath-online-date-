@@ -33,7 +33,7 @@ const AngleDiagramView: React.FC<AngleDiagramViewProps> = ({ data, userAnswer, i
     }
     
     // Clamp the angle for better visualization to avoid extreme cases.
-    drawingAngle = Math.max(25, Math.min(drawingAngle, 85));
+    drawingAngle = Math.max(15, Math.min(drawingAngle, 89));
 
     // 2. Calculate transversal line points based on the drawingAngle
     const centerX = width / 2;
@@ -115,7 +115,7 @@ const AngleDiagramView: React.FC<AngleDiagramViewProps> = ({ data, userAnswer, i
     return (
         <div className="flex flex-col items-center">
              <p className="text-xl mb-4 font-mono">{question || `直線lとmが平行なとき、∠${unknown.name} の角度を求めなさい。`}</p>
-            <svg width="100%" viewBox={`0 0 ${width} ${height}`}>
+            <svg width="100%" style={{ maxHeight: '220px' }} viewBox={`0 0 ${width} ${height}`}>
                 {/* Parallel lines */}
                 <line x1="0" y1={y_l} x2={width} y2={y_l} stroke="#666" strokeWidth="2" />
                 <text x="5" y={y_l - 8} className="text-gray-400 font-sans text-base">l</text>

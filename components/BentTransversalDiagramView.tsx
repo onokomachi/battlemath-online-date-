@@ -76,7 +76,7 @@ const BentTransversalDiagramView: React.FC<BentTransversalDiagramViewProps> = ({
             if (angle.placement.includes('exterior')) {
                effectiveAngle = 180 - angle.value;
             }
-            return Math.max(20, Math.min(effectiveAngle, 80));
+            return Math.max(15, Math.min(effectiveAngle, 89));
         };
 
         const topDrawAngle = getAngleForCalc(topAngle);
@@ -107,11 +107,17 @@ const BentTransversalDiagramView: React.FC<BentTransversalDiagramViewProps> = ({
         const startPoint = extendLine(bendPoint, topIntersect, 0);
         const endPoint = extendLine(bendPoint, bottomIntersect, height);
         
-        const v_top_h = { x: topIntersect.x + 50, y: y_l };
-        const v_top_t = bendPoint;
-        const v_bottom_h = { x: bottomIntersect.x - 50, y: y_m };
-        const v_bottom_t = bendPoint;
-        
+        // Determine angle display vectors based on placement
+        const topIsRight = !topAngle.placement || topAngle.placement.includes('right');
+        const topIsExterior = topAngle.placement?.includes('exterior');
+        const v_top_h = { x: topIntersect.x + (topIsRight ? 50 : -50), y: y_l };
+        const v_top_t = topIsExterior ? startPoint : bendPoint;
+
+        const bottomIsLeft = !bottomAngle.placement || bottomAngle.placement.includes('left');
+        const bottomIsExterior = bottomAngle.placement?.includes('exterior');
+        const v_bottom_h = { x: bottomIntersect.x + (bottomIsLeft ? -50 : 50), y: y_m };
+        const v_bottom_t = bottomIsExterior ? endPoint : bendPoint;
+
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         const updateBounds = (p: { x: number, y: number }) => {
             if(!p) return;
@@ -158,7 +164,7 @@ const BentTransversalDiagramView: React.FC<BentTransversalDiagramViewProps> = ({
     return (
         <div className="flex flex-col items-center">
             <p className="text-xl mb-4 font-mono">{question || `直線 l と m が平行なとき、∠${unknownAngle.label} の角度を求めなさい。`}</p>
-            <svg width="100%" viewBox={viewBox}>
+            <svg width="100%" style={{ maxHeight: '240px' }} viewBox={viewBox}>
                 {viewElements}
             </svg>
             <div className="mt-4 flex items-baseline">

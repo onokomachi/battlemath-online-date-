@@ -88,7 +88,7 @@ const MultiTransversalAngleDiagramView: React.FC<MultiTransversalAngleDiagramVie
                     acuteAngle = angleValue > 90 ? 180 - angleValue : angleValue;
                 }
                 
-                acuteAngle = Math.max(20, Math.min(acuteAngle, 80));
+                acuteAngle = Math.max(15, Math.min(acuteAngle, 89));
                 const sign = isPositiveSlope ? 1 : -1;
                 slope = Math.tan(acuteAngle * Math.PI / 180) * sign;
             }
@@ -252,7 +252,7 @@ const MultiTransversalAngleDiagramView: React.FC<MultiTransversalAngleDiagramVie
     return (
         <div className="flex flex-col items-center">
             <p className="text-xl mb-4 font-mono text-center whitespace-pre-line">{questionText || defaultQuestion}</p>
-            <svg width="100%" viewBox={viewBox}>
+            <svg width="100%" style={{ maxHeight: '240px' }} viewBox={viewBox}>
                 <defs>
                     <style>{`
                         .angle-known-text { font: bold 16px 'Roboto Mono', monospace; fill: white; }
