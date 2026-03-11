@@ -97,12 +97,13 @@ const FillInProofProblemView = forwardRef<ProblemViewRef | null, FillInProofProb
         <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-shrink-0 md:w-1/3">
                 <p className="text-base text-center mb-2">{data.question}</p>
-                {data.imageUrl && (
+                {data.svg ? (
+                    <div className="svg-container w-full max-w-[200px] mx-auto" dangerouslySetInnerHTML={{ __html: data.svg }} />
+                ) : data.imageUrl ? (
                     <div className="my-2 w-full p-1 bg-black/20 rounded-lg flex justify-center items-center">
                         <img src={data.imageUrl} alt="問題図" className="max-w-full max-h-48 object-contain rounded-md bg-white p-1" />
                     </div>
-                )}
-                {data.svg && <div className="svg-container w-full max-w-[200px] mx-auto" dangerouslySetInnerHTML={{ __html: data.svg }} />}
+                ) : null}
             </div>
             <div className="flex-grow space-y-2 text-sm sm:text-base md:text-lg">
                 {data.steps.map((step, stepIndex) => (
