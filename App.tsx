@@ -21,7 +21,7 @@ import {
   runTransaction, where, orderBy, limit, Timestamp, deleteDoc
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
-import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode, ClassInfo, BadgeDef } from './types';
+import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode, ClassInfo, BadgeDef, StudentProfile } from './types';
 import {
   CARD_DEFINITIONS, HAND_SIZE, DECK_SIZE,
   INITIAL_HP, calcDamage, ADMIN_EMAILS, GAMEMASTER_PASSWORD,
@@ -74,6 +74,14 @@ const App: React.FC = () => {
   // --- Auth ---
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // --- Student Profile (学年・組・番号) ---
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(() => {
+    try {
+      const s = localStorage.getItem('battleMathStudentProfile');
+      return s ? JSON.parse(s) : null;
+    } catch { return null; }
+  });
 
   // --- Game State ---
   const [gameState, setGameState] = useState<GameState>('login_screen');
@@ -187,7 +195,8 @@ const App: React.FC = () => {
     localStorage.setItem('battleMathPlayerLevel', JSON.stringify(playerLevel));
     localStorage.setItem('battleMathPlayerExp', JSON.stringify(playerExp));
     localStorage.setItem('battleMathUserLevelStats', JSON.stringify(userLevelStats));
-  }, [mathPoints, ownedCardIds, playerLevel, playerExp, userLevelStats]);
+    if (studentProfile) localStorage.setItem('battleMathStudentProfile', JSON.stringify(studentProfile));
+  }, [mathPoints, ownedCardIds, playerLevel, playerExp, userLevelStats, studentProfile]);
 
   const ownedCards = useMemo(
     () => CARD_DEFINITIONS.filter(c => ownedCardIds.has(c.id)),
@@ -222,6 +231,11 @@ const App: React.FC = () => {
             // ゲーミフィケーションデータ読み込み
             if (d.earnedBadgeIds) setEarnedBadgeIds(new Set(d.earnedBadgeIds));
             if (d.totalCorrectAnswers !== undefined) setTotalCorrectAnswers(d.totalCorrectAnswers);
+            // 学年・組・番号情報をFirestoreから復元 (ローカルになければ)
+            if (d.studentProfile) {
+              setStudentProfile(d.studentProfile);
+              localStorage.setItem('battleMathStudentProfile', JSON.stringify(d.studentProfile));
+            }
             // ログインストリーク計算
             const today = getTodayStr();
             const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -257,6 +271,7 @@ const App: React.FC = () => {
               totalCorrectAnswers: 0,
               loginStreak: 1,
               lastLoginDate: getTodayStr(),
+              studentProfile: studentProfile || null,
               createdAt: serverTimestamp(),
             });
             setLoginStreak(1);
@@ -531,6 +546,18 @@ const App: React.FC = () => {
       cleanupGameSession();
     } catch (e) { console.error('Logout failed:', e); }
   };
+
+  const handleStudentProfileSet = useCallback(async (profile: StudentProfile) => {
+    setStudentProfile(profile);
+    localStorage.setItem('battleMathStudentProfile', JSON.stringify(profile));
+    if (user && db) {
+      try {
+        await updateDoc(doc(db, 'users', user.uid), {
+          studentProfile: profile,
+        });
+      } catch (e) { console.error('Student profile sync error:', e); }
+    }
+  }, [user]);
 
   const handleGuestPlay = () => {
     setGameState('main_menu');
@@ -1098,6 +1125,8 @@ const App: React.FC = () => {
             onOpenGameMaster={canAccessGameMaster ? handleOpenGameMaster : undefined}
             mathPoints={mathPoints}
             playerLevel={playerLevel}
+            studentProfile={studentProfile}
+            onStudentProfileSet={handleStudentProfileSet}
           />
         );
 

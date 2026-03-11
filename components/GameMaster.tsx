@@ -1,11 +1,11 @@
 /**
  * GameMaster.tsx - BattleMath Admin Panel
  *
- * エビデンスレベルA: Firebase Firestore公式パターン (onSnapshot リアルタイム監視)
  * 管理機能:
  *  - ユーザー管理 (戦績/レベル確認・リセット・削除)
+ *  - クラス管理 (学年・組別の生徒一覧、成績、学習状況)
  *  - ルーム管理 (PvPルームの状況確認・強制終了)
- *  - 問題統計 (正答率・難易度別パフォーマンス)
+ *  - 統計 (全体統計・ランキング)
  *  - ゲーム設定 (お知らせ・メンテナンス管理)
  */
 import React, { useEffect, useState, useMemo } from 'react';
@@ -13,7 +13,7 @@ import {
   collection, query, orderBy, onSnapshot,
   doc, updateDoc, deleteDoc, limit, getDoc, setDoc
 } from 'firebase/firestore';
-import type { Room } from '../types';
+import type { Room, StudentProfile } from '../types';
 
 // ---- Types ----
 interface UserData {
@@ -27,6 +27,12 @@ interface UserData {
   mathPoints: number;
   ownedCardIds: number[];
   createdAt: any;
+  totalCorrectAnswers?: number;
+  loginStreak?: number;
+  lastLoginDate?: string;
+  earnedBadgeIds?: string[];
+  classId?: string;
+  studentProfile?: StudentProfile;
 }
 
 interface GameConfig {
@@ -52,7 +58,7 @@ const winRate = (wins: number, matches: number) =>
 
 // ---- Component ----
 const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'users' | 'rooms' | 'stats' | 'config'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'class' | 'rooms' | 'stats' | 'config'>('class');
   const [users, setUsers] = useState<UserData[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [gameConfig, setGameConfig] = useState<GameConfig>({
@@ -64,10 +70,15 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [userSearch, setUserSearch] = useState('');
 
+  // Class management state
+  const [selectedGrade, setSelectedGrade] = useState<number>(1);
+  const [selectedClassNum, setSelectedClassNum] = useState<number>(1);
+  const [classDetailUser, setClassDetailUser] = useState<UserData | null>(null);
+
   // Real-time user watch
   useEffect(() => {
     if (!db) return;
-    const q = query(collection(db, 'users'), orderBy('totalWins', 'desc'), limit(200));
+    const q = query(collection(db, 'users'), orderBy('totalWins', 'desc'), limit(500));
     return onSnapshot(q, snap => {
       const list: UserData[] = [];
       snap.forEach(d => list.push({ id: d.id, ...d.data() } as UserData));
@@ -120,9 +131,48 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
     const s = userSearch.toLowerCase();
     return users.filter(u =>
       u.displayName?.toLowerCase().includes(s) ||
-      u.email?.toLowerCase().includes(s)
+      u.email?.toLowerCase().includes(s) ||
+      u.studentProfile?.displayLabel?.includes(s)
     );
   }, [users, userSearch]);
+
+  // --- Class-based data ---
+  // 学年・組で生徒をグループ化
+  const classStudents = useMemo(() => {
+    return users.filter(u => {
+      const sp = u.studentProfile;
+      return sp && sp.grade === selectedGrade && sp.classNum === selectedClassNum;
+    }).sort((a, b) => (a.studentProfile?.number || 0) - (b.studentProfile?.number || 0));
+  }, [users, selectedGrade, selectedClassNum]);
+
+  // クラス全体の統計
+  const classStats = useMemo(() => {
+    if (classStudents.length === 0) return null;
+    const totalStudents = classStudents.length;
+    const avgLevel = classStudents.reduce((s, u) => s + (u.playerLevel || 1), 0) / totalStudents;
+    const totalCorrect = classStudents.reduce((s, u) => s + (u.totalCorrectAnswers || 0), 0);
+    const totalMatches = classStudents.reduce((s, u) => s + (u.totalMatches || 0), 0);
+    const totalWins = classStudents.reduce((s, u) => s + (u.totalWins || 0), 0);
+    const avgMP = classStudents.reduce((s, u) => s + (u.mathPoints || 0), 0) / totalStudents;
+    const activeLast7d = classStudents.filter(u => {
+      if (!u.lastLoginDate) return false;
+      const last = new Date(u.lastLoginDate).getTime();
+      return Date.now() - last < 7 * 24 * 60 * 60 * 1000;
+    }).length;
+    return { totalStudents, avgLevel, totalCorrect, totalMatches, totalWins, avgMP, activeLast7d };
+  }, [classStudents]);
+
+  // 全学年・全組に存在する生徒数のサマリー
+  const gradeClassSummary = useMemo(() => {
+    const summary: Record<number, Record<number, number>> = {};
+    users.forEach(u => {
+      const sp = u.studentProfile;
+      if (!sp) return;
+      if (!summary[sp.grade]) summary[sp.grade] = {};
+      summary[sp.grade][sp.classNum] = (summary[sp.grade][sp.classNum] || 0) + 1;
+    });
+    return summary;
+  }, [users]);
 
   // --- User Actions ---
   const handleResetUserStats = async (userId: string, name: string) => {
@@ -154,6 +204,13 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
     } catch (e) { console.error(e); alert('削除失敗'); }
   };
 
+  const handleUpdateStudentProfile = async (userId: string, profile: StudentProfile) => {
+    try {
+      await updateDoc(doc(db, 'users', userId), { studentProfile: profile });
+      alert('更新しました。');
+    } catch (e) { console.error(e); alert('更新失敗'); }
+  };
+
   // --- Room Actions ---
   const handleForceCloseRoom = async (roomId: string) => {
     if (!confirm(`ルーム「${roomId}」を強制終了しますか？`)) return;
@@ -166,7 +223,6 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
     } catch (e) { console.error(e); alert('エラー'); }
   };
 
-  // エビデンスA: ゾンビルーム一括クリーンアップ
   const handleCleanupZombieRooms = async () => {
     const zombies = rooms.filter(r => {
       if (r.status === 'finished') return true;
@@ -177,7 +233,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
       return false;
     });
     if (zombies.length === 0) { alert('クリーンアップ対象のルームはありません。'); return; }
-    if (!confirm(`${zombies.length}件のルームを削除しますか？（finished + 10分以上前のwaiting）`)) return;
+    if (!confirm(`${zombies.length}件のルームを削除しますか？`)) return;
     let deleted = 0;
     for (const room of zombies) {
       try {
@@ -201,6 +257,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
   };
 
   const tabs = [
+    { id: 'class', label: 'クラス管理', color: 'text-purple-400' },
     { id: 'users', label: 'ユーザー', color: 'text-amber-400' },
     { id: 'rooms', label: 'ルーム', color: 'text-green-400' },
     { id: 'stats', label: '統計', color: 'text-blue-400' },
@@ -246,6 +303,231 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
       {/* Content */}
       <div className="flex-grow overflow-hidden p-6">
 
+        {/* ===== CLASS MANAGEMENT TAB ===== */}
+        {activeTab === 'class' && (
+          <div className="h-full flex flex-col gap-4 overflow-hidden">
+            {/* Class selector */}
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
+              <div className="flex items-center gap-6 flex-wrap">
+                {/* Grade selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-purple-400 font-bold tracking-widest">学年:</span>
+                  <div className="flex gap-1">
+                    {[1, 2, 3].map(g => (
+                      <button
+                        key={g}
+                        onClick={() => setSelectedGrade(g)}
+                        className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                          selectedGrade === g
+                            ? 'bg-purple-600 text-white shadow-[0_0_10px_rgba(147,51,234,0.3)]'
+                            : 'bg-gray-800 text-gray-400 border border-gray-700 hover:text-white'
+                        }`}
+                      >
+                        {g}年
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Class selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-purple-400 font-bold tracking-widest">組:</span>
+                  <div className="flex gap-1 flex-wrap">
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map(c => {
+                      const count = gradeClassSummary[selectedGrade]?.[c] || 0;
+                      return (
+                        <button
+                          key={c}
+                          onClick={() => setSelectedClassNum(c)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all relative ${
+                            selectedClassNum === c
+                              ? 'bg-purple-600 text-white shadow-[0_0_10px_rgba(147,51,234,0.3)]'
+                              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:text-white'
+                          }`}
+                        >
+                          {c}組
+                          {count > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 bg-cyan-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-mono">
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Class stats summary */}
+            {classStats && (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                {[
+                  { label: '生徒数', value: classStats.totalStudents, color: 'text-purple-400', unit: '人' },
+                  { label: '平均Lv', value: classStats.avgLevel.toFixed(1), color: 'text-cyan-400', unit: '' },
+                  { label: '総正答数', value: classStats.totalCorrect, color: 'text-green-400', unit: '' },
+                  { label: '総対戦数', value: classStats.totalMatches, color: 'text-blue-400', unit: '' },
+                  { label: '総勝利数', value: classStats.totalWins, color: 'text-amber-400', unit: '' },
+                  { label: '平均MP', value: Math.round(classStats.avgMP).toLocaleString(), color: 'text-amber-300', unit: '' },
+                  { label: '直近7日\nアクティブ', value: classStats.activeLast7d, color: 'text-green-300', unit: `/${classStats.totalStudents}` },
+                ].map(item => (
+                  <div key={item.label} className="bg-gray-900 border border-gray-800 rounded-xl p-3">
+                    <p className="text-[10px] text-gray-500 mb-1 whitespace-pre-line">{item.label}</p>
+                    <p className={`text-xl font-bold font-mono ${item.color}`}>
+                      {item.value}<span className="text-xs text-gray-500">{item.unit}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Student detail modal */}
+            {classDetailUser && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[80vh] overflow-y-auto">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-white">{classDetailUser.displayName || 'Unknown'}</h3>
+                      <p className="text-sm text-purple-400">{classDetailUser.studentProfile?.displayLabel}</p>
+                      <p className="text-xs text-gray-500">{classDetailUser.email}</p>
+                    </div>
+                    <button
+                      onClick={() => setClassDetailUser(null)}
+                      className="text-gray-500 hover:text-white text-xl"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    {[
+                      { label: 'レベル', value: classDetailUser.playerLevel || 1, color: 'text-cyan-400' },
+                      { label: 'MP', value: (classDetailUser.mathPoints || 0).toLocaleString(), color: 'text-amber-400' },
+                      { label: '勝利数', value: classDetailUser.totalWins || 0, color: 'text-green-400' },
+                      { label: '対戦数', value: classDetailUser.totalMatches || 0, color: 'text-blue-400' },
+                      { label: '勝率', value: winRate(classDetailUser.totalWins || 0, classDetailUser.totalMatches || 0), color: 'text-amber-300' },
+                      { label: '総正答数', value: classDetailUser.totalCorrectAnswers || 0, color: 'text-green-300' },
+                      { label: 'ログイン連続', value: `${classDetailUser.loginStreak || 0}日`, color: 'text-orange-400' },
+                      { label: '最終ログイン', value: classDetailUser.lastLoginDate || '---', color: 'text-gray-300' },
+                    ].map(item => (
+                      <div key={item.label} className="bg-gray-800 rounded-lg p-3">
+                        <p className="text-[10px] text-gray-500 mb-0.5">{item.label}</p>
+                        <p className={`text-lg font-bold font-mono ${item.color}`}>{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Badges */}
+                  {classDetailUser.earnedBadgeIds && classDetailUser.earnedBadgeIds.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-gray-500 mb-2">獲得バッジ</p>
+                      <div className="flex flex-wrap gap-2">
+                        {classDetailUser.earnedBadgeIds.map(bid => (
+                          <span key={bid} className="bg-amber-900/30 border border-amber-700/40 px-2 py-1 rounded-full text-xs text-amber-300">
+                            {bid}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Card collection */}
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 mb-1">カード所持数</p>
+                    <p className="text-lg font-bold text-cyan-300 font-mono">
+                      {classDetailUser.ownedCardIds?.length || 0} 枚
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mb-1">登録日</p>
+                  <p className="text-sm text-gray-400">{formatDate(classDetailUser.createdAt)}</p>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 mt-6 pt-4 border-t border-gray-700">
+                    <button onClick={() => { handleResetUserStats(classDetailUser.id, classDetailUser.displayName); }} className="text-xs bg-orange-900/50 text-orange-300 border border-orange-800 px-3 py-1.5 rounded hover:bg-orange-800/50">戦績リセット</button>
+                    <button onClick={() => { handleGrantMathPoints(classDetailUser.id, classDetailUser.displayName); }} className="text-xs bg-blue-900/50 text-blue-300 border border-blue-800 px-3 py-1.5 rounded hover:bg-blue-800/50">MP付与</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Student list */}
+            <div className="flex-grow bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+                <h2 className="font-bold text-purple-400">
+                  {selectedGrade}年{selectedClassNum}組 ({classStudents.length}名)
+                </h2>
+              </div>
+              <div className="flex-grow overflow-auto">
+                {classStudents.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                    <p className="text-4xl mb-3 opacity-30">&#128203;</p>
+                    <p className="text-sm">このクラスにはまだ生徒が登録されていません</p>
+                    <p className="text-xs text-gray-600 mt-1">生徒がログイン時に学年・組・番号を選択すると表示されます</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-950 text-gray-500 text-xs sticky top-0">
+                      <tr>
+                        <th className="p-3 text-center w-12">番号</th>
+                        <th className="p-3">氏名</th>
+                        <th className="p-3 text-center">Lv</th>
+                        <th className="p-3 text-center">正答数</th>
+                        <th className="p-3 text-center">戦績</th>
+                        <th className="p-3 text-center">MP</th>
+                        <th className="p-3 text-center">連続</th>
+                        <th className="p-3 text-center">最終ログイン</th>
+                        <th className="p-3 text-center">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800">
+                      {classStudents.map(u => {
+                        const isActive = u.lastLoginDate && (Date.now() - new Date(u.lastLoginDate).getTime()) < 3 * 24 * 60 * 60 * 1000;
+                        return (
+                          <tr key={u.id} className="hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={() => setClassDetailUser(u)}>
+                            <td className="p-3 text-center font-mono text-sm text-purple-300 font-bold">{u.studentProfile?.number}</td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-400' : 'bg-gray-600'}`} />
+                                <div>
+                                  <div className="font-bold text-sm">{u.displayName || 'Unknown'}</div>
+                                  <div className="text-[10px] text-gray-500">{u.email?.split('@')[0] || ''}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3 text-center text-cyan-400 font-bold">{u.playerLevel || 1}</td>
+                            <td className="p-3 text-center text-green-400 font-mono text-sm">{u.totalCorrectAnswers || 0}</td>
+                            <td className="p-3 text-center">
+                              <span className="text-amber-400 font-bold text-sm">{u.totalWins || 0}</span>
+                              <span className="text-gray-500 text-xs">/{u.totalMatches || 0}</span>
+                              <span className="text-green-400 text-xs ml-1">{winRate(u.totalWins || 0, u.totalMatches || 0)}</span>
+                            </td>
+                            <td className="p-3 text-center text-amber-300 font-mono text-sm">{(u.mathPoints || 0).toLocaleString()}</td>
+                            <td className="p-3 text-center">
+                              {(u.loginStreak || 0) >= 2 ? (
+                                <span className="text-orange-400 font-bold text-sm">{u.loginStreak}日</span>
+                              ) : (
+                                <span className="text-gray-600 text-xs">---</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center text-xs text-gray-500">{u.lastLoginDate || '---'}</td>
+                            <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
+                              <div className="flex gap-1 justify-center">
+                                <button onClick={() => setClassDetailUser(u)} className="text-xs bg-purple-900/50 text-purple-300 border border-purple-800 px-2 py-0.5 rounded hover:bg-purple-800/50">詳細</button>
+                                <button onClick={() => handleGrantMathPoints(u.id, u.displayName)} className="text-xs bg-blue-900/50 text-blue-300 border border-blue-800 px-2 py-0.5 rounded hover:bg-blue-800/50">MP+</button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ===== USERS TAB ===== */}
         {activeTab === 'users' && (
           <div className="h-full flex flex-col bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
@@ -255,7 +537,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
                 type="text"
                 value={userSearch}
                 onChange={e => setUserSearch(e.target.value)}
-                placeholder="名前・メールで検索..."
+                placeholder="名前・メール・学年組で検索..."
                 className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:border-amber-500 outline-none w-60"
               />
             </div>
@@ -265,6 +547,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
                   <tr>
                     <th className="p-3 text-center">Rank</th>
                     <th className="p-3">ユーザー</th>
+                    <th className="p-3 text-center">学年組番</th>
                     <th className="p-3 text-center">Lv</th>
                     <th className="p-3 text-center">戦績</th>
                     <th className="p-3 text-center">MP</th>
@@ -279,6 +562,13 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
                       <td className="p-3">
                         <div className="font-bold text-sm">{u.displayName || 'Unknown'}</div>
                         <div className="text-xs text-gray-500 font-mono">{u.email || u.id.slice(0, 12) + '...'}</div>
+                      </td>
+                      <td className="p-3 text-center">
+                        {u.studentProfile ? (
+                          <span className="text-purple-300 text-xs font-bold">{u.studentProfile.displayLabel}</span>
+                        ) : (
+                          <span className="text-gray-600 text-xs">未設定</span>
+                        )}
                       </td>
                       <td className="p-3 text-center text-cyan-400 font-bold">{u.playerLevel || 1}</td>
                       <td className="p-3 text-center">
@@ -396,6 +686,40 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
               ))}
             </div>
 
+            {/* Grade-level overview */}
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              <div className="p-4 border-b border-gray-800">
+                <h3 className="font-bold text-purple-400">学年別サマリー</h3>
+              </div>
+              <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[1, 2, 3].map(grade => {
+                  const gradeUsers = users.filter(u => u.studentProfile?.grade === grade);
+                  const gradeTotal = gradeUsers.length;
+                  const gradeAvgLv = gradeTotal > 0 ? (gradeUsers.reduce((s, u) => s + (u.playerLevel || 1), 0) / gradeTotal).toFixed(1) : '--';
+                  const gradeCorrect = gradeUsers.reduce((s, u) => s + (u.totalCorrectAnswers || 0), 0);
+                  return (
+                    <div key={grade} className="bg-gray-800 rounded-lg p-4">
+                      <h4 className="text-lg font-bold text-purple-300 mb-3">{grade}年生</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">登録者数</span>
+                          <span className="text-white font-bold">{gradeTotal}人</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">平均Lv</span>
+                          <span className="text-cyan-400 font-bold">{gradeAvgLv}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">総正答数</span>
+                          <span className="text-green-400 font-bold">{gradeCorrect}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Top 10 by wins */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
               <div className="p-4 border-b border-gray-800">
@@ -406,6 +730,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
                   <tr>
                     <th className="p-3 text-center w-12">順位</th>
                     <th className="p-3">プレイヤー</th>
+                    <th className="p-3 text-center">学年組番</th>
                     <th className="p-3 text-center">勝利</th>
                     <th className="p-3 text-center">対戦</th>
                     <th className="p-3 text-center">勝率</th>
@@ -417,6 +742,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
                     <tr key={u.id} className="hover:bg-gray-800/50">
                       <td className="p-3 text-center font-mono text-sm text-gray-400">{i + 1}</td>
                       <td className="p-3 font-bold text-sm">{u.displayName || 'Unknown'}</td>
+                      <td className="p-3 text-center text-xs text-purple-300">{u.studentProfile?.displayLabel || '---'}</td>
                       <td className="p-3 text-center text-amber-400 font-bold">{u.totalWins || 0}</td>
                       <td className="p-3 text-center text-gray-400">{u.totalMatches || 0}</td>
                       <td className="p-3 text-center text-green-400">{winRate(u.totalWins || 0, u.totalMatches || 0)}</td>
