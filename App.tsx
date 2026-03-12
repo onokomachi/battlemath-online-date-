@@ -41,6 +41,7 @@ import GameMaster from './components/GameMaster';
 import QuestPanel from './components/QuestPanel';
 import BadgeNotification from './components/BadgeNotification';
 import LoginBonusModal, { getLoginReward } from './components/LoginBonusModal';
+import ClassBattleBoard from './components/ClassBattleBoard';
 
 // ============================
 // Helpers
@@ -171,6 +172,7 @@ const App: React.FC = () => {
   const [showQuestPanel, setShowQuestPanel] = useState(false);
   const [showLoginBonus, setShowLoginBonus] = useState(false);
   const [loginBonusClaimed, setLoginBonusClaimed] = useState(false);
+  const [showClassBattle, setShowClassBattle] = useState(false);
   // クエスト進捗 (localStorage管理でFirestoreクォータ節約)
   const [dailyQuestProgress, setDailyQuestProgress] = useState<Record<string, number>>({});
   const [dailyQuestDone, setDailyQuestDone] = useState<Set<string>>(new Set());
@@ -1084,6 +1086,8 @@ const App: React.FC = () => {
             dailyQuestDefs={DAILY_QUEST_DEFS}
             dailyQuestProgress={dailyQuestProgress}
             dailyQuestDone={dailyQuestDone}
+            onOpenClassBattle={() => setShowClassBattle(true)}
+            hasStudentProfile={!!studentProfile}
           />
         );
 
@@ -1278,6 +1282,14 @@ const App: React.FC = () => {
             alreadyClaimed={loginBonusClaimed}
             onClaim={handleClaimLoginBonus}
             onClose={() => setShowLoginBonus(false)}
+          />
+        )}
+        {showClassBattle && db && (
+          <ClassBattleBoard
+            db={db}
+            onClose={() => setShowClassBattle(false)}
+            currentGrade={studentProfile?.grade}
+            currentClass={studentProfile?.classNum}
           />
         )}
       </div>

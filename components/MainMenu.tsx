@@ -19,6 +19,8 @@ interface MainMenuProps {
   dailyQuestDefs?: DailyQuestDef[];
   dailyQuestProgress?: Record<string, number>;
   dailyQuestDone?: Set<string>;
+  onOpenClassBattle?: () => void;
+  hasStudentProfile?: boolean;
 }
 
 const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
@@ -151,6 +153,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
   loginStreak, onOpenQuests, onOpenLoginBonus,
   canAccessGameMaster, onOpenGameMaster,
   dailyQuestDefs, dailyQuestProgress, dailyQuestDone,
+  onOpenClassBattle, hasStudentProfile,
 }) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
@@ -182,6 +185,14 @@ const MainMenu: React.FC<MainMenuProps> = ({
             className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
           >
             <span>⚡</span> クエスト
+          </button>
+        )}
+        {onOpenClassBattle && user && hasStudentProfile && (
+          <button
+            onClick={onOpenClassBattle}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold border border-amber-500/30 text-amber-400 hover:bg-amber-900/20 transition-colors"
+          >
+            <span>⚔</span> クラス対抗
           </button>
         )}
         {canAccessGameMaster && onOpenGameMaster && (
