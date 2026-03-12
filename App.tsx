@@ -40,6 +40,7 @@ import RankingBoard from './components/RankingBoard';
 import GameMaster from './components/GameMaster';
 import QuestPanel from './components/QuestPanel';
 import BadgeNotification from './components/BadgeNotification';
+import LoginBonusModal, { getLoginReward } from './components/LoginBonusModal';
 
 // ============================
 // Helpers
@@ -168,6 +169,8 @@ const App: React.FC = () => {
   const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0);
   // パネル表示
   const [showQuestPanel, setShowQuestPanel] = useState(false);
+  const [showLoginBonus, setShowLoginBonus] = useState(false);
+  const [loginBonusClaimed, setLoginBonusClaimed] = useState(false);
   // クエスト進捗 (localStorage管理でFirestoreクォータ節約)
   const [dailyQuestProgress, setDailyQuestProgress] = useState<Record<string, number>>({});
   const [dailyQuestDone, setDailyQuestDone] = useState<Set<string>>(new Set());
@@ -240,6 +243,12 @@ const App: React.FC = () => {
             if (lastLogin !== today) {
               newStreak = lastLogin === yesterdayStr ? newStreak + 1 : 1;
               await updateDoc(ref, { loginStreak: newStreak, lastLoginDate: today }).catch(() => {});
+              // Show login bonus modal automatically on new day
+              setLoginBonusClaimed(false);
+              setTimeout(() => setShowLoginBonus(true), 800);
+            } else {
+              // Already logged in today - check if bonus was claimed
+              setLoginBonusClaimed(!!d.loginBonusClaimedDate && d.loginBonusClaimedDate === today);
             }
             setLoginStreak(newStreak);
           } else {
@@ -259,10 +268,13 @@ const App: React.FC = () => {
               totalCorrectAnswers: 0,
               loginStreak: 1,
               lastLoginDate: getTodayStr(),
+              loginBonusClaimedDate: '',
               studentProfile: studentProfile || null,
               createdAt: serverTimestamp(),
             });
             setLoginStreak(1);
+            setLoginBonusClaimed(false);
+            setTimeout(() => setShowLoginBonus(true), 800);
           }
           // クエスト進捗をlocalStorageから復元
           const dqKey = `bm_dq_${getTodayStr()}`;
@@ -473,6 +485,18 @@ const App: React.FC = () => {
   const handleGuestPlay = () => {
     setGameState('main_menu');
   };
+
+  const handleClaimLoginBonus = useCallback(() => {
+    const reward = getLoginReward(loginStreak);
+    setMathPoints(p => p + reward);
+    setLoginBonusClaimed(true);
+    if (user && db) {
+      updateDoc(doc(db, 'users', user.uid), {
+        mathPoints: increment(reward),
+        loginBonusClaimedDate: getTodayStr(),
+      }).catch(() => {});
+    }
+  }, [loginStreak, user]);
 
   const canAccessGameMaster = useMemo(() => {
     if (ADMIN_EMAILS.length === 0) return !!user;
@@ -1054,6 +1078,12 @@ const App: React.FC = () => {
             onOpenRanking={() => setShowRanking(true)}
             loginStreak={loginStreak}
             onOpenQuests={() => setShowQuestPanel(true)}
+            onOpenLoginBonus={() => setShowLoginBonus(true)}
+            canAccessGameMaster={canAccessGameMaster}
+            onOpenGameMaster={handleOpenGameMaster}
+            dailyQuestDefs={DAILY_QUEST_DEFS}
+            dailyQuestProgress={dailyQuestProgress}
+            dailyQuestDone={dailyQuestDone}
           />
         );
 
@@ -1239,6 +1269,15 @@ const App: React.FC = () => {
           <BadgeNotification
             badge={pendingBadge}
             onDismiss={() => setPendingBadge(null)}
+          />
+        )}
+        {showLoginBonus && (
+          <LoginBonusModal
+            loginStreak={loginStreak}
+            todayReward={getLoginReward(loginStreak)}
+            alreadyClaimed={loginBonusClaimed}
+            onClaim={handleClaimLoginBonus}
+            onClose={() => setShowLoginBonus(false)}
           />
         )}
       </div>
