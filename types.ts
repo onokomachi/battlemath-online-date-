@@ -166,15 +166,6 @@ export interface StudentProfile {
 
 // --- Auth / Online Types ---
 
-export interface ClassInfo {
-  classId: string;
-  className: string;
-  teacherName: string;
-  weeklyScore: number;
-  weekStart: string;
-  memberCount: number;
-}
-
 export interface DailyQuestDef {
   id: string;
   title: string;

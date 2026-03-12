@@ -1,20 +1,118 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Category, SubCategoryGroup } from '../types';
 import { MATH_CATEGORIES } from '../constants';
-import { ArchiveIcon } from './Icons';
+import { ArchiveIcon, TrophyIcon } from './Icons';
+import type { Firestore } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 
 interface MenuScreenProps {
   onSelectSubTopic: (category: string, subTopic: string) => void;
   onShowRecords: () => void;
   onExit: () => void;
+  db?: Firestore | null;
 }
 
-const MenuScreen: React.FC<MenuScreenProps> = ({ onSelectSubTopic, onShowRecords, onExit }) => {
+/** 単元別ランキングモーダル */
+const TopicRankingModal: React.FC<{
+  subTopic: string;
+  db: Firestore;
+  onClose: () => void;
+}> = ({ subTopic, db, onClose }) => {
+  const [entries, setEntries] = useState<Array<{ displayName: string; studentLabel: string | null; score: number }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const month = new Date().toISOString().slice(0, 7);
+    const fetchRanking = async () => {
+      try {
+        // Firestore最適化: limit(20)で読取を最小化（最大21読取/クエリ）
+        const q = query(
+          collection(db, 'rankings'),
+          where('month', '==', month),
+          where('subTopic', '==', subTopic),
+          orderBy('score', 'desc'),
+          limit(20)
+        );
+        const snap = await getDocs(q);
+        setEntries(snap.docs.map(d => {
+          const data = d.data();
+          return { displayName: data.displayName, studentLabel: data.studentLabel, score: data.score };
+        }));
+      } catch (e) {
+        console.warn('Ranking fetch failed:', e);
+      }
+      setLoading(false);
+    };
+    fetchRanking();
+  }, [db, subTopic]);
+
+  return (
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-4 backdrop-blur-md">
+      <div className="hud-panel rounded-2xl p-6 max-w-lg w-full shadow-2xl animate-math-fade-in max-h-[80vh] flex flex-col">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-xl font-bold text-white">{subTopic}</h3>
+            <p className="text-xs text-cyan-400">{new Date().toISOString().slice(0, 7)} 月間ランキング</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl px-2">×</button>
+        </div>
+
+        <div className="flex-grow overflow-y-auto space-y-2">
+          {loading ? (
+            <div className="text-center text-cyan-600 py-8 animate-pulse">読み込み中...</div>
+          ) : entries.length === 0 ? (
+            <div className="text-center text-cyan-700 py-8">
+              <p className="text-sm">まだ記録がありません</p>
+              <p className="text-xs mt-1 text-cyan-800">この単元を練習して1位を目指そう！</p>
+            </div>
+          ) : (
+            entries.map((entry, i) => (
+              <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                i === 0 ? 'bg-amber-900/20 border-amber-500/30' :
+                i === 1 ? 'bg-gray-700/10 border-gray-500/20' :
+                i === 2 ? 'bg-amber-800/10 border-amber-700/20' :
+                'bg-slate-900/30 border-cyan-500/5'
+              }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                  i === 0 ? 'bg-amber-500 text-black' :
+                  i === 1 ? 'bg-gray-400 text-black' :
+                  i === 2 ? 'bg-amber-700 text-white' :
+                  'bg-slate-800 text-cyan-400'
+                }`}>
+                  {i + 1}
+                </div>
+                <div className="flex-grow min-w-0">
+                  <p className="font-bold text-white text-sm truncate">{entry.displayName}</p>
+                  {entry.studentLabel && <p className="text-xs text-cyan-500">{entry.studentLabel}</p>}
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold font-mono text-cyan-300">{entry.score}</p>
+                  <p className="text-[10px] text-cyan-600">pts</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <button onClick={onClose} className="mt-4 btn-tactical w-full py-3 rounded-lg font-bold text-cyan-400">
+          閉じる
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const MenuScreen: React.FC<MenuScreenProps> = ({ onSelectSubTopic, onShowRecords, onExit, db }) => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(MATH_CATEGORIES[0]);
+  const [rankingTopic, setRankingTopic] = useState<string | null>(null);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-6 text-white">
+      {rankingTopic && db && (
+        <TopicRankingModal subTopic={rankingTopic} db={db} onClose={() => setRankingTopic(null)} />
+      )}
+
       <header className="w-full max-w-5xl text-center mb-8 flex-shrink-0">
         <h1 className="text-6xl md:text-8xl font-black text-hologram tracking-[0.1em] mb-3">
           練習モード
@@ -63,17 +161,24 @@ const MenuScreen: React.FC<MenuScreenProps> = ({ onSelectSubTopic, onShowRecords
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {group.subtopics.map((subTopic: string) => (
-                                <button
-                                    key={subTopic}
-                                    onClick={() => onSelectSubTopic(selectedCategory.name, subTopic)}
-                                    className="bg-slate-950/40 border border-cyan-500/10 text-cyan-100/90 p-4 rounded-xl text-sm font-bold hover:bg-cyan-500 hover:text-slate-950 hover:border-white transition-all text-left relative group overflow-hidden"
-                                >
-                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-500/20 group-hover:bg-white transition-colors"></div>
-                                    <span className="relative z-10 block pr-6">{subTopic}</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                    </svg>
-                                </button>
+                                <div key={subTopic} className="relative group">
+                                  <button
+                                      onClick={() => onSelectSubTopic(selectedCategory.name, subTopic)}
+                                      className="w-full bg-slate-950/40 border border-cyan-500/10 text-cyan-100/90 p-4 rounded-xl text-sm font-bold hover:bg-cyan-500 hover:text-slate-950 hover:border-white transition-all text-left relative overflow-hidden pr-12"
+                                  >
+                                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-500/20 group-hover:bg-white transition-colors"></div>
+                                      <span className="relative z-10 block">{subTopic}</span>
+                                  </button>
+                                  {db && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setRankingTopic(subTopic); }}
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-cyan-600 hover:text-amber-400 transition-colors z-10"
+                                      title="ランキングを見る"
+                                    >
+                                      <TrophyIcon className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
                             ))}
                         </div>
                     </section>

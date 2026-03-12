@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GameState, ClassInfo } from '../types';
+import type { GameState } from '../types';
 import type { User } from 'firebase/auth';
 
 interface MainMenuProps {
@@ -11,11 +11,8 @@ interface MainMenuProps {
   mathPoints?: number;
   onLogout?: () => void;
   onOpenRanking?: () => void;
-  // ゲーミフィケーション拡張
   loginStreak?: number;
   onOpenQuests?: () => void;
-  onOpenClass?: () => void;
-  classInfo?: ClassInfo | null;
 }
 
 const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
@@ -80,7 +77,7 @@ const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
 const MainMenu: React.FC<MainMenuProps> = ({
   onSelectMode, playerLevel, playerExp, expForNextLevel,
   user, mathPoints, onLogout, onOpenRanking,
-  loginStreak, onOpenQuests, onOpenClass, classInfo,
+  loginStreak, onOpenQuests,
 }) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
@@ -100,30 +97,17 @@ const MainMenu: React.FC<MainMenuProps> = ({
         {onOpenRanking && (
           <button
             onClick={onOpenRanking}
-            className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold tracking-[0.2em]"
+            className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold"
           >
-            RANKING
+            ランキング
           </button>
         )}
         {onOpenQuests && user && (
           <button
             onClick={onOpenQuests}
-            className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold tracking-[0.2em] flex items-center gap-2"
+            className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
           >
-            <span>⚡</span> QUEST
-          </button>
-        )}
-        {onOpenClass && user && (
-          <button
-            onClick={onOpenClass}
-            className={`px-5 py-2 rounded-lg text-sm font-bold tracking-[0.2em] transition-colors flex items-center gap-2 ${
-              classInfo
-                ? 'bg-blue-900/60 text-blue-300 border border-blue-600 hover:bg-blue-800/60'
-                : 'btn-tactical'
-            }`}
-          >
-            <span>🏫</span>
-            {classInfo ? classInfo.className : 'CLASS'}
+            <span>⚡</span> クエスト
           </button>
         )}
       </div>
