@@ -309,6 +309,15 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
     if (!currentProblem) return [[]];
     const type = currentProblem.type;
 
+    // 証明問題(穴埋め): △, ∠, A-Gなどの文字が必要
+    if (type === 'fill_in_proof') {
+      return [
+        ['A', 'B', 'C', 'D', 'E', 'F'],
+        ['G', 'H', 'M', 'N', 'O', 'P'],
+        ['△', '∠', '共通', ' ', ' ', ' '],
+      ];
+    }
+
     // Geometry angle problems - consistent layout
     if (['angle_diagram', 'bent_transversal_diagram', 'triangle_in_parallel_lines', 'multi_transversal_angle'].includes(type)) {
       return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '°']];
@@ -326,7 +335,6 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
 
     // Category-based layouts (don't leak answer info)
     if (category === '式の計算') {
-      // Always show full set of variables and operators for expressions
       return [
         ['7', '8', '9', 'x', 'y'],
         ['4', '5', '6', 'a', 'b'],
@@ -510,7 +518,18 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
                         <div className='w-full max-w-lg'>
                            <div className={`min-h-[4.5rem] p-4 bg-slate-950/60 rounded-xl border-2 border-cyan-500/30 flex items-center shadow-inner`}>
                               <span className='text-sm font-bold text-cyan-400 mr-4 whitespace-nowrap'>解答:</span>
-                              <span className='text-3xl font-mono text-cyan-200 flex-grow font-bold tracking-wide' style={{ wordBreak: 'break-all' }}>{userAnswer || <span className="text-cyan-800 text-lg">キーパッドで入力...</span>}</span>
+                              {(currentProblem?.type === 'text' || !currentProblem?.type) ? (
+                                <input
+                                  type="text"
+                                  value={userAnswer}
+                                  onChange={(e) => !showAnswer && setUserAnswer(e.target.value)}
+                                  disabled={showAnswer}
+                                  placeholder="ここに入力..."
+                                  className="flex-grow bg-transparent text-2xl sm:text-3xl font-mono text-cyan-200 font-bold tracking-wide outline-none placeholder:text-cyan-800 placeholder:text-lg"
+                                />
+                              ) : (
+                                <span className='text-3xl font-mono text-cyan-200 flex-grow font-bold tracking-wide' style={{ wordBreak: 'break-all' }}>{userAnswer || <span className="text-cyan-800 text-lg">キーパッドで入力...</span>}</span>
+                              )}
                            </div>
                         </div>
                     )}

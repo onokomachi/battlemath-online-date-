@@ -13,8 +13,10 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
     if (key === ' ' || !key) {
         return <div key={Math.random()} className="h-12 sm:h-14 w-full"></div>;
     }
-    const isSpecial = ['=', '+', '-', '×', '(', ')', '^', '/', '°', '≤', '≥', '<', '>', ',', 'π', '²', '³'].includes(key);
+    const isSpecial = ['=', '+', '-', '×', '(', ')', '^', '/', '°', '≤', '≥', '<', '>', ',', 'π', '²', '³', '△', '∠'].includes(key);
     const isVar = ['x', 'y', 'a', 'b'].includes(key);
+    const isLetter = /^[A-Z]$/.test(key);
+    const isJapanese = key === '共通' || key === '対応';
 
     return (
       <button
@@ -25,7 +27,11 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
           h-12 sm:h-14 w-full flex items-center justify-center rounded-lg transition-all duration-200 border
           text-xl sm:text-2xl font-black transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-1 focus:ring-cyan-400
           ${isSpecial || isVar
-            ? 'bg-cyan-900/20 border-cyan-400/30 text-cyan-200 hover:bg-cyan-800/40 font-["JetBrains_Mono"]' 
+            ? 'bg-cyan-900/20 border-cyan-400/30 text-cyan-200 hover:bg-cyan-800/40 font-["JetBrains_Mono"]'
+            : isLetter
+            ? 'bg-indigo-900/30 border-indigo-400/30 text-indigo-200 hover:bg-indigo-800/40 font-bold'
+            : isJapanese
+            ? 'bg-amber-900/20 border-amber-500/30 text-amber-200 hover:bg-amber-800/40 text-base'
             : 'bg-slate-900/60 border-cyan-900/50 text-white hover:bg-slate-800 font-mono shadow-[inset_0_0_10px_rgba(34,211,238,0.1)]'
           }
           disabled:opacity-10 disabled:cursor-not-allowed disabled:transform-none shadow-lg

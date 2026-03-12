@@ -108,30 +108,30 @@ const MenuScreen: React.FC<MenuScreenProps> = ({ onSelectSubTopic, onShowRecords
   const [rankingTopic, setRankingTopic] = useState<string | null>(null);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-white">
+    <div className="w-full h-full flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 text-white overflow-y-auto">
       {rankingTopic && db && (
         <TopicRankingModal subTopic={rankingTopic} db={db} onClose={() => setRankingTopic(null)} />
       )}
 
-      <header className="w-full max-w-5xl text-center mb-8 flex-shrink-0">
-        <h1 className="text-6xl md:text-8xl font-black text-hologram tracking-[0.1em] mb-3">
+      <header className="w-full max-w-5xl text-center mb-4 sm:mb-8 flex-shrink-0">
+        <h1 className="text-3xl sm:text-6xl md:text-8xl font-black text-hologram tracking-[0.05em] sm:tracking-[0.1em] mb-2 sm:mb-3">
           練習モード
         </h1>
-        <p className="text-cyan-400 text-sm font-bold">分野を選んで問題を解こう</p>
+        <p className="text-cyan-400 text-xs sm:text-sm font-bold">分野を選んで問題を解こう</p>
       </header>
 
-      <main className="w-full max-w-7xl hud-panel rounded-2xl p-0 shadow-2xl relative overflow-hidden flex flex-col md:flex-row h-[65vh]">
+      <main className="w-full max-w-7xl hud-panel rounded-2xl p-0 shadow-2xl relative overflow-hidden flex flex-col md:flex-row flex-grow md:flex-grow-0 md:h-[65vh] min-h-0">
         <div className="corner-accent lt"></div>
         <div className="corner-accent rb"></div>
 
         {/* Left Side: Category Selection */}
-        <div className="w-full md:w-1/4 bg-slate-950/60 border-r border-cyan-500/10 flex flex-col p-6 gap-3">
-          <h2 className="text-xs font-bold text-cyan-400 mb-2">分野を選択</h2>
+        <div className="w-full md:w-1/4 bg-slate-950/60 border-b md:border-b-0 md:border-r border-cyan-500/10 flex md:flex-col p-3 sm:p-4 md:p-6 gap-2 md:gap-3 overflow-x-auto md:overflow-x-visible md:overflow-y-auto flex-shrink-0">
+          <h2 className="text-xs font-bold text-cyan-400 mb-1 md:mb-2 hidden md:block">分野を選択</h2>
           {MATH_CATEGORIES.map((cat) => (
             <button
               key={cat.name}
               onClick={() => setSelectedCategory(cat)}
-              className={`p-4 text-left rounded-xl transition-all duration-300 font-bold text-sm border
+              className={`p-2 sm:p-3 md:p-4 text-left rounded-xl transition-all duration-300 font-bold text-xs sm:text-sm border whitespace-nowrap md:whitespace-normal flex-shrink-0
                 ${selectedCategory?.name === cat.name
                   ? 'bg-cyan-500/20 text-white border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.2)]'
                   : 'bg-transparent border-transparent text-cyan-700 hover:text-cyan-400 hover:bg-slate-900/40'

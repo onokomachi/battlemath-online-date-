@@ -21,7 +21,7 @@ const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
   const expPercentage = (playerExp / expForNextLevel) * 100;
 
   return (
-    <div className="absolute top-6 left-6 w-80 hud-panel rounded-xl p-5 shadow-2xl border-l-4 border-l-cyan-500">
+    <div className="absolute top-4 left-4 sm:top-6 sm:left-6 w-64 sm:w-72 md:w-80 hud-panel rounded-xl p-3 sm:p-5 shadow-2xl border-l-4 border-l-cyan-500 z-10">
       <div className="corner-accent rt" />
       <div className="corner-accent rb" />
       {/* User info */}
@@ -93,7 +93,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
       />
 
       {/* Top-right buttons: RANKING / QUEST / CLASS */}
-      <div className="absolute top-6 right-6 flex flex-col gap-2 items-end">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex flex-col gap-2 items-end z-10">
         {onOpenRanking && (
           <button
             onClick={onOpenRanking}
@@ -112,9 +112,9 @@ const MainMenu: React.FC<MainMenuProps> = ({
         )}
       </div>
 
-      <div className="text-center mb-16 relative">
+      <div className="text-center mb-8 md:mb-16 relative">
         <div className="absolute -inset-20 bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
-        <h1 className="text-7xl md:text-9xl font-black text-hologram mb-4 tracking-[0.2em]">
+        <h1 className="text-4xl sm:text-7xl md:text-9xl font-black text-hologram mb-4 tracking-[0.1em] sm:tracking-[0.2em]">
           BATTLE-MATH
         </h1>
         <div className="flex items-center justify-center gap-6">
@@ -126,7 +126,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 w-full max-w-5xl px-6">
+      <div className="flex flex-col md:flex-row gap-3 sm:gap-4 md:gap-6 w-full max-w-5xl px-4 sm:px-6">
         {[
           { mode: 'deck_building' as GameState, label: 'バトル', desc: 'デッキを組んでCPUやプレイヤーと対戦', icon: '⚔' },
           { mode: 'practice_mode' as GameState, label: '練習', desc: '分野別に問題を解いて実力アップ', icon: '📖' },
@@ -135,7 +135,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
           <button
             key={item.mode}
             onClick={() => onSelectMode(item.mode)}
-            className="flex-1 btn-tactical p-10 rounded-2xl flex flex-col items-center gap-3 group relative overflow-hidden"
+            className="flex-1 btn-tactical p-6 sm:p-8 md:p-10 rounded-2xl flex flex-col items-center gap-2 sm:gap-3 group relative overflow-hidden"
             style={{ animationDelay: `${i * 150}ms` }}
           >
             <div className="corner-accent lt" />
@@ -143,7 +143,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
             <div className="absolute -right-4 -bottom-4 text-6xl opacity-[0.08] group-hover:opacity-[0.15] group-hover:scale-125 transition-all duration-500">
               {item.icon}
             </div>
-            <span className="text-3xl font-bold group-hover:text-cyan-300 transition-colors tracking-wide">
+            <span className="text-xl sm:text-2xl md:text-3xl font-bold group-hover:text-cyan-300 transition-colors tracking-wide">
               {item.label}
             </span>
             <span className="text-xs text-blue-300 font-bold opacity-70">
