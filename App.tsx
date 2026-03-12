@@ -21,7 +21,7 @@ import {
   runTransaction, where, orderBy, limit, Timestamp, deleteDoc
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
-import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode, ClassInfo, BadgeDef, StudentProfile } from './types';
+import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode, BadgeDef, StudentProfile } from './types';
 import {
   CARD_DEFINITIONS, HAND_SIZE, DECK_SIZE,
   INITIAL_HP, calcDamage, ADMIN_EMAILS, GAMEMASTER_PASSWORD,
@@ -39,7 +39,6 @@ import Matchmaking from './components/Matchmaking';
 import RankingBoard from './components/RankingBoard';
 import GameMaster from './components/GameMaster';
 import QuestPanel from './components/QuestPanel';
-import ClassPanel from './components/ClassPanel';
 import BadgeNotification from './components/BadgeNotification';
 
 // ============================
@@ -167,11 +166,8 @@ const App: React.FC = () => {
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
   const [pendingBadge, setPendingBadge] = useState<BadgeDef | null>(null);
   const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0);
-  // エビデンスB: クラスチーム × オキシトシン系（Zak 2012）
-  const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   // パネル表示
   const [showQuestPanel, setShowQuestPanel] = useState(false);
-  const [showClassPanel, setShowClassPanel] = useState(false);
   // クエスト進捗 (localStorage管理でFirestoreクォータ節約)
   const [dailyQuestProgress, setDailyQuestProgress] = useState<Record<string, number>>({});
   const [dailyQuestDone, setDailyQuestDone] = useState<Set<string>>(new Set());
@@ -179,7 +175,6 @@ const App: React.FC = () => {
   const [weeklyQuestDone, setWeeklyQuestDone] = useState<Set<string>>(new Set());
   // セッション蓄積 refs (書き込み最小化)
   const sessionCorrectRef = useRef(0);
-  const classScoreAccumRef = useRef(0);
 
   // Sync refs
   useEffect(() => { isHostRef.current = isHost; }, [isHost]);
@@ -247,13 +242,6 @@ const App: React.FC = () => {
               await updateDoc(ref, { loginStreak: newStreak, lastLoginDate: today }).catch(() => {});
             }
             setLoginStreak(newStreak);
-            // クラス情報読み込み
-            if (d.classId && db) {
-              try {
-                const classSnap = await getDoc(doc(db, 'classes', d.classId));
-                if (classSnap.exists()) setClassInfo(classSnap.data() as ClassInfo);
-              } catch {}
-            }
           } else {
             // First login: initialize user doc
             await setDoc(ref, {
@@ -397,7 +385,6 @@ const App: React.FC = () => {
       setWrongAnswerText(null);
       // 累積カウンター
       sessionCorrectRef.current += 1;
-      classScoreAccumRef.current += 1;
       setTotalCorrectAnswers(prev => {
         const next = prev + 1;
         if (next === 1) earnBadge('first_correct');
@@ -435,83 +422,7 @@ const App: React.FC = () => {
     if (Object.keys(updates).length > 0) {
       await updateDoc(doc(db, 'users', user.uid), updates).catch(() => {});
     }
-    // クラス週間スコア蓄積分をフラッシュ
-    if (classInfo && classScoreAccumRef.current > 0) {
-      const weekStart = getWeekStart();
-      const classRef = doc(db, 'classes', classInfo.classId);
-      const classSnap = await getDoc(classRef).catch(() => null);
-      if (classSnap?.exists()) {
-        const data = classSnap.data();
-        // 週が変わっていればリセット
-        if (data.weekStart !== weekStart) {
-          await updateDoc(classRef, {
-            weeklyScore: classScoreAccumRef.current,
-            weekStart,
-          }).catch(() => {});
-        } else {
-          await updateDoc(classRef, {
-            weeklyScore: increment(classScoreAccumRef.current),
-          }).catch(() => {});
-        }
-      }
-      classScoreAccumRef.current = 0;
-    }
-  }, [user, classInfo]);
-
-  // ============================
-  // クラス操作
-  // エビデンスB: 協力設計 × オキシトシン系（Zak 2012）
-  // ============================
-  const handleJoinClass = useCallback(async (code: string) => {
-    if (!user || !db) { alert('ログインが必要です'); return; }
-    try {
-      const classRef = doc(db, 'classes', code.toUpperCase());
-      const snap = await getDoc(classRef);
-      if (!snap.exists()) { alert('クラスコードが見つかりません'); return; }
-      const data = snap.data() as ClassInfo;
-      // 週リセットチェック
-      const weekStart = getWeekStart();
-      const updates: any = { memberCount: increment(1) };
-      if (data.weekStart !== weekStart) {
-        updates.weeklyScore = 0;
-        updates.weekStart = weekStart;
-      }
-      await updateDoc(classRef, updates);
-      await updateDoc(doc(db, 'users', user.uid), { classId: code.toUpperCase() });
-      setClassInfo({ ...data, memberCount: data.memberCount + 1 });
-    } catch (e) { console.error('Join class error:', e); alert('クラス参加に失敗しました'); }
   }, [user]);
-
-  const handleCreateClass = useCallback(async (name: string) => {
-    if (!user || !db) { alert('ログインが必要です'); return; }
-    // ランダム6文字コード生成
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const code = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    try {
-      const newClass: ClassInfo = {
-        classId: code,
-        className: name,
-        teacherName: user.displayName || 'Teacher',
-        weeklyScore: 0,
-        weekStart: getWeekStart(),
-        memberCount: 1,
-      };
-      await setDoc(doc(db, 'classes', code), newClass);
-      await updateDoc(doc(db, 'users', user.uid), { classId: code });
-      setClassInfo(newClass);
-      alert(`クラスを作成しました！\nコード: ${code}\n生徒に共有してください`);
-    } catch (e) { console.error('Create class error:', e); alert('クラス作成に失敗しました'); }
-  }, [user]);
-
-  const handleLeaveClass = useCallback(async () => {
-    if (!user || !db || !classInfo) return;
-    await flushSessionData();
-    try {
-      await updateDoc(doc(db, 'classes', classInfo.classId), { memberCount: increment(-1) });
-      await updateDoc(doc(db, 'users', user.uid), { classId: null });
-      setClassInfo(null);
-    } catch (e) { console.error('Leave class error:', e); }
-  }, [user, classInfo, flushSessionData]);
 
   // ============================
   // Auth Handlers
@@ -894,7 +805,7 @@ const App: React.FC = () => {
     if (playerCorrect) {
       let dmg = calcDamage(playerCard.difficulty);
       if (playerCard.ability?.type === 'SCORE_BOOST') dmg += (playerCard.ability.value || 1) * 2;
-      addLog(`正解！${pcCard.problem.data.question?.slice(0, 20)}... → ${dmg}ダメージ！`);
+      addLog(`正解！${(pcCard.problem.data as Record<string, unknown>).question ? String((pcCard.problem.data as Record<string, unknown>).question).slice(0, 20) : ''}... → ${dmg}ダメージ！`);
       setPcHP(prev => Math.max(0, prev - dmg));
       setPlayerScore(s => s + 1);
       return 'player_win';
@@ -1143,8 +1054,6 @@ const App: React.FC = () => {
             onOpenRanking={() => setShowRanking(true)}
             loginStreak={loginStreak}
             onOpenQuests={() => setShowQuestPanel(true)}
-            onOpenClass={() => setShowClassPanel(true)}
-            classInfo={classInfo}
           />
         );
 
@@ -1152,6 +1061,9 @@ const App: React.FC = () => {
         return (
           <PracticeMode
             onSessionComplete={pts => { setMathPoints(p => p + pts); setGameState('main_menu'); }}
+            db={db}
+            user={user}
+            studentProfile={studentProfile}
           />
         );
 
@@ -1321,15 +1233,6 @@ const App: React.FC = () => {
             weeklyProgress={weeklyQuestProgress}
             weeklyCompleted={Object.fromEntries([...weeklyQuestDone].map(id => [id, true]))}
             onClose={() => setShowQuestPanel(false)}
-          />
-        )}
-        {showClassPanel && (
-          <ClassPanel
-            classInfo={classInfo}
-            onJoinClass={handleJoinClass}
-            onCreateClass={handleCreateClass}
-            onLeaveClass={handleLeaveClass}
-            onClose={() => setShowClassPanel(false)}
           />
         )}
         {pendingBadge && (
