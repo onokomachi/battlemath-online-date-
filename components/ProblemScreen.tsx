@@ -38,17 +38,17 @@ const HintModal: React.FC<{ hint: string | string[]; onClose: () => void }> = ({
     <div className="hud-panel rounded-2xl p-8 max-w-xl w-full shadow-2xl border-cyan-400/40 animate-math-fade-in relative">
       <div className="corner-accent lt border-cyan-400"></div>
       <div className="corner-accent rb border-cyan-400"></div>
-      <h3 className="text-cyan-400 text-2xl font-black mb-4 flex items-center gap-3 font-['Cinzel_Decorative'] tracking-widest">
-        ◈ ANALYSIS_HINT
+      <h3 className="text-cyan-400 text-2xl font-bold mb-4 flex items-center gap-3">
+        💡 ヒント
       </h3>
-      <div className="text-white/90 text-lg space-y-3 font-['Inter'] leading-relaxed border-l-2 border-cyan-500/20 pl-4">
+      <div className="text-white/90 text-lg space-y-3 leading-relaxed border-l-2 border-cyan-500/30 pl-4">
         {Array.isArray(hint) ? hint.map((h, i) => <p key={i}>{h}</p>) : <p>{hint}</p>}
       </div>
       <button
         onClick={onClose}
-        className="mt-8 w-full btn-tactical py-3 rounded-lg font-black text-cyan-400 border-cyan-400/40 hover:bg-cyan-400/20 text-lg tracking-widest"
+        className="mt-8 w-full btn-tactical py-3 rounded-lg font-bold text-cyan-400 border-cyan-400/40 hover:bg-cyan-400/20 text-lg"
       >
-        DISMISS
+        閉じる
       </button>
     </div>
   </div>
@@ -73,31 +73,40 @@ const PracticeSummary: React.FC<{ stats: SessionStats, subTopic: string, onBack:
     return (
         <div className="flex flex-col items-center animate-level-up-reveal w-full max-w-2xl mx-auto">
              <div className="text-center mb-8">
-                <p className="text-cyan-500 font-black tracking-[0.5em] text-xs uppercase mb-2">Analysis_Complete</p>
-                <h2 className="text-5xl font-black font-['Cinzel_Decorative'] text-white tracking-widest">SUMMARY</h2>
+                <p className="text-cyan-400 font-bold tracking-[0.3em] text-sm mb-2">セッション完了</p>
+                <h2 className="text-5xl font-black text-white tracking-wide">結果発表</h2>
              </div>
-             
+
              <div className="hud-panel w-full rounded-2xl p-10 flex flex-col items-center shadow-2xl relative overflow-hidden">
                 <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-cyan-500/5 blur-[80px] rounded-full"></div>
-                
-                <div className="text-8xl font-black mb-8 drop-shadow-[0_0_30px_rgba(34,211,238,0.4)]">
-                    <span className={rank === 'S' ? 'text-amber-400' : rank === 'A' ? 'text-cyan-400' : 'text-slate-400'}>{rank}</span>
-                    <span className="text-xs text-white/30 uppercase tracking-widest block text-center font-sans mt-2">Evaluation_Rank</span>
+
+                <div className="text-8xl font-black mb-4 drop-shadow-[0_0_30px_rgba(34,211,238,0.4)]">
+                    <span className={rank === 'S' ? 'text-amber-400' : rank === 'A' ? 'text-cyan-400' : rank === 'B' ? 'text-blue-400' : 'text-slate-400'}>{rank}</span>
+                    <span className="text-sm text-white/50 block text-center font-bold mt-2">ランク</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 w-full font-mono mb-10 border-t border-cyan-500/10 pt-10">
+                {/* Level B: Growth Mindset (Dweck, 2006) - encourage effort over ability */}
+                <p className="text-cyan-300/70 text-sm mb-8 text-center">
+                  {rank === 'S' ? '素晴らしい！完璧な理解力です！' :
+                   rank === 'A' ? 'よくできました！この調子で頑張ろう！' :
+                   rank === 'B' ? 'いい感じ！もう少し練習すればAランクも近い！' :
+                   rank === 'C' ? '基礎は掴めています。繰り返し練習で伸びます！' :
+                   '間違いは学びのチャンス。もう一度挑戦してみよう！'}
+                </p>
+
+                <div className="grid grid-cols-2 gap-8 w-full mb-10 border-t border-cyan-500/10 pt-8">
                     <div className="text-center">
-                        <p className="text-[10px] text-cyan-800 font-black uppercase mb-1">Synchronization</p>
-                        <p className="text-3xl text-white">{stats.correct} / {stats.problemCount}</p>
+                        <p className="text-xs text-cyan-400 font-bold mb-2">正解数</p>
+                        <p className="text-3xl text-white font-bold font-mono">{stats.correct} <span className="text-lg text-cyan-600">/ {stats.problemCount}</span></p>
                     </div>
                     <div className="text-center">
-                        <p className="text-[10px] text-cyan-800 font-black uppercase mb-1">Energy_Salvage</p>
-                        <p className="text-3xl text-cyan-400">{stats.totalScore} MP</p>
+                        <p className="text-xs text-cyan-400 font-bold mb-2">獲得ポイント</p>
+                        <p className="text-3xl text-amber-400 font-bold font-mono">{stats.totalScore} <span className="text-lg text-amber-600">MP</span></p>
                     </div>
                 </div>
 
-                <button onClick={onBack} className="btn-tactical w-full py-4 rounded-xl font-black text-xl tracking-[0.3em] text-cyan-400 border-cyan-400/40">
-                    CONFIRM_AND_EXIT
+                <button onClick={onBack} className="btn-tactical w-full py-4 rounded-xl font-bold text-lg tracking-wide text-cyan-400 border-cyan-400/40">
+                    戻る
                 </button>
              </div>
         </div>
@@ -342,22 +351,26 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
            <div className="corner-accent lb border-cyan-500/40"></div>
            <div className="corner-accent rb border-cyan-500/40"></div>
 
-           <header className='flex justify-between items-center mb-8 border-b border-cyan-500/10 pb-4'>
-              <div className='flex items-center gap-4'>
-                <button onClick={() => onBack(sessionStats)} className='text-cyan-500 hover:text-white transition-all transform hover:scale-110 p-2 bg-blue-900/10 rounded-lg border border-cyan-500/20' title="前の画面へ">
-                  <BackIcon className='w-6 h-6' />
+           <header className='flex justify-between items-center mb-6 border-b border-cyan-500/10 pb-4'>
+              <div className='flex items-center gap-3'>
+                <button onClick={() => onBack(sessionStats)} className='text-cyan-400 hover:text-white transition-all p-2.5 bg-blue-900/20 rounded-lg border border-cyan-500/20' title="前の画面へ">
+                  <BackIcon className='w-5 h-5' />
                 </button>
-                <button onClick={onHome} className='text-cyan-500 hover:text-white transition-all transform hover:scale-110 p-2 bg-blue-900/10 rounded-lg border border-cyan-500/20' title="メインメニューへ">
-                  <HomeIcon className='w-6 h-6' />
+                <button onClick={onHome} className='text-cyan-400 hover:text-white transition-all p-2.5 bg-blue-900/20 rounded-lg border border-cyan-500/20' title="メインメニューへ">
+                  <HomeIcon className='w-5 h-5' />
                 </button>
                 <div>
-                  <h2 className='text-[9px] text-cyan-400 uppercase tracking-[0.4em] font-black opacity-60'>{getHierarchyLabel()}</h2>
-                  <h1 className='text-2xl font-bold font-["Cinzel_Decorative"] tracking-widest'>{subTopic}</h1>
+                  <h2 className='text-[10px] text-cyan-300 tracking-[0.2em] font-bold'>{getHierarchyLabel()}</h2>
+                  <h1 className='text-xl font-bold tracking-wide text-white'>{subTopic}</h1>
                 </div>
               </div>
               <div className='text-right'>
-                <p className='text-[8px] text-cyan-700 font-mono tracking-widest uppercase'>SYNC_NODES</p>
-                <p className='text-2xl font-bold font-mono text-cyan-300'>{currentIndex + 1} <span className="text-xs text-cyan-900">/ {problems.length}</span></p>
+                <p className='text-[10px] text-cyan-400 font-bold tracking-wide'>進捗</p>
+                <p className='text-2xl font-bold font-mono text-cyan-300'>{currentIndex + 1} <span className="text-sm text-cyan-600">/ {problems.length}</span></p>
+                {/* Progress bar - Level B: Self-Determination Theory (Deci & Ryan, 2000) - competence visualization */}
+                <div className="w-24 bg-slate-900 h-1.5 rounded-full overflow-hidden mt-1">
+                  <div className="bg-cyan-400 h-full rounded-full transition-all duration-500" style={{ width: `${((currentIndex + 1) / problems.length) * 100}%` }} />
+                </div>
               </div>
            </header>
 
@@ -439,9 +452,9 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
                   <div className='flex flex-col items-center gap-6'>
                     {!['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'intersection_guided_equation', 'simultaneous_equation'].includes(currentProblem?.type || '') && (
                         <div className='w-full max-w-lg'>
-                           <div className={`min-h-[4.5rem] p-4 bg-slate-950/60 rounded-lg border-b-2 border-cyan-500/40 flex items-center shadow-inner`}>
-                              <span className='text-xs font-mono text-cyan-800 mr-4 font-black'>RESULT_BUFFER:</span>
-                              <span className='text-3xl font-mono text-cyan-300 flex-grow font-black drop-shadow-[0_0_8px_cyan]'>{userAnswer}</span>
+                           <div className={`min-h-[4.5rem] p-4 bg-slate-950/60 rounded-xl border-2 border-cyan-500/30 flex items-center shadow-inner`}>
+                              <span className='text-sm font-bold text-cyan-400 mr-4 whitespace-nowrap'>解答:</span>
+                              <span className='text-3xl font-mono text-cyan-200 flex-grow font-bold tracking-wide' style={{ wordBreak: 'break-all' }}>{userAnswer || <span className="text-cyan-800 text-lg">キーパッドで入力...</span>}</span>
                            </div>
                         </div>
                     )}
@@ -475,12 +488,15 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
                   onShowHint={() => setIsHintVisible(true)}
                 />
                 
-                <div className="hud-panel p-4 rounded-xl font-mono text-[10px] text-cyan-500/50 space-y-2 mt-auto border-cyan-500/5">
-                   <div className="flex justify-between"><span>LINK:</span><span className="text-cyan-400">ENCRYPTED</span></div>
-                   <div className="flex justify-between"><span>SYNC:</span><span className="text-white">ACTIVE</span></div>
-                   <div className="w-full bg-slate-900 h-1 rounded-full overflow-hidden mt-2">
-                     <div className="bg-cyan-500 h-full w-[92%] animate-pulse"></div>
-                   </div>
+                {/* Session stats - Level B: Self-Determination Theory - competence feedback */}
+                <div className="hud-panel p-4 rounded-xl text-sm space-y-3 mt-auto border-cyan-500/10">
+                   <div className="flex justify-between items-center"><span className="text-cyan-500 font-bold text-xs">正解数</span><span className="text-white font-bold">{sessionStats.correct} / {sessionStats.problemCount}</span></div>
+                   <div className="flex justify-between items-center"><span className="text-cyan-500 font-bold text-xs">獲得MP</span><span className="text-amber-400 font-bold">{sessionStats.totalScore}</span></div>
+                   {sessionStats.problemCount > 0 && (
+                     <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                       <div className={`h-full rounded-full transition-all duration-500 ${(sessionStats.correct / sessionStats.problemCount) >= 0.7 ? 'bg-cyan-400' : 'bg-amber-500'}`} style={{ width: `${(sessionStats.correct / sessionStats.problemCount) * 100}%` }}></div>
+                     </div>
+                   )}
                 </div>
               </div>
            </main>

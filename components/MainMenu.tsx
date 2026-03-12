@@ -55,15 +55,15 @@ const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
       )}
       <div className="flex justify-between items-end mb-3">
         <div>
-          <span className="text-[10px] text-cyan-400 font-black tracking-widest uppercase block mb-1">
-            Authorization_Core
+          <span className="text-[10px] text-cyan-400 font-bold tracking-wide block mb-1">
+            プレイヤーレベル
           </span>
-          <span className="font-bold text-3xl font-['Cinzel_Decorative'] text-white">
-            LV. {playerLevel}
+          <span className="font-bold text-3xl text-white">
+            Lv. {playerLevel}
           </span>
         </div>
         <div className="text-right">
-          <span className="text-[9px] font-mono text-cyan-500/70 block">EXP_STREAM</span>
+          <span className="text-[9px] font-mono text-cyan-500/70 block">経験値</span>
           <span className="text-xs font-mono text-gray-300">{playerExp} / {expForNextLevel}</span>
         </div>
       </div>
@@ -144,9 +144,9 @@ const MainMenu: React.FC<MainMenuProps> = ({
 
       <div className="flex flex-col md:flex-row gap-6 w-full max-w-5xl px-6">
         {[
-          { mode: 'deck_building' as GameState, label: 'Star Duel', desc: '戦略と計算で星海を制せ', icon: 'Ω' },
-          { mode: 'practice_mode' as GameState, label: 'Academy', desc: '深宇宙の知識を解析せよ', icon: 'Δ' },
-          { mode: 'card_shop' as GameState, label: 'Nebula Market', desc: '未知の数式をサルベージ', icon: 'Ξ' },
+          { mode: 'deck_building' as GameState, label: 'バトル', desc: 'デッキを組んでCPUやプレイヤーと対戦', icon: '⚔' },
+          { mode: 'practice_mode' as GameState, label: '練習', desc: '分野別に問題を解いて実力アップ', icon: '📖' },
+          { mode: 'card_shop' as GameState, label: 'ショップ', desc: 'MPでカードパックを購入', icon: '🎴' },
         ].map((item, i) => (
           <button
             key={item.mode}
@@ -156,13 +156,13 @@ const MainMenu: React.FC<MainMenuProps> = ({
           >
             <div className="corner-accent lt" />
             <div className="corner-accent rb" />
-            <div className="absolute -right-4 -bottom-4 text-6xl font-mono opacity-[0.04] group-hover:opacity-[0.1] group-hover:scale-125 transition-all duration-500">
+            <div className="absolute -right-4 -bottom-4 text-6xl opacity-[0.08] group-hover:opacity-[0.15] group-hover:scale-125 transition-all duration-500">
               {item.icon}
             </div>
-            <span className="text-3xl font-['Cinzel_Decorative'] font-bold group-hover:text-cyan-300 transition-colors">
+            <span className="text-3xl font-bold group-hover:text-cyan-300 transition-colors tracking-wide">
               {item.label}
             </span>
-            <span className="text-[10px] text-blue-300 uppercase tracking-[0.2em] font-bold opacity-60">
+            <span className="text-xs text-blue-300 font-bold opacity-70">
               {item.desc}
             </span>
           </button>
@@ -182,9 +182,6 @@ const MainMenu: React.FC<MainMenuProps> = ({
       )}
 
       <div className="absolute bottom-10 flex flex-col items-center gap-2">
-        <div className="text-[10px] text-cyan-600 font-mono tracking-[0.4em] opacity-50 uppercase">
-          Signal_Lock: Deep_Space_Network // Buffer: Clear
-        </div>
         <div className="w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
       </div>
     </div>

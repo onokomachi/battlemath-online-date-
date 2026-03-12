@@ -37,7 +37,7 @@ const PackOpeningView: React.FC<{
   if (stage === 'presenting') {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white bg-black/90 backdrop-blur-xl animate-math-fade-in z-[100]">
-        <h2 className="text-4xl font-black text-cyan-300 mb-12 tracking-[0.2em] font-['Cinzel_Decorative'] drop-shadow-[0_0_15px_cyan]">DECRYPTING_PACK</h2>
+        <h2 className="text-4xl font-bold text-cyan-300 mb-12 tracking-wide">パック開封中...</h2>
         <div 
           className="w-56 h-80 bg-gradient-to-br from-cyan-900 to-blue-950 border-2 border-cyan-400/60 rounded-xl shadow-[0_0_50px_rgba(34,211,238,0.3)] flex items-center justify-center p-4 cursor-pointer transform hover:scale-110 transition-all duration-500 animate-pulse-slow group"
           onClick={() => setStage('revealing')}
@@ -45,14 +45,14 @@ const PackOpeningView: React.FC<{
            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.2)_0%,transparent_70%)] animate-pulse"></div>
            <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-cyan-400 group-hover:rotate-90 transition-transform duration-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
         </div>
-        <p className="mt-12 text-cyan-700 font-mono tracking-[0.3em] uppercase text-sm">Click_To_Access_Core_Data</p>
+        <p className="mt-12 text-cyan-600 text-sm font-bold">タップして開封</p>
       </div>
     );
   }
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white bg-black/90 backdrop-blur-2xl z-[100]">
-      <h2 className="text-4xl font-black text-cyan-300 mb-12 tracking-[0.3em] font-['Cinzel_Decorative']">DATA_SALVAGED</h2>
+      <h2 className="text-4xl font-bold text-cyan-300 mb-12 tracking-wide">新しいカードを入手！</h2>
       <div className="flex flex-wrap justify-center items-center gap-10 h-96">
         {pack.map((card, index) => (
           <div
@@ -75,9 +75,9 @@ const PackOpeningView: React.FC<{
       {allRevealed && (
          <button
           onClick={onFinish}
-          className="mt-16 btn-tactical px-12 py-4 rounded-xl text-xl font-black text-cyan-400 animate-level-up-reveal tracking-[0.2em]"
+          className="mt-16 btn-tactical px-12 py-4 rounded-xl text-xl font-bold text-cyan-400 animate-level-up-reveal"
         >
-          RETURN_TO_MARKET
+          ショップに戻る
         </button>
       )}
     </div>
@@ -107,13 +107,13 @@ const CardShop: React.FC<CardShopProps> = ({ mathPoints, onBuyPack, onExit }) =>
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-6 text-white font-['Inter']">
       <div className="absolute top-8 left-8 hud-panel p-5 rounded-xl border-l-4 border-cyan-500 shadow-2xl">
-        <span className="text-[10px] text-cyan-500 font-black tracking-widest uppercase block mb-1">Stellar_Credits</span>
-        <span className="text-cyan-300 text-4xl font-black font-mono drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">{mathPoints} <span className="text-sm opacity-50">MP</span></span>
+        <span className="text-xs text-cyan-400 font-bold block mb-1">所持ポイント</span>
+        <span className="text-cyan-300 text-3xl font-bold font-mono">{mathPoints.toLocaleString()} <span className="text-sm text-cyan-500/60">MP</span></span>
       </div>
 
       <header className="text-center mb-16">
-        <h1 className="text-7xl md:text-9xl font-black font-['Cinzel_Decorative'] text-hologram tracking-[0.1em] mb-4">NEBULA_MARKET</h1>
-        <p className="text-xs text-cyan-600 font-bold tracking-[0.5em] uppercase italic opacity-60">新しい数学計算モジュールを入手してください</p>
+        <h1 className="text-6xl md:text-8xl font-black text-hologram tracking-[0.1em] mb-4">カードショップ</h1>
+        <p className="text-sm text-cyan-400 font-bold opacity-70">MPを使ってカードパックを購入しよう</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 w-full max-w-7xl px-4">
@@ -140,8 +140,8 @@ const CardShop: React.FC<CardShopProps> = ({ mathPoints, onBuyPack, onExit }) =>
           </div>
         ))}
       </div>
-       <button onClick={onExit} className="mt-16 btn-tactical px-10 py-3 rounded-lg flex items-center gap-3 text-xs font-black tracking-[0.3em] opacity-70 hover:opacity-100">
-        <BackIcon className="w-4 h-4" /> DISCONNECT_TERMINAL
+       <button onClick={onExit} className="mt-16 btn-tactical px-10 py-3 rounded-lg flex items-center gap-3 text-sm font-bold opacity-70 hover:opacity-100">
+        <BackIcon className="w-4 h-4" /> メニューに戻る
       </button>
     </div>
   );

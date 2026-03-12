@@ -191,8 +191,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                 />
               )}
               <div>
-                <p className="text-xs text-cyan-400 tracking-widest uppercase font-bold">
-                  Authorization_Core
+                <p className="text-xs text-cyan-400 tracking-wide font-bold">
+                  ログイン中
                 </p>
                 <p className="text-xl font-bold text-white">{currentUser.displayName}</p>
                 <p className="text-xs text-gray-400">{currentUser.email}</p>
@@ -213,11 +213,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
             <div className="flex gap-6 text-center">
               <div className="hud-panel rounded-lg px-4 py-2">
-                <p className="text-xs text-cyan-400 tracking-widest">LEVEL</p>
-                <p className="text-2xl font-bold text-white font-['Cinzel_Decorative']">{playerLevel}</p>
+                <p className="text-xs text-cyan-400 font-bold">レベル</p>
+                <p className="text-2xl font-bold text-white">{playerLevel}</p>
               </div>
               <div className="hud-panel rounded-lg px-4 py-2">
-                <p className="text-xs text-cyan-400 tracking-widest">MATH_PTS</p>
+                <p className="text-xs text-cyan-400 font-bold">ポイント</p>
                 <p className="text-2xl font-bold text-amber-400">{mathPoints.toLocaleString()}</p>
               </div>
             </div>
@@ -226,7 +226,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
               onClick={onGuestPlay}
               className="w-full btn-tactical py-4 rounded-xl text-xl tracking-[0.3em] font-bold"
             >
-              LAUNCH GAME
+              ゲームスタート
             </button>
 
             <div className="flex gap-4 w-full">
@@ -235,14 +235,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                   onClick={onOpenGameMaster}
                   className="flex-1 py-2 rounded-lg text-sm font-bold text-red-400 border border-red-800 hover:bg-red-900/30 transition-colors tracking-widest"
                 >
-                  GAME MASTER
+                  管理者
                 </button>
               )}
               <button
                 onClick={onLogout}
                 className="flex-1 py-2 rounded-lg text-sm font-bold text-gray-400 border border-gray-700 hover:bg-gray-800 transition-colors"
               >
-                LOGOUT
+                ログアウト
               </button>
             </div>
           </div>
@@ -270,7 +270,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
             <div className="relative w-full flex items-center gap-3">
               <div className="flex-1 h-[1px] bg-gray-700" />
-              <span className="text-xs text-gray-500">OR</span>
+              <span className="text-xs text-gray-500">または</span>
               <div className="flex-1 h-[1px] bg-gray-700" />
             </div>
 
@@ -278,16 +278,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
               onClick={onGuestPlay}
               className="w-full btn-tactical py-3 rounded-xl text-sm font-bold tracking-[0.3em] opacity-80 hover:opacity-100"
             >
-              GUEST PLAY（データは保存されません）
+              ゲストプレイ（データは保存されません）
             </button>
           </div>
         )}
       </div>
 
       <div className="absolute bottom-8 flex flex-col items-center gap-2">
-        <div className="text-[10px] text-cyan-600 font-mono tracking-[0.4em] opacity-50 uppercase">
-          Signal_Lock: Online_Protocol // Auth: Firebase
-        </div>
         <div className="w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
       </div>
     </div>
