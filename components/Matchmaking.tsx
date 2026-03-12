@@ -42,9 +42,9 @@ const Matchmaking: React.FC<MatchmakingProps> = ({ rooms, onJoinRoom, onCancel, 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-hologram tracking-[0.2em]">MATCHMAKING</h2>
-            <p className="text-xs text-cyan-400 font-mono tracking-widest mt-1">
-              PVP Protocol // Online Battle
+            <h2 className="text-3xl font-bold text-hologram tracking-wide">対戦マッチング</h2>
+            <p className="text-xs text-cyan-400 font-bold mt-1">
+              オンライン対戦
             </p>
           </div>
           <button
@@ -61,7 +61,7 @@ const Matchmaking: React.FC<MatchmakingProps> = ({ rooms, onJoinRoom, onCancel, 
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping" />
               <div>
-                <p className="text-xs text-cyan-400 font-mono tracking-widest">WAITING_FOR_OPPONENT</p>
+                <p className="text-xs text-cyan-400 font-bold">対戦相手を待っています...</p>
                 <p className="text-sm text-white font-bold">ルーム: <span className="text-cyan-300 font-mono">{currentRoomId}</span></p>
               </div>
             </div>

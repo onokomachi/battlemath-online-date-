@@ -70,7 +70,7 @@ const Card: React.FC<CardProps> = ({
   // 安全に問題文を取得する
   const getCardDisplayText = () => {
     const data = card.problem?.data as any;
-    if (!data) return "DATA_MISSING";
+    if (!data) return "問題データなし";
     
     // プロパティ候補を順に探す
     const text = data.question || data.questionText || data.assumption;
@@ -130,7 +130,7 @@ const Card: React.FC<CardProps> = ({
       {isDisabled && (
          <div className="absolute inset-0 flex items-center justify-center bg-black/40 pointer-events-none">
             <div className="border border-white/20 px-3 py-1 bg-black/80 rounded-sm">
-                <span className="text-[10px] font-black tracking-[0.2em] text-white/50 uppercase">Sync_Locked</span>
+                <span className="text-[10px] font-bold text-white/50">使用不可</span>
             </div>
          </div>
       )}

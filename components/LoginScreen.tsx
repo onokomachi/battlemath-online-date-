@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User } from 'firebase/auth';
+import type { StudentProfile } from '../types';
 
 interface LoginScreenProps {
   currentUser: User | null;
@@ -9,7 +10,13 @@ interface LoginScreenProps {
   onOpenGameMaster?: () => void;
   mathPoints: number;
   playerLevel: number;
+  studentProfile: StudentProfile | null;
+  onStudentProfileSet: (profile: StudentProfile) => void;
 }
+
+const GRADES = [1, 2, 3];
+const CLASSES = Array.from({ length: 10 }, (_, i) => i + 1);
+const NUMBERS = Array.from({ length: 45 }, (_, i) => i + 1);
 
 const LoginScreen: React.FC<LoginScreenProps> = ({
   currentUser,
@@ -19,7 +26,134 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   onOpenGameMaster,
   mathPoints,
   playerLevel,
+  studentProfile,
+  onStudentProfileSet,
 }) => {
+  // ログイン済みだがプロフィール未設定の場合はプロフィール入力画面を表示
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [selectedGrade, setSelectedGrade] = useState<number>(2);
+  const [selectedClass, setSelectedClass] = useState<number>(1);
+  const [selectedNumber, setSelectedNumber] = useState<number>(1);
+
+  useEffect(() => {
+    if (currentUser && !studentProfile) {
+      setShowProfileSetup(true);
+    }
+  }, [currentUser, studentProfile]);
+
+  const handleProfileSubmit = () => {
+    const profile: StudentProfile = {
+      grade: selectedGrade,
+      classNum: selectedClass,
+      number: selectedNumber,
+      displayLabel: `${selectedGrade}年${selectedClass}組${selectedNumber}番`,
+    };
+    onStudentProfileSet(profile);
+    setShowProfileSetup(false);
+  };
+
+  // 学年・組・番号の選択UI
+  if (currentUser && (showProfileSetup || !studentProfile)) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
+        <div className="absolute inset-0 bg-gradient-radial from-cyan-900/20 via-transparent to-transparent pointer-events-none" />
+
+        <div className="text-center mb-10 relative">
+          <h1 className="text-4xl md:text-5xl font-black text-hologram mb-2 tracking-[0.15em]">
+            STUDENT ID
+          </h1>
+          <p className="text-xs text-cyan-400 tracking-[0.3em] uppercase">
+            学年・組・番号を入力してください
+          </p>
+        </div>
+
+        <div className="w-full max-w-lg hud-panel rounded-2xl p-8 shadow-2xl space-y-6">
+          {/* 学年 */}
+          <div>
+            <label className="block text-xs text-cyan-400 tracking-widest uppercase font-bold mb-3">
+              学年 (Grade)
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {GRADES.map(g => (
+                <button
+                  key={g}
+                  onClick={() => setSelectedGrade(g)}
+                  className={`py-4 rounded-xl text-2xl font-bold transition-all ${
+                    selectedGrade === g
+                      ? 'bg-cyan-600 text-white shadow-[0_0_20px_rgba(0,200,255,0.4)] scale-105'
+                      : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-cyan-600 hover:text-white'
+                  }`}
+                >
+                  {g}年
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 組 */}
+          <div>
+            <label className="block text-xs text-cyan-400 tracking-widest uppercase font-bold mb-3">
+              組 (Class)
+            </label>
+            <div className="grid grid-cols-5 gap-2">
+              {CLASSES.map(c => (
+                <button
+                  key={c}
+                  onClick={() => setSelectedClass(c)}
+                  className={`py-3 rounded-lg text-lg font-bold transition-all ${
+                    selectedClass === c
+                      ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(0,200,255,0.3)] scale-105'
+                      : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-cyan-600 hover:text-white'
+                  }`}
+                >
+                  {c}組
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 出席番号 */}
+          <div>
+            <label className="block text-xs text-cyan-400 tracking-widest uppercase font-bold mb-3">
+              出席番号 (Number)
+            </label>
+            <div className="grid grid-cols-9 gap-1.5 max-h-40 overflow-y-auto pr-1">
+              {NUMBERS.map(n => (
+                <button
+                  key={n}
+                  onClick={() => setSelectedNumber(n)}
+                  className={`py-2 rounded text-sm font-bold transition-all ${
+                    selectedNumber === n
+                      ? 'bg-cyan-600 text-white shadow-[0_0_10px_rgba(0,200,255,0.3)]'
+                      : 'bg-gray-800 text-gray-500 border border-gray-700 hover:border-cyan-600 hover:text-white'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* プレビュー＆確定 */}
+          <div className="pt-4 border-t border-gray-700">
+            <div className="text-center mb-4">
+              <p className="text-xs text-gray-500 mb-1">選択中</p>
+              <p className="text-2xl font-bold text-cyan-300 tracking-widest">
+                {selectedGrade}年{selectedClass}組{selectedNumber}番
+              </p>
+            </div>
+            <button
+              onClick={handleProfileSubmit}
+              className="w-full btn-tactical py-4 rounded-xl text-xl tracking-[0.3em] font-bold"
+            >
+              決定
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
       {/* Background glow */}
@@ -57,21 +191,33 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                 />
               )}
               <div>
-                <p className="text-xs text-cyan-400 tracking-widest uppercase font-bold">
-                  Authorization_Core
+                <p className="text-xs text-cyan-400 tracking-wide font-bold">
+                  ログイン中
                 </p>
                 <p className="text-xl font-bold text-white">{currentUser.displayName}</p>
                 <p className="text-xs text-gray-400">{currentUser.email}</p>
+                {studentProfile && (
+                  <p className="text-xs text-amber-400 mt-1">
+                    {studentProfile.displayLabel}
+                    <button
+                      onClick={() => setShowProfileSetup(true)}
+                      className="ml-2 text-gray-500 hover:text-cyan-400 transition-colors"
+                      title="変更"
+                    >
+                      [変更]
+                    </button>
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="flex gap-6 text-center">
               <div className="hud-panel rounded-lg px-4 py-2">
-                <p className="text-xs text-cyan-400 tracking-widest">LEVEL</p>
-                <p className="text-2xl font-bold text-white font-['Cinzel_Decorative']">{playerLevel}</p>
+                <p className="text-xs text-cyan-400 font-bold">レベル</p>
+                <p className="text-2xl font-bold text-white">{playerLevel}</p>
               </div>
               <div className="hud-panel rounded-lg px-4 py-2">
-                <p className="text-xs text-cyan-400 tracking-widest">MATH_PTS</p>
+                <p className="text-xs text-cyan-400 font-bold">ポイント</p>
                 <p className="text-2xl font-bold text-amber-400">{mathPoints.toLocaleString()}</p>
               </div>
             </div>
@@ -80,7 +226,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
               onClick={onGuestPlay}
               className="w-full btn-tactical py-4 rounded-xl text-xl tracking-[0.3em] font-bold"
             >
-              LAUNCH GAME
+              ゲームスタート
             </button>
 
             <div className="flex gap-4 w-full">
@@ -89,14 +235,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                   onClick={onOpenGameMaster}
                   className="flex-1 py-2 rounded-lg text-sm font-bold text-red-400 border border-red-800 hover:bg-red-900/30 transition-colors tracking-widest"
                 >
-                  GAME MASTER
+                  管理者
                 </button>
               )}
               <button
                 onClick={onLogout}
                 className="flex-1 py-2 rounded-lg text-sm font-bold text-gray-400 border border-gray-700 hover:bg-gray-800 transition-colors"
               >
-                LOGOUT
+                ログアウト
               </button>
             </div>
           </div>
@@ -124,7 +270,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
             <div className="relative w-full flex items-center gap-3">
               <div className="flex-1 h-[1px] bg-gray-700" />
-              <span className="text-xs text-gray-500">OR</span>
+              <span className="text-xs text-gray-500">または</span>
               <div className="flex-1 h-[1px] bg-gray-700" />
             </div>
 
@@ -132,16 +278,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
               onClick={onGuestPlay}
               className="w-full btn-tactical py-3 rounded-xl text-sm font-bold tracking-[0.3em] opacity-80 hover:opacity-100"
             >
-              GUEST PLAY（データは保存されません）
+              ゲストプレイ（データは保存されません）
             </button>
           </div>
         )}
       </div>
 
       <div className="absolute bottom-8 flex flex-col items-center gap-2">
-        <div className="text-[10px] text-cyan-600 font-mono tracking-[0.4em] opacity-50 uppercase">
-          Signal_Lock: Online_Protocol // Auth: Firebase
-        </div>
         <div className="w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
       </div>
     </div>

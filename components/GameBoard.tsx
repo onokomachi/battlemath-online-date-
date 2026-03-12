@@ -117,7 +117,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
   return (
     <div className="w-full max-w-4xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl p-8 flex flex-col items-center shadow-[0_0_80px_rgba(0,0,0,0.8)] relative overflow-y-auto max-h-[90vh]">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
-      <h3 className="text-cyan-400 font-black text-xs tracking-[0.4em] uppercase mb-6 opacity-60">Intercepted_Transmission</h3>
+      <h3 className="text-cyan-400 font-bold text-sm mb-4">問題を解こう</h3>
 
       <div className="w-full">
       {problemType === 'angle_diagram' && <AngleDiagramView data={problemData} userAnswer={answer} isSubmitted={false} />}
@@ -188,9 +188,9 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
           <div className="w-full flex flex-col items-center mt-6">
              {!problemData?.options && !['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'simultaneous_equation'].includes(problemType) && (
                  <div className="w-full max-w-xl mb-4">
-                    <div className={`min-h-[4rem] p-4 border-b-4 bg-slate-950 flex items-center border-cyan-500 shadow-inner`}>
-                        <span className="text-2xl font-mono text-cyan-900 mr-4 font-black">A_STREAM:</span>
-                        <span className="text-4xl font-mono text-cyan-300 flex-grow font-black drop-shadow-[0_0_10px_cyan]" style={{ wordBreak: 'break-all' }}>{answer}</span>
+                    <div className={`min-h-[4rem] p-4 bg-slate-950 rounded-xl border-2 border-cyan-500/30 flex items-center shadow-inner`}>
+                        <span className="text-sm font-bold text-cyan-400 mr-4 whitespace-nowrap">解答:</span>
+                        <span className="text-3xl font-mono text-cyan-200 flex-grow font-bold tracking-wide" style={{ wordBreak: 'break-all' }}>{answer || <span className="text-cyan-800 text-lg">入力してください...</span>}</span>
                     </div>
                 </div>
              )}
@@ -198,9 +198,9 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
              <button
               type="submit"
               disabled={!isSolving || turnPhase !== 'solving_problem'}
-              className="w-full mt-8 bg-blue-700 text-white font-black py-4 px-10 rounded-xl hover:bg-blue-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-xl tracking-[0.4em] border border-blue-400/30 shadow-2xl"
+              className="w-full mt-6 bg-blue-600 text-white font-bold py-4 px-10 rounded-xl hover:bg-blue-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-xl border border-blue-400/30 shadow-xl"
             >
-              COMMIT_SEQUENCE
+              解答する
             </button>
           </div>
         )}
@@ -216,8 +216,8 @@ const HpBar: React.FC<{ hp: number; maxHp: number; label: string; isPlayer: bool
   return (
     <div className={`p-4 rounded-2xl border-2 flex flex-col gap-2 w-80 shadow-2xl backdrop-blur-md ${isPlayer ? 'bg-blue-900/20 border-cyan-500/40' : 'bg-slate-900/40 border-slate-700'}`}>
       <div className="flex justify-between items-center">
-        <span className={`text-[10px] font-black uppercase tracking-widest ${isPlayer ? 'text-cyan-400' : 'text-gray-500'}`}>{label}</span>
-        <span className="text-xl font-black font-mono text-white">{hp} <span className="text-sm opacity-30">/ {maxHp} HP</span></span>
+        <span className={`text-xs font-bold ${isPlayer ? 'text-cyan-400' : 'text-gray-400'}`}>{label}</span>
+        <span className="text-xl font-bold font-mono text-white">{hp} <span className="text-sm text-white/40">/ {maxHp} HP</span></span>
       </div>
       <div className="bg-slate-950/80 h-3 rounded-full overflow-hidden p-[1px] border border-white/5">
         <div
@@ -306,12 +306,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
       {/* PC Area */}
       <div className="w-full flex justify-center items-center flex-col space-y-6">
-        <HpBar hp={pcHP} maxHp={initialHP} label={`Enemy_HP  |  正解: ${pcScore}`} isPlayer={false} />
+        <HpBar hp={pcHP} maxHp={initialHP} label={`相手 HP  |  正解: ${pcScore}`} isPlayer={false} />
         <div className="flex justify-center items-center h-48 space-x-2">
           {[...Array(pcHandSize)].map((_, i) => (
             <div key={i} className="opacity-40 hover:opacity-60 transition-opacity relative group transform -translate-y-4">
               <CardBack />
-              {i === 0 && <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-slate-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Stack: {pcDeckSize}</div>}
+              {i === 0 && <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-slate-400 text-[10px] font-bold px-3 py-1 rounded-full">残り: {pcDeckSize}枚</div>}
             </div>
           ))}
         </div>
@@ -324,12 +324,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <div className="animate-math-fade-in"><Card card={playerPlayedCard} isSelected={true} /></div>
           ) : (
             <div className="w-full h-full rounded-2xl border-2 border-dashed border-cyan-500/10 flex items-center justify-center">
-                <span className="text-cyan-900 text-xs font-black uppercase tracking-[0.5em] animate-pulse">
-                    {initiative === 'player' ? 'Pick Protocol' : 'Sync Awaiting'}
+                <span className="text-cyan-700 text-xs font-bold animate-pulse">
+                    {initiative === 'player' ? 'カードを選んでください' : '待機中...'}
                 </span>
             </div>
           )}
-          {playerPlayedCard && <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-cyan-400 text-[10px] font-black tracking-widest uppercase">Deployed</div>}
+          {playerPlayedCard && <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-cyan-400 text-[10px] font-bold">あなたのカード</div>}
         </div>
 
         <div className="flex-grow flex flex-col items-center justify-center max-w-4xl z-20">
@@ -345,12 +345,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 {turnPhase === 'selecting_card' ? (
                     <div className="flex flex-col items-center gap-4">
                         <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></div>
-                        <p className="text-cyan-200 text-3xl font-black tracking-[0.3em] uppercase italic">
-                            {initiative === 'player' ? (playerPlayedCard ? 'PC SYNCING...' : 'YOUR INITIATIVE') : (pcPlayedCard ? 'SYNC YOUR MODULE' : 'PC INITIATIVE')}
+                        <p className="text-cyan-200 text-2xl font-bold">
+                            {initiative === 'player' ? (playerPlayedCard ? '相手が考え中...' : 'あなたの先攻！カードを選ぼう') : (pcPlayedCard ? '同じ難易度のカードを選ぼう' : '相手の先攻！')}
                         </p>
                         {playerMustMatchLevel && (
-                             <div className="bg-amber-500/20 border border-amber-500/40 px-4 py-1 rounded text-[10px] text-amber-300 font-black uppercase tracking-widest animate-pulse">
-                                Required Level: {pcPlayedCard.difficulty}
+                             <div className="bg-amber-500/20 border border-amber-500/40 px-4 py-1.5 rounded-lg text-sm text-amber-300 font-bold animate-pulse">
+                                難易度 {pcPlayedCard.difficulty} のカードを選んでください
                              </div>
                         )}
                     </div>
@@ -359,26 +359,27 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 )}
             </div>
           )}
-          {/* チェインカウンター - エビデンスA: 可変報酬スケジュール */}
+          {/* チェインカウンター - Level A: 可変比率報酬スケジュール (Ferster & Skinner, 1957) */}
           {chainCount >= 2 && !roundResult && (
             <div className="mt-6 text-center animate-math-fade-in">
               <div className="inline-flex items-center gap-2 bg-amber-900/40 border border-amber-500/50 rounded-full px-5 py-2 shadow-[0_0_20px_rgba(251,191,36,0.3)]">
-                <span className="text-amber-400 font-black text-sm tracking-widest">CHAIN</span>
-                <span className="text-amber-300 font-black text-2xl font-mono">×{chainCount}</span>
+                <span className="text-amber-400 font-bold text-sm">連続正解</span>
+                <span className="text-amber-300 font-bold text-2xl font-mono">×{chainCount}</span>
                 <span className="text-xl">{chainCount >= 10 ? '⚡⚡' : chainCount >= 5 ? '⚡' : '🔥'}</span>
               </div>
             </div>
           )}
-          {/* 惜しい！正解ヒント - エビデンスB: 成長マインドセット（Dweck 2006） */}
+          {/* Level B: Growth Mindset (Dweck, 2006) - corrective feedback */}
           {wrongAnswerText && (
             <div className="mt-6 text-center animate-math-fade-in">
-              <div className="inline-block bg-red-950/60 border border-red-500/40 rounded-xl px-5 py-3 shadow-lg">
-                <div className="text-red-400 text-xs font-black tracking-widest mb-1">惜しい！正解は...</div>
-                <div className="text-white font-bold text-xl font-mono">{wrongAnswerText}</div>
+              <div className="inline-block bg-red-950/60 border border-red-500/40 rounded-xl px-6 py-4 shadow-lg">
+                <div className="text-red-400 text-sm font-bold mb-2">惜しい！正解は...</div>
+                <div className="text-white font-bold text-2xl font-mono">{wrongAnswerText}</div>
+                <div className="text-red-300/50 text-xs mt-2">次は正解できるよ！</div>
               </div>
             </div>
           )}
-          {roundResult && <div className={`mt-8 text-5xl font-black text-center animate-math-fade-in tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] ${roundResult.includes('VICTORY') ? 'text-cyan-300' : 'text-red-500'}`}>{roundResult}</div>}
+          {roundResult && <div className={`mt-8 text-5xl font-black text-center animate-math-fade-in tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] ${roundResult.includes('勝利') ? 'text-cyan-300' : 'text-red-500'}`}>{roundResult}</div>}
         </div>
 
         <div className="w-56 h-80 flex items-center justify-center relative">
@@ -386,12 +387,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <div className="animate-math-fade-in"><Card card={pcPlayedCard} isSelected={true} /></div>
           ) : (
             <div className="w-full h-full rounded-2xl border-2 border-dashed border-slate-700/30 flex items-center justify-center">
-                <span className="text-slate-800 text-xs font-black uppercase tracking-[0.5em]">
-                    {initiative === 'pc' ? 'Analyzing...' : 'Standby'}
+                <span className="text-slate-700 text-xs font-bold">
+                    {initiative === 'pc' ? '選択中...' : '待機中'}
                 </span>
             </div>
           )}
-          {pcPlayedCard && <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-slate-500 text-[10px] font-black tracking-widest uppercase">Detected</div>}
+          {pcPlayedCard && <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-slate-400 text-[10px] font-bold">相手のカード</div>}
         </div>
       </div>
 
@@ -402,7 +403,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <>
               <div className="relative mr-8 group transform translate-y-4">
                 <CardBack />
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-blue-900 border border-cyan-500/40 text-cyan-200 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Memory: {playerDeckSize}</div>
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-blue-900 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold px-4 py-1.5 rounded-full shadow-lg">残り: {playerDeckSize}枚</div>
               </div>
               {playerHand.map(card => {
                 const isForbidden = playerMustMatchLevel && card.difficulty !== pcPlayedCard.difficulty;
@@ -421,7 +422,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             </>
           )}
         </div>
-        <HpBar hp={playerHP} maxHp={initialHP} label={`Player_HP  |  正解: ${playerScore}`} isPlayer={true} />
+        <HpBar hp={playerHP} maxHp={initialHP} label={`あなた HP  |  正解: ${playerScore}`} isPlayer={true} />
       </div>
 
       <DrawingCanvas isVisible={isDrawing} />

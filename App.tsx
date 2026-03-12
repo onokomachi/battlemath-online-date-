@@ -21,7 +21,7 @@ import {
   runTransaction, where, orderBy, limit, Timestamp, deleteDoc
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
-import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode, ClassInfo, BadgeDef } from './types';
+import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode, ClassInfo, BadgeDef, StudentProfile } from './types';
 import {
   CARD_DEFINITIONS, HAND_SIZE, DECK_SIZE,
   INITIAL_HP, calcDamage, ADMIN_EMAILS, GAMEMASTER_PASSWORD,
@@ -74,6 +74,14 @@ const App: React.FC = () => {
   // --- Auth ---
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // --- Student Profile (学年・組・番号) ---
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(() => {
+    try {
+      const s = localStorage.getItem('battleMathStudentProfile');
+      return s ? JSON.parse(s) : null;
+    } catch { return null; }
+  });
 
   // --- Game State ---
   const [gameState, setGameState] = useState<GameState>('login_screen');
@@ -187,7 +195,8 @@ const App: React.FC = () => {
     localStorage.setItem('battleMathPlayerLevel', JSON.stringify(playerLevel));
     localStorage.setItem('battleMathPlayerExp', JSON.stringify(playerExp));
     localStorage.setItem('battleMathUserLevelStats', JSON.stringify(userLevelStats));
-  }, [mathPoints, ownedCardIds, playerLevel, playerExp, userLevelStats]);
+    if (studentProfile) localStorage.setItem('battleMathStudentProfile', JSON.stringify(studentProfile));
+  }, [mathPoints, ownedCardIds, playerLevel, playerExp, userLevelStats, studentProfile]);
 
   const ownedCards = useMemo(
     () => CARD_DEFINITIONS.filter(c => ownedCardIds.has(c.id)),
@@ -222,6 +231,11 @@ const App: React.FC = () => {
             // ゲーミフィケーションデータ読み込み
             if (d.earnedBadgeIds) setEarnedBadgeIds(new Set(d.earnedBadgeIds));
             if (d.totalCorrectAnswers !== undefined) setTotalCorrectAnswers(d.totalCorrectAnswers);
+            // 学年・組・番号情報をFirestoreから復元 (ローカルになければ)
+            if (d.studentProfile) {
+              setStudentProfile(d.studentProfile);
+              localStorage.setItem('battleMathStudentProfile', JSON.stringify(d.studentProfile));
+            }
             // ログインストリーク計算
             const today = getTodayStr();
             const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -257,6 +271,7 @@ const App: React.FC = () => {
               totalCorrectAnswers: 0,
               loginStreak: 1,
               lastLoginDate: getTodayStr(),
+              studentProfile: studentProfile || null,
               createdAt: serverTimestamp(),
             });
             setLoginStreak(1);
@@ -532,6 +547,18 @@ const App: React.FC = () => {
     } catch (e) { console.error('Logout failed:', e); }
   };
 
+  const handleStudentProfileSet = useCallback(async (profile: StudentProfile) => {
+    setStudentProfile(profile);
+    localStorage.setItem('battleMathStudentProfile', JSON.stringify(profile));
+    if (user && db) {
+      try {
+        await updateDoc(doc(db, 'users', user.uid), {
+          studentProfile: profile,
+        });
+      } catch (e) { console.error('Student profile sync error:', e); }
+    }
+  }, [user]);
+
   const handleGuestPlay = () => {
     setGameState('main_menu');
   };
@@ -719,7 +746,7 @@ const App: React.FC = () => {
           if (isAbandoned) {
             setWinner('中断されました');
           } else {
-            setWinner(data.winnerId === 'draw' ? '引き分け' : isWinner ? 'VICTORY' : 'DEFEAT');
+            setWinner(data.winnerId === 'draw' ? '引き分け' : isWinner ? '勝利！' : '敗北...');
           }
           if (isWinner && !isAbandoned) {
             addExp(500);
@@ -910,7 +937,7 @@ const App: React.FC = () => {
     onCorrectAnswerEvent(correct, pcPlayedCard.problem.answer);
 
     const outcome = resolveHpBattle(correct, playerPlayedCard, pcPlayedCard);
-    setRoundResult(outcome === 'player_win' ? '== ROUND_VICTORY ==' : '>> ROUND_DEFEAT <<');
+    setRoundResult(outcome === 'player_win' ? 'ラウンド勝利！' : 'ラウンド敗北...');
     if (!pcAnswered) setPcAnswered(true);
     setTurnPhase('round_end');
   };
@@ -922,7 +949,7 @@ const App: React.FC = () => {
     if (turnPhase !== 'selecting_card') return;
     if (initiative === 'pc' && pcPlayedCard !== null) {
       if (card.difficulty !== pcPlayedCard.difficulty) {
-        addLog('LEVEL_MISMATCH: 相手のレベルに合わせてください');
+        addLog('同じ難易度のカードを選んでください');
         return;
       }
     }
@@ -999,7 +1026,7 @@ const App: React.FC = () => {
           addLog(`時間切れ！${dmg}ダメージを受けた`);
           setPcScore(s => s + 1);
         }
-        setRoundResult('>> ROUND_DEFEAT <<');
+        setRoundResult('ラウンド敗北...');
         setTurnPhase('round_end');
       }
       setPcAnswered(true);
@@ -1018,16 +1045,16 @@ const App: React.FC = () => {
         const isWin = pcHP <= 0 && playerHP > 0;
         const isDraw = pcHP <= 0 && playerHP <= 0;
         if (isDraw) {
-          setWinner('DRAW\nHONORABLE BATTLE');
+          setWinner('引き分け\nお互い健闘しました！');
           addExp(200);
         } else if (isWin) {
-          setWinner('VICTORY\nMISSION COMPLETE');
+          setWinner('勝利！\nおめでとう！');
           addExp(500);
           setMathPoints(p => p + 300);
           saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1) });
           earnBadge('first_pvp_win');
         } else {
-          setWinner('DEFEAT\nSYSTEM TERMINATED');
+          setWinner('敗北...\n次こそ勝とう！');
           addExp(100);
           saveUserToFirestore({ totalMatches: increment(1) });
         }
@@ -1048,7 +1075,7 @@ const App: React.FC = () => {
       }
 
       // Next round setup
-      const isPlayerDefeated = roundResult?.includes('DEFEAT');
+      const isPlayerDefeated = roundResult?.includes('敗北');
       setInitiative(isPlayerDefeated ? 'player' : 'pc');
       setPlayerHand(prev => {
         const needed = HAND_SIZE - prev.length;
@@ -1098,6 +1125,8 @@ const App: React.FC = () => {
             onOpenGameMaster={canAccessGameMaster ? handleOpenGameMaster : undefined}
             mathPoints={mathPoints}
             playerLevel={playerLevel}
+            studentProfile={studentProfile}
+            onStudentProfileSet={handleStudentProfileSet}
           />
         );
 
