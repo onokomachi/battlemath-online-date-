@@ -379,7 +379,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
               </div>
             </div>
           )}
-          {roundResult && <div className={`mt-8 text-5xl font-black text-center animate-math-fade-in tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] ${roundResult.includes('VICTORY') ? 'text-cyan-300' : 'text-red-500'}`}>{roundResult}</div>}
+          {roundResult && <div className={`mt-8 text-5xl font-black text-center animate-math-fade-in tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] ${roundResult.includes('勝利') ? 'text-cyan-300' : 'text-red-500'}`}>{roundResult}</div>}
         </div>
 
         <div className="w-56 h-80 flex items-center justify-center relative">

@@ -746,7 +746,7 @@ const App: React.FC = () => {
           if (isAbandoned) {
             setWinner('中断されました');
           } else {
-            setWinner(data.winnerId === 'draw' ? '引き分け' : isWinner ? 'VICTORY' : 'DEFEAT');
+            setWinner(data.winnerId === 'draw' ? '引き分け' : isWinner ? '勝利！' : '敗北...');
           }
           if (isWinner && !isAbandoned) {
             addExp(500);
@@ -937,7 +937,7 @@ const App: React.FC = () => {
     onCorrectAnswerEvent(correct, pcPlayedCard.problem.answer);
 
     const outcome = resolveHpBattle(correct, playerPlayedCard, pcPlayedCard);
-    setRoundResult(outcome === 'player_win' ? '== ROUND_VICTORY ==' : '>> ROUND_DEFEAT <<');
+    setRoundResult(outcome === 'player_win' ? 'ラウンド勝利！' : 'ラウンド敗北...');
     if (!pcAnswered) setPcAnswered(true);
     setTurnPhase('round_end');
   };
@@ -949,7 +949,7 @@ const App: React.FC = () => {
     if (turnPhase !== 'selecting_card') return;
     if (initiative === 'pc' && pcPlayedCard !== null) {
       if (card.difficulty !== pcPlayedCard.difficulty) {
-        addLog('LEVEL_MISMATCH: 相手のレベルに合わせてください');
+        addLog('同じ難易度のカードを選んでください');
         return;
       }
     }
@@ -1026,7 +1026,7 @@ const App: React.FC = () => {
           addLog(`時間切れ！${dmg}ダメージを受けた`);
           setPcScore(s => s + 1);
         }
-        setRoundResult('>> ROUND_DEFEAT <<');
+        setRoundResult('ラウンド敗北...');
         setTurnPhase('round_end');
       }
       setPcAnswered(true);
@@ -1045,16 +1045,16 @@ const App: React.FC = () => {
         const isWin = pcHP <= 0 && playerHP > 0;
         const isDraw = pcHP <= 0 && playerHP <= 0;
         if (isDraw) {
-          setWinner('DRAW\nHONORABLE BATTLE');
+          setWinner('引き分け\nお互い健闘しました！');
           addExp(200);
         } else if (isWin) {
-          setWinner('VICTORY\nMISSION COMPLETE');
+          setWinner('勝利！\nおめでとう！');
           addExp(500);
           setMathPoints(p => p + 300);
           saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1) });
           earnBadge('first_pvp_win');
         } else {
-          setWinner('DEFEAT\nSYSTEM TERMINATED');
+          setWinner('敗北...\n次こそ勝とう！');
           addExp(100);
           saveUserToFirestore({ totalMatches: increment(1) });
         }
@@ -1075,7 +1075,7 @@ const App: React.FC = () => {
       }
 
       // Next round setup
-      const isPlayerDefeated = roundResult?.includes('DEFEAT');
+      const isPlayerDefeated = roundResult?.includes('敗北');
       setInitiative(isPlayerDefeated ? 'player' : 'pc');
       setPlayerHand(prev => {
         const needed = HAND_SIZE - prev.length;
