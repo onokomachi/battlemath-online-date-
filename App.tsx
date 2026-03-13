@@ -47,7 +47,9 @@ import { addIncorrectToSrs, getDueCount } from './services/spacedRepetitionServi
 import { recordAttempt, getCategoryWeights } from './services/weaknessAnalysisService';
 import WeaknessPanel from './components/WeaknessPanel';
 import ItemShop from './components/ItemShop';
+import TutorialBattle from './components/TutorialBattle';
 import type { ShopItemDef } from './types';
+import { getCategoryStats } from './services/weaknessAnalysisService';
 
 // ============================
 // Helpers
@@ -200,6 +202,9 @@ const App: React.FC = () => {
   const [equippedTitle, setEquippedTitle] = useState<string | null>(() => {
     try { return localStorage.getItem('bm_equipped_title') || null; }
     catch { return null; }
+  });
+  const [tutorialDone, setTutorialDone] = useState(() => {
+    return localStorage.getItem('bm_tutorial_done') === '1';
   });
   // クエスト進捗 (localStorage管理でFirestoreクォータ節約)
   const [dailyQuestProgress, setDailyQuestProgress] = useState<Record<string, number>>({});
@@ -427,6 +432,7 @@ const App: React.FC = () => {
         const next = prev + 1;
         if (next === 5) earnBadge('chain_5');
         if (next === 10) earnBadge('chain_10');
+        if (next === 20) earnBadge('chain_20');
         return next;
       });
       setWrongAnswerText(null);
@@ -438,6 +444,7 @@ const App: React.FC = () => {
         if (next === 50) earnBadge('correct_50');
         if (next === 100) earnBadge('correct_100');
         if (next === 500) earnBadge('correct_500');
+        if (next === 1000) earnBadge('correct_1000');
         return next;
       });
       // クエスト進捗
@@ -448,6 +455,14 @@ const App: React.FC = () => {
       setWrongAnswerText(correctAnswer);
     }
   }, [earnBadge, handleQuestProgress]);
+
+  // ログインストリークバッジ
+  useEffect(() => {
+    if (loginStreak >= 3) earnBadge('streak_3');
+    if (loginStreak >= 7) earnBadge('streak_7');
+    if (loginStreak >= 14) earnBadge('streak_14');
+    if (loginStreak >= 30) earnBadge('streak_30');
+  }, [loginStreak, earnBadge]);
 
   // 正解ヒント自動クリア（3秒後）
   useEffect(() => {
@@ -518,7 +533,7 @@ const App: React.FC = () => {
   }, [user]);
 
   const handleGuestPlay = () => {
-    setGameState('main_menu');
+    setGameState(tutorialDone ? 'main_menu' : 'tutorial');
   };
 
   const handleClaimLoginBonus = useCallback(() => {
@@ -543,6 +558,30 @@ const App: React.FC = () => {
       }).catch(() => {});
     }
   }, [ownedShopItems, mathPoints, user]);
+
+  // 分野マスターバッジチェック
+  const checkCategoryMasterBadges = useCallback(() => {
+    const stats = getCategoryStats();
+    const categoryBadgeMap: Record<string, string> = {
+      '式の計算': 'master_polynomial',
+      '連立方程式': 'master_equation',
+      '図形の性質': 'master_geometry',
+      '一次関数': 'master_function',
+      '確率': 'master_probability',
+      'データの活用': 'master_data',
+    };
+    let masteredCount = 0;
+    Object.entries(categoryBadgeMap).forEach(([cat, badgeId]) => {
+      const s = stats[cat];
+      if (s && s.total >= 10 && (s.correct / s.total) >= 0.85) {
+        earnBadge(badgeId);
+        masteredCount++;
+      }
+    });
+    if (masteredCount >= Object.keys(categoryBadgeMap).length) {
+      earnBadge('all_master');
+    }
+  }, [earnBadge]);
 
   const canAccessGameMaster = useMemo(() => {
     if (ADMIN_EMAILS.length === 0) return !!user;
@@ -936,6 +975,8 @@ const App: React.FC = () => {
         const s = prev[diff] || { avgTime: 20000, count: 0 };
         return { ...prev, [diff]: { avgTime: (s.avgTime * s.count + solveTime) / (s.count + 1), count: s.count + 1 } };
       });
+      // スピードバッジ: 3秒以内正解
+      if (solveTime < 3000) earnBadge('speed_demon');
     }
 
     // ゲーミフィケーション: チェイン・バッジ・クエスト更新
@@ -1077,7 +1118,14 @@ const App: React.FC = () => {
           addExp(500);
           setMathPoints(p => p + 300);
           saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1) });
-          earnBadge('first_pvp_win');
+          if (gameMode === 'cpu') earnBadge('first_cpu_win');
+          else earnBadge('first_pvp_win');
+          // 完全勝利バッジ: HP満タン
+          if (playerHP >= INITIAL_HP) earnBadge('perfect_battle');
+          // 逆転勝利バッジ: HP5以下から勝利
+          if (playerHP <= 5) earnBadge('comeback');
+          // 分野マスターバッジチェック
+          checkCategoryMasterBadges();
         } else {
           setWinner('敗北...\n次こそ勝とう！');
           addExp(100);
@@ -1326,6 +1374,23 @@ const App: React.FC = () => {
               </button>
             </div>
           </div>
+        );
+
+      case 'tutorial':
+        return (
+          <TutorialBattle
+            onComplete={() => {
+              setTutorialDone(true);
+              localStorage.setItem('bm_tutorial_done', '1');
+              earnBadge('tutorial_clear');
+              setGameState('main_menu');
+            }}
+            onSkip={() => {
+              setTutorialDone(true);
+              localStorage.setItem('bm_tutorial_done', '1');
+              setGameState('main_menu');
+            }}
+          />
         );
 
       case 'gamemaster':

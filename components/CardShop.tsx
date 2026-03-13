@@ -16,6 +16,7 @@ const PACKS = [
   { type: '図形の性質パック', cost: 1000, desc: '「角度の計算」や「三角形・四角形の証明」', main: '図形の性質' },
   { type: '一次関数パック', cost: 1000, desc: '「グラフの作成」や「直線の式の決定」', main: '一次関数' },
   { type: '確率パック', cost: 1000, desc: '「樹形図」や「サイコロの確率」など', main: '確率' },
+  { type: 'データ活用パック', cost: 1000, desc: '「四分位数」や「箱ひげ図」など', main: 'データの活用' },
 ];
 
 const PackOpeningView: React.FC<{

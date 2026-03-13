@@ -5,6 +5,7 @@ import { linearFunctionsProblems } from './data/linearFunctionsProblems';
 import { polynomialProblems } from './data/polynomialProblems';
 import { probabilityProblems } from './data/probabilityProblems';
 import { simultaneousEquationsProblems } from './data/simultaneousEquations';
+import { dataAnalysisProblems } from './data/dataAnalysisProblems';
 
 export const MAX_SCORE = 5;
 export const DECK_SIZE = 20;
@@ -129,6 +130,19 @@ export const MATH_CATEGORIES: Category[] = [
                 subtopics: ["樹形図に表す", "樹形図に表す(標)", "区別できない時"]
             }
         ]
+    },
+    {
+        name: "データの活用",
+        groups: [
+            {
+                name: "四分位数と箱ひげ図",
+                subtopics: ["四分位数(基)", "四分位範囲(基)", "箱ひげ図の読み取り(基)", "箱ひげ図の読み取り(標)"]
+            },
+            {
+                name: "データの分析",
+                subtopics: ["度数分布表(基)", "ヒストグラム(基)", "平均値・中央値(基)", "代表値の比較(標)"]
+            }
+        ]
     }
 ];
 
@@ -165,6 +179,11 @@ export const difficultyMap: Record<string, number> = {
     "サイコロ1個の確率(標)": 3, "カード1枚の確率(標)": 3,
     "サイコロ2個の確率(標)": 4, "区別できない時": 4,
     "サイコロ2個の確率(応)": 5,
+
+    // --- データの活用 ---
+    "四分位数(基)": 2, "四分位範囲(基)": 2, "度数分布表(基)": 2, "ヒストグラム(基)": 2,
+    "平均値・中央値(基)": 1, "箱ひげ図の読み取り(基)": 3,
+    "箱ひげ図の読み取り(標)": 4, "代表値の比較(標)": 4,
 };
 
 const getDifficulty = (category: string): number => {
@@ -185,6 +204,7 @@ const assignAbility = (card: ProblemCard): Ability | undefined => {
         "一次関数": ['TIME_PRESSURE', 'SCORE_BOOST'],
         "連立方程式": ['TIME_PRESSURE'],
         "式の計算": ['SCORE_BOOST'],
+        "データの活用": ['DEFENSIVE_STANCE', 'SCORE_BOOST'],
     };
     const possibleTypes = abilityMap[card.mainCategory];
     if (!possibleTypes) return undefined;
@@ -204,6 +224,7 @@ const processProblems = (): ProblemCard[] => {
         { mainCat: "図形の性質", problems: geometryProblems },
         { mainCat: "一次関数", problems: linearFunctionsProblems },
         { mainCat: "確率", problems: probabilityProblems },
+        { mainCat: "データの活用", problems: dataAnalysisProblems },
     ];
     for (const set of sets) {
         for (const category in set.problems) {
@@ -243,17 +264,47 @@ export const getWeekStart = (): string => {
 // エビデンスB: 達成バッジ × 自己決定理論（有能感欲求）
 // ============================
 export const BADGE_DEFS: BadgeDef[] = [
+  // --- 正解マイルストーン ---
   { id: 'first_correct', title: '初正解', description: 'はじめて問題に正解した', icon: '⭐' },
-  { id: 'first_pvp_win', title: '初勝利', description: 'はじめてPvPで勝利した', icon: '⚔️' },
   { id: 'correct_50', title: '50問達成', description: '通算50問正解した', icon: '🎯' },
   { id: 'correct_100', title: '100問達成', description: '通算100問正解した', icon: '💯' },
   { id: 'correct_500', title: '500問達成', description: '通算500問正解した', icon: '🌟' },
+  { id: 'correct_1000', title: '1000問達成', description: '通算1000問正解した', icon: '🏅' },
+  // --- PvPバトル ---
+  { id: 'first_pvp_win', title: '初勝利', description: 'はじめてPvPで勝利した', icon: '⚔️' },
+  { id: 'pvp_10wins', title: 'PvP10勝', description: 'PvPで10勝した', icon: '🏆' },
+  { id: 'pvp_50wins', title: 'PvP50勝', description: 'PvPで50勝した', icon: '🥇' },
+  { id: 'first_cpu_win', title: 'CPU撃破', description: 'はじめてCPU戦に勝利した', icon: '🤖' },
+  { id: 'perfect_battle', title: '完全勝利', description: 'HP満タンで勝利した', icon: '💎' },
+  // --- ログインストリーク ---
   { id: 'streak_3', title: '3日連続', description: '3日連続でログインした', icon: '🔥' },
   { id: 'streak_7', title: '7日連続', description: '7日連続でログインした', icon: '🔥🔥' },
+  { id: 'streak_14', title: '14日連続', description: '14日連続でログインした', icon: '🔥🔥🔥' },
   { id: 'streak_30', title: '30日連続', description: '30日連続でログインした', icon: '👑' },
+  // --- 連鎖 ---
   { id: 'chain_5', title: '5連鎖', description: '5問連続正解した', icon: '⚡' },
   { id: 'chain_10', title: '10連鎖', description: '10問連続正解した', icon: '⚡⚡' },
-  { id: 'pvp_10wins', title: 'PvP10勝', description: 'PvPで10勝した', icon: '🏆' },
+  { id: 'chain_20', title: '20連鎖', description: '20問連続正解した', icon: '⚡⚡⚡' },
+  // --- 分野マスター ---
+  { id: 'master_polynomial', title: '式の計算マスター', description: '式の計算の正答率85%以上', icon: '📐' },
+  { id: 'master_equation', title: '連立方程式マスター', description: '連立方程式の正答率85%以上', icon: '📝' },
+  { id: 'master_geometry', title: '図形マスター', description: '図形の性質の正答率85%以上', icon: '📏' },
+  { id: 'master_function', title: '一次関数マスター', description: '一次関数の正答率85%以上', icon: '📈' },
+  { id: 'master_probability', title: '確率マスター', description: '確率の正答率85%以上', icon: '🎲' },
+  { id: 'master_data', title: 'データ活用マスター', description: 'データの活用の正答率85%以上', icon: '📊' },
+  { id: 'all_master', title: '全分野制覇', description: '全分野の正答率85%以上', icon: '🎓' },
+  // --- コレクション ---
+  { id: 'deck_full', title: 'フルデッキ', description: 'カードを50枚以上所持', icon: '🃏' },
+  { id: 'shop_first', title: '初めての買い物', description: 'ショップで初購入', icon: '🛒' },
+  { id: 'title_collector', title: '称号コレクター', description: '称号を3つ以上購入', icon: '🏷️' },
+  // --- クエスト ---
+  { id: 'daily_complete', title: 'デイリー完遂', description: '全デイリークエストを達成', icon: '📋' },
+  { id: 'weekly_complete', title: 'ウィークリー完遂', description: '全ウィークリークエストを達成', icon: '📅' },
+  // --- チュートリアル ---
+  { id: 'tutorial_clear', title: 'チュートリアル完了', description: 'チュートリアルバトルをクリア', icon: '🎮' },
+  // --- スペシャル ---
+  { id: 'speed_demon', title: 'スピードデーモン', description: '3秒以内に正解した', icon: '⏱️' },
+  { id: 'comeback', title: '逆転勝利', description: 'HP5以下から勝利した', icon: '🔄' },
 ];
 
 // ============================
