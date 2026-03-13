@@ -306,6 +306,8 @@ interface GameBoardProps {
   /** エビデンスA: 精緻化フィードバック (Hattie & Timperley 2007, ES=0.73) */
   playerWrongAnswer?: string | null;
   wrongCategory?: string | null;
+  /** レベル不一致で応戦中 */
+  mismatchRound?: boolean;
 }
 
 const ScoreDisplay: React.FC<{ score: number; label: string; maxScore: number; isPlayer: boolean }> = ({ score, label, maxScore, isPlayer }) => (
@@ -347,11 +349,16 @@ const GameBoard: React.FC<GameBoardProps> = ({
   wrongAnswerText,
   playerWrongAnswer,
   wrongCategory,
+  mismatchRound = false,
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
 
   const isPlayerSecond = initiative === 'pc';
   const playerMustMatchLevel = isPlayerSecond && pcPlayedCard !== null && playerPlayedCard === null;
+  // 手札に同レベルカードがあるか（UIで禁止表示に使用）
+  const hasMatchInHand = playerMustMatchLevel && pcPlayedCard
+    ? playerHand.some(c => c.difficulty === pcPlayedCard.difficulty)
+    : false;
 
   return (
     <div className="w-full h-full flex flex-col justify-between items-center p-3 sm:p-4 md:p-6 relative overflow-hidden overflow-y-auto">
@@ -388,9 +395,16 @@ const GameBoard: React.FC<GameBoardProps> = ({
         </div>
 
         <div className="flex-grow flex flex-col items-center justify-center max-w-4xl z-20">
+          {/* レベル不一致ラウンドの時間ボーナス表示 */}
+          {mismatchRound && turnPhase === 'solving_problem' && (
+            <div className="mb-3 bg-purple-900/40 border border-purple-500/40 rounded-xl px-5 py-2 flex items-center gap-3 animate-math-fade-in">
+              <span className="text-lg">⚡</span>
+              <span className="text-purple-300 text-sm font-bold">レベル不一致応戦 — 解答時間+50%ボーナス</span>
+            </div>
+          )}
           {turnPhase === 'solving_problem' && pcPlayedCard ? (
-            <ProblemSolver 
-              problemCard={pcPlayedCard} 
+            <ProblemSolver
+              problemCard={pcPlayedCard}
               onAnswerSubmit={onAnswerSubmit}
               isSolving={turnPhase === 'solving_problem'}
               turnPhase={turnPhase}
@@ -403,9 +417,14 @@ const GameBoard: React.FC<GameBoardProps> = ({
                         <p className="text-cyan-200 text-2xl font-bold">
                             {initiative === 'player' ? (playerPlayedCard ? '相手が考え中...' : 'あなたの先攻！カードを選ぼう') : (pcPlayedCard ? '同じ難易度のカードを選ぼう' : '相手の先攻！')}
                         </p>
-                        {playerMustMatchLevel && (
+                        {playerMustMatchLevel && hasMatchInHand && (
                              <div className="bg-amber-500/20 border border-amber-500/40 px-4 py-1.5 rounded-lg text-sm text-amber-300 font-bold animate-pulse">
-                                難易度 {pcPlayedCard.difficulty} のカードを選んでください
+                                難易度 {pcPlayedCard!.difficulty} のカードを選んでください
+                             </div>
+                        )}
+                        {playerMustMatchLevel && !hasMatchInHand && (
+                             <div className="bg-purple-500/20 border border-purple-500/40 px-4 py-1.5 rounded-lg text-sm text-purple-300 font-bold animate-pulse">
+                                ⚡ 同レベルなし — 任意のカードで応戦！（時間ボーナス+50%）
                              </div>
                         )}
                     </div>
@@ -473,7 +492,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-blue-900 border border-cyan-500/40 text-cyan-200 text-[10px] font-bold px-4 py-1.5 rounded-full shadow-lg">残り: {playerDeckSize}枚</div>
               </div>
               {playerHand.map(card => {
-                const isForbidden = playerMustMatchLevel && card.difficulty !== pcPlayedCard.difficulty;
+                // 同レベルカードが手札にある場合のみ、不一致カードを禁止
+                const isForbidden = playerMustMatchLevel && hasMatchInHand && card.difficulty !== pcPlayedCard!.difficulty;
                 return (
                   <Card
                     key={card.id}

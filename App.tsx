@@ -158,6 +158,7 @@ const App: React.FC = () => {
   const [playerAnswered, setPlayerAnswered] = useState(false);
   const [pcAnswered, setPcAnswered] = useState(false);
   const [roundStartTime, setRoundStartTime] = useState(0);
+  const [mismatchRound, setMismatchRound] = useState(false);
 
   // --- PvP State ---
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
@@ -692,6 +693,7 @@ const App: React.FC = () => {
     setWinner(null);
     setPlayerPlayedCard(null);
     setPcPlayedCard(null);
+    setMismatchRound(false);
     setTurnPhase('selecting_card');
   }, []);
 
@@ -1011,15 +1013,35 @@ const App: React.FC = () => {
   // ============================
   // Card Selection
   // ============================
+  // 手札+デッキに同レベルカードがあるか判定
+  const hasMatchingCard = useCallback((targetDiff: number): boolean => {
+    return playerHand.some(c => c.difficulty === targetDiff) ||
+           playerDeck.some(c => c.difficulty === targetDiff);
+  }, [playerHand, playerDeck]);
+
   const handleCardClickInHand = (card: ProblemCard) => {
     if (turnPhase !== 'selecting_card') return;
+
+    // PC先攻時: 同レベルマッチング制約
     if (initiative === 'pc' && pcPlayedCard !== null) {
-      if (card.difficulty !== pcPlayedCard.difficulty) {
+      const canMatch = hasMatchingCard(pcPlayedCard.difficulty);
+      if (canMatch && card.difficulty !== pcPlayedCard.difficulty) {
+        // 同レベルカードが存在するなら、それを選ぶよう促す
         addLog('同じ難易度のカードを選んでください');
         return;
       }
+      // 同レベルカードが無い場合 → 任意カードで応戦OK（mismatch round）
     }
+
     if (selectedCardId === card.id) {
+      // 難易度不一致ラウンド判定
+      const isMismatch = initiative === 'pc' && pcPlayedCard !== null &&
+                          card.difficulty !== pcPlayedCard.difficulty;
+      setMismatchRound(isMismatch);
+      if (isMismatch) {
+        addLog(`⚡ レベル不一致で応戦！ 解答時間ボーナス獲得（+50%）`);
+      }
+
       setPlayerPlayedCard(card);
       setPlayerHand(prev => prev.filter(c => c.id !== card.id));
       if (initiative === 'player') {
@@ -1060,11 +1082,15 @@ const App: React.FC = () => {
       addLog(`PC: レベル${pcCard.difficulty} の問題を出題`);
       const hasMatch = playerHand.some(c => c.difficulty === pcCard.difficulty);
       if (!hasMatch) {
+        // まずデッキから同レベルカードを自動補充
         const res = handleAutoDraw(playerHand, playerDeck, pcCard.difficulty);
         if (res.success) {
           addLog('カードを自動補充しました');
           setPlayerHand(res.newHand);
           setPlayerDeck(res.newDeck);
+        } else {
+          // 手札にもデッキにも同レベルがない → 任意カードで応戦可能
+          addLog('⚠ 同レベルカードがありません — 手持ちのカードで応戦しましょう！');
         }
       }
     }, 1500);
@@ -1081,6 +1107,8 @@ const App: React.FC = () => {
     const stats = userLevelStats[diff] || { avgTime: diff * 12000, count: 0 };
     const baseTime = stats.count > 2 ? stats.avgTime : diff * 12000;
     let finalTime = baseTime * 1.25;
+    // レベル不一致ラウンド: 解答時間+50%ボーナス
+    if (mismatchRound) finalTime *= 1.5;
     if (pcPlayedCard.ability?.type === 'TIME_PRESSURE') finalTime -= (pcPlayedCard.ability.value || 3) * 1000;
     const solveTime = Math.max(3000, Math.min(120000, finalTime));
 
@@ -1098,7 +1126,7 @@ const App: React.FC = () => {
       setPcAnswered(true);
     }, solveTime);
     return () => clearTimeout(timer);
-  }, [turnPhase, pcAnswered, playerAnswered, pcPlayedCard, playerPlayedCard, userLevelStats]);
+  }, [turnPhase, pcAnswered, playerAnswered, pcPlayedCard, playerPlayedCard, userLevelStats, mismatchRound]);
 
   // ============================
   // Round End / HP Win Check
@@ -1170,6 +1198,7 @@ const App: React.FC = () => {
       setPlayerAnswered(false);
       setPcAnswered(false);
       setSelectedCardId(null);
+      setMismatchRound(false);
       setTurnPhase('selecting_card');
     }, 3000);
     return () => clearTimeout(timer);
@@ -1329,6 +1358,7 @@ const App: React.FC = () => {
               wrongAnswerText={wrongAnswerText}
               playerWrongAnswer={playerWrongAnswer}
               wrongCategory={wrongCategory}
+              mismatchRound={mismatchRound}
             />
             {/* 相手切断通知バナー */}
             {opponentDisconnected && gameMode === 'pvp' && (
