@@ -196,6 +196,16 @@ export interface UserProfile {
   createdAt?: any;
 }
 
+/** MPシンク: 購入可能アイテム定義 */
+export interface ShopItemDef {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  icon: string;
+  type: 'title' | 'streak_shield' | 'theme';
+}
+
 export type BattleMode = 'cpu' | 'pvp';
 
 export interface Room {
@@ -268,7 +278,7 @@ export interface ProblemCard {
 }
 
 export type TurnPhase = 'selecting_card' | 'solving_problem' | 'round_end' | 'game_over' | 'waiting_for_opponent';
-export type GameState = 'login_screen' | 'main_menu' | 'deck_building' | 'in_game' | 'end' | 'practice_mode' | 'card_shop' | 'matchmaking' | 'gamemaster';
+export type GameState = 'login_screen' | 'main_menu' | 'deck_building' | 'in_game' | 'end' | 'practice_mode' | 'card_shop' | 'matchmaking' | 'gamemaster' | 'tutorial';
 export type TurnInitiative = 'player' | 'pc';
 
 // For FillInProofProblemView to connect with a virtual keypad in the future

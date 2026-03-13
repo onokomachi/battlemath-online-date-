@@ -26,6 +26,7 @@ import {
   CARD_DEFINITIONS, HAND_SIZE, DECK_SIZE,
   INITIAL_HP, calcDamage, ADMIN_EMAILS, GAMEMASTER_PASSWORD,
   BADGE_DEFS, DAILY_QUEST_DEFS, WEEKLY_QUEST_DEFS, getTodayStr, getWeekStart,
+  SHOP_ITEMS,
 } from './constants';
 import GameBoard from './components/GameBoard';
 import DeckBuilder from './components/DeckBuilder';
@@ -40,12 +41,29 @@ import RankingBoard from './components/RankingBoard';
 import GameMaster from './components/GameMaster';
 import QuestPanel from './components/QuestPanel';
 import BadgeNotification from './components/BadgeNotification';
+import LoginBonusModal, { getLoginReward } from './components/LoginBonusModal';
+import ClassBattleBoard from './components/ClassBattleBoard';
+import { addIncorrectToSrs, getDueCount } from './services/spacedRepetitionService';
+import { recordAttempt, getCategoryWeights } from './services/weaknessAnalysisService';
+import WeaknessPanel from './components/WeaknessPanel';
+import ItemShop from './components/ItemShop';
+import TutorialBattle from './components/TutorialBattle';
+import type { ShopItemDef } from './types';
+import { getCategoryStats } from './services/weaknessAnalysisService';
 
 // ============================
 // Helpers
 // ============================
-const shuffleDeck = (deck: ProblemCard[]): ProblemCard[] =>
-  [...deck].sort(() => Math.random() - 0.5);
+// エビデンスA: Fisher-Yates shuffle — 唯一の均一分布シャッフル
+// sort(() => Math.random()-0.5) は偏りがある (Raymond Chen 2007)
+const shuffleDeck = (deck: ProblemCard[]): ProblemCard[] => {
+  const arr = [...deck];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
 
 const SUPERSCRIPT_MAP: Record<string, string> = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '+': '⁺', '-': '⁻', 'n': 'ⁿ', 'm': 'ᵐ' };
 
@@ -162,12 +180,32 @@ const App: React.FC = () => {
   // エビデンスA: チェインカウンター × 可変報酬スケジュール（Skinner 1938）
   const [chainCount, setChainCount] = useState(0);
   const [wrongAnswerText, setWrongAnswerText] = useState<string | null>(null);
+  const [playerWrongAnswer, setPlayerWrongAnswer] = useState<string | null>(null);
+  const [wrongCategory, setWrongCategory] = useState<string | null>(null);
   // エビデンスB: バッジ × 自己決定理論（Deci & Ryan 1985）
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
   const [pendingBadge, setPendingBadge] = useState<BadgeDef | null>(null);
   const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0);
   // パネル表示
   const [showQuestPanel, setShowQuestPanel] = useState(false);
+  const [showLoginBonus, setShowLoginBonus] = useState(false);
+  const [loginBonusClaimed, setLoginBonusClaimed] = useState(false);
+  const [showClassBattle, setShowClassBattle] = useState(false);
+  const [showWeaknessPanel, setShowWeaknessPanel] = useState(false);
+  const [showItemShop, setShowItemShop] = useState(false);
+  const [ownedShopItems, setOwnedShopItems] = useState<Set<string>>(() => {
+    try {
+      const s = localStorage.getItem('bm_owned_shop_items');
+      return s ? new Set(JSON.parse(s)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [equippedTitle, setEquippedTitle] = useState<string | null>(() => {
+    try { return localStorage.getItem('bm_equipped_title') || null; }
+    catch { return null; }
+  });
+  const [tutorialDone, setTutorialDone] = useState(() => {
+    return localStorage.getItem('bm_tutorial_done') === '1';
+  });
   // クエスト進捗 (localStorage管理でFirestoreクォータ節約)
   const [dailyQuestProgress, setDailyQuestProgress] = useState<Record<string, number>>({});
   const [dailyQuestDone, setDailyQuestDone] = useState<Set<string>>(new Set());
@@ -191,7 +229,10 @@ const App: React.FC = () => {
     localStorage.setItem('battleMathPlayerExp', JSON.stringify(playerExp));
     localStorage.setItem('battleMathUserLevelStats', JSON.stringify(userLevelStats));
     if (studentProfile) localStorage.setItem('battleMathStudentProfile', JSON.stringify(studentProfile));
-  }, [mathPoints, ownedCardIds, playerLevel, playerExp, userLevelStats, studentProfile]);
+    localStorage.setItem('bm_owned_shop_items', JSON.stringify(Array.from(ownedShopItems)));
+    if (equippedTitle) localStorage.setItem('bm_equipped_title', equippedTitle);
+    else localStorage.removeItem('bm_equipped_title');
+  }, [mathPoints, ownedCardIds, playerLevel, playerExp, userLevelStats, studentProfile, ownedShopItems, equippedTitle]);
 
   const ownedCards = useMemo(
     () => CARD_DEFINITIONS.filter(c => ownedCardIds.has(c.id)),
@@ -240,6 +281,12 @@ const App: React.FC = () => {
             if (lastLogin !== today) {
               newStreak = lastLogin === yesterdayStr ? newStreak + 1 : 1;
               await updateDoc(ref, { loginStreak: newStreak, lastLoginDate: today }).catch(() => {});
+              // Show login bonus modal automatically on new day
+              setLoginBonusClaimed(false);
+              setTimeout(() => setShowLoginBonus(true), 800);
+            } else {
+              // Already logged in today - check if bonus was claimed
+              setLoginBonusClaimed(!!d.loginBonusClaimedDate && d.loginBonusClaimedDate === today);
             }
             setLoginStreak(newStreak);
           } else {
@@ -259,10 +306,13 @@ const App: React.FC = () => {
               totalCorrectAnswers: 0,
               loginStreak: 1,
               lastLoginDate: getTodayStr(),
+              loginBonusClaimedDate: '',
               studentProfile: studentProfile || null,
               createdAt: serverTimestamp(),
             });
             setLoginStreak(1);
+            setLoginBonusClaimed(false);
+            setTimeout(() => setShowLoginBonus(true), 800);
           }
           // クエスト進捗をlocalStorageから復元
           const dqKey = `bm_dq_${getTodayStr()}`;
@@ -319,8 +369,9 @@ const App: React.FC = () => {
     setDailyQuestProgress(prev => {
       const next = { ...prev };
       if (type === 'correct') {
-        next['dq_3'] = (next['dq_3'] || 0) + 1;
-        next['dq_10'] = (next['dq_10'] || 0) + 1;
+        next['dq_5'] = (next['dq_5'] || 0) + 1;
+        next['dq_15'] = (next['dq_15'] || 0) + 1;
+        next['dq_30'] = (next['dq_30'] || 0) + 1;
       } else if (type === 'pvp_match') {
         next['dq_pvp'] = (next['dq_pvp'] || 0) + 1;
       }
@@ -346,7 +397,8 @@ const App: React.FC = () => {
     setWeeklyQuestProgress(prev => {
       const next = { ...prev };
       if (type === 'correct') {
-        next['wq_30'] = (next['wq_30'] || 0) + 1;
+        next['wq_50'] = (next['wq_50'] || 0) + 1;
+        next['wq_100'] = (next['wq_100'] || 0) + 1;
       } else if (type === 'pvp_match') {
         next['wq_pvp3'] = (next['wq_pvp3'] || 0) + 1;
       }
@@ -380,6 +432,7 @@ const App: React.FC = () => {
         const next = prev + 1;
         if (next === 5) earnBadge('chain_5');
         if (next === 10) earnBadge('chain_10');
+        if (next === 20) earnBadge('chain_20');
         return next;
       });
       setWrongAnswerText(null);
@@ -391,6 +444,7 @@ const App: React.FC = () => {
         if (next === 50) earnBadge('correct_50');
         if (next === 100) earnBadge('correct_100');
         if (next === 500) earnBadge('correct_500');
+        if (next === 1000) earnBadge('correct_1000');
         return next;
       });
       // クエスト進捗
@@ -401,6 +455,14 @@ const App: React.FC = () => {
       setWrongAnswerText(correctAnswer);
     }
   }, [earnBadge, handleQuestProgress]);
+
+  // ログインストリークバッジ
+  useEffect(() => {
+    if (loginStreak >= 3) earnBadge('streak_3');
+    if (loginStreak >= 7) earnBadge('streak_7');
+    if (loginStreak >= 14) earnBadge('streak_14');
+    if (loginStreak >= 30) earnBadge('streak_30');
+  }, [loginStreak, earnBadge]);
 
   // 正解ヒント自動クリア（3秒後）
   useEffect(() => {
@@ -471,8 +533,55 @@ const App: React.FC = () => {
   }, [user]);
 
   const handleGuestPlay = () => {
-    setGameState('main_menu');
+    setGameState(tutorialDone ? 'main_menu' : 'tutorial');
   };
+
+  const handleClaimLoginBonus = useCallback(() => {
+    const reward = getLoginReward(loginStreak);
+    setMathPoints(p => p + reward);
+    setLoginBonusClaimed(true);
+    if (user && db) {
+      updateDoc(doc(db, 'users', user.uid), {
+        mathPoints: increment(reward),
+        loginBonusClaimedDate: getTodayStr(),
+      }).catch(() => {});
+    }
+  }, [loginStreak, user]);
+
+  const handleShopPurchase = useCallback((item: ShopItemDef) => {
+    if (ownedShopItems.has(item.id) || mathPoints < item.cost) return;
+    setMathPoints(p => p - item.cost);
+    setOwnedShopItems(prev => new Set([...prev, item.id]));
+    if (user && db) {
+      updateDoc(doc(db, 'users', user.uid), {
+        mathPoints: increment(-item.cost),
+      }).catch(() => {});
+    }
+  }, [ownedShopItems, mathPoints, user]);
+
+  // 分野マスターバッジチェック
+  const checkCategoryMasterBadges = useCallback(() => {
+    const stats = getCategoryStats();
+    const categoryBadgeMap: Record<string, string> = {
+      '式の計算': 'master_polynomial',
+      '連立方程式': 'master_equation',
+      '図形の性質': 'master_geometry',
+      '一次関数': 'master_function',
+      '確率': 'master_probability',
+      'データの活用': 'master_data',
+    };
+    let masteredCount = 0;
+    Object.entries(categoryBadgeMap).forEach(([cat, badgeId]) => {
+      const s = stats[cat];
+      if (s && s.total >= 10 && (s.correct / s.total) >= 0.85) {
+        earnBadge(badgeId);
+        masteredCount++;
+      }
+    });
+    if (masteredCount >= Object.keys(categoryBadgeMap).length) {
+      earnBadge('all_master');
+    }
+  }, [earnBadge]);
 
   const canAccessGameMaster = useMemo(() => {
     if (ADMIN_EMAILS.length === 0) return !!user;
@@ -744,9 +853,33 @@ const App: React.FC = () => {
   // ============================
   // Game Start
   // ============================
+  // ZPD重み付きデッキ構築（エビデンスA: Vygotsky 1978）
+  const buildAdaptiveCpuDeck = useCallback((): ProblemCard[] => {
+    const weights = getCategoryWeights();
+    const cards = [...CARD_DEFINITIONS];
+    // 各カードに重みを割り当て（未記録カテゴリはデフォルト2）
+    const weighted = cards.map(c => ({ card: c, weight: weights[c.category] || 2 }));
+    const totalWeight = weighted.reduce((sum, w) => sum + w.weight, 0);
+
+    // 重み付きサンプリング（復元なし）
+    const selected: ProblemCard[] = [];
+    const pool = [...weighted];
+    while (selected.length < DECK_SIZE && pool.length > 0) {
+      let roll = Math.random() * pool.reduce((s, w) => s + w.weight, 0);
+      let idx = 0;
+      for (; idx < pool.length - 1; idx++) {
+        roll -= pool[idx].weight;
+        if (roll <= 0) break;
+      }
+      selected.push(pool[idx].card);
+      pool.splice(idx, 1);
+    }
+    return selected;
+  }, []);
+
   const startGame = useCallback((playerDeckSetup: ProblemCard[], isCpu: boolean, roomData?: Room) => {
     cleanupGameSession(true);
-    const pcDeckSetup = shuffleDeck([...CARD_DEFINITIONS]).slice(0, DECK_SIZE);
+    const pcDeckSetup = isCpu ? buildAdaptiveCpuDeck() : shuffleDeck([...CARD_DEFINITIONS]).slice(0, DECK_SIZE);
     const shuffledP = shuffleDeck(playerDeckSetup);
     const shuffledC = shuffleDeck(pcDeckSetup);
     setPlayerHand(shuffledP.slice(0, HAND_SIZE));
@@ -769,7 +902,7 @@ const App: React.FC = () => {
     setInitiative(Math.random() > 0.5 ? 'player' : 'pc');
     setTurnPhase('selecting_card');
     setGameLog(['バトル開始！問題に答えてダメージを与えよう！']);
-  }, [cleanupGameSession]);
+  }, [cleanupGameSession, buildAdaptiveCpuDeck]);
 
   // ============================
   // Auto-draw helper
@@ -842,10 +975,32 @@ const App: React.FC = () => {
         const s = prev[diff] || { avgTime: 20000, count: 0 };
         return { ...prev, [diff]: { avgTime: (s.avgTime * s.count + solveTime) / (s.count + 1), count: s.count + 1 } };
       });
+      // スピードバッジ: 3秒以内正解
+      if (solveTime < 3000) earnBadge('speed_demon');
     }
 
     // ゲーミフィケーション: チェイン・バッジ・クエスト更新
     onCorrectAnswerEvent(correct, pcPlayedCard.problem.answer);
+
+    // メタ認知: カテゴリ別正答率を記録（エビデンスA: Wang et al. 1993, ES=0.69）
+    recordAttempt(pcPlayedCard.category, correct);
+
+    // 精緻化フィードバック: 不正解時にプレイヤーの回答とカテゴリを記録
+    if (!correct) {
+      setPlayerWrongAnswer(answer);
+      setWrongCategory(pcPlayedCard.category);
+      // SRS: 不正解を間隔反復キューに追加（エビデンスA: Cepeda 2006, d=0.42）
+      const qData = pcPlayedCard.problem.data as Record<string, unknown>;
+      addIncorrectToSrs(
+        pcPlayedCard.category,
+        String(qData.question || '').slice(0, 50),
+        pcPlayedCard.problem.answer,
+        pcPlayedCard.problem.type
+      );
+    } else {
+      setPlayerWrongAnswer(null);
+      setWrongCategory(null);
+    }
 
     const outcome = resolveHpBattle(correct, playerPlayedCard, pcPlayedCard);
     setRoundResult(outcome === 'player_win' ? 'ラウンド勝利！' : 'ラウンド敗北...');
@@ -963,7 +1118,14 @@ const App: React.FC = () => {
           addExp(500);
           setMathPoints(p => p + 300);
           saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1) });
-          earnBadge('first_pvp_win');
+          if (gameMode === 'cpu') earnBadge('first_cpu_win');
+          else earnBadge('first_pvp_win');
+          // 完全勝利バッジ: HP満タン
+          if (playerHP >= INITIAL_HP) earnBadge('perfect_battle');
+          // 逆転勝利バッジ: HP5以下から勝利
+          if (playerHP <= 5) earnBadge('comeback');
+          // 分野マスターバッジチェック
+          checkCategoryMasterBadges();
         } else {
           setWinner('敗北...\n次こそ勝とう！');
           addExp(100);
@@ -1054,6 +1216,18 @@ const App: React.FC = () => {
             onOpenRanking={() => setShowRanking(true)}
             loginStreak={loginStreak}
             onOpenQuests={() => setShowQuestPanel(true)}
+            onOpenLoginBonus={() => setShowLoginBonus(true)}
+            canAccessGameMaster={canAccessGameMaster}
+            onOpenGameMaster={handleOpenGameMaster}
+            dailyQuestDefs={DAILY_QUEST_DEFS}
+            dailyQuestProgress={dailyQuestProgress}
+            dailyQuestDone={dailyQuestDone}
+            onOpenClassBattle={() => setShowClassBattle(true)}
+            hasStudentProfile={!!studentProfile}
+            srsReviewCount={getDueCount()}
+            onOpenWeakness={() => setShowWeaknessPanel(true)}
+            onOpenItemShop={() => setShowItemShop(true)}
+            equippedTitleName={equippedTitle ? SHOP_ITEMS.find(i => i.id === equippedTitle)?.name || null : null}
           />
         );
 
@@ -1153,6 +1327,8 @@ const App: React.FC = () => {
               initiative={initiative}
               chainCount={chainCount}
               wrongAnswerText={wrongAnswerText}
+              playerWrongAnswer={playerWrongAnswer}
+              wrongCategory={wrongCategory}
             />
             {/* 相手切断通知バナー */}
             {opponentDisconnected && gameMode === 'pvp' && (
@@ -1200,6 +1376,23 @@ const App: React.FC = () => {
           </div>
         );
 
+      case 'tutorial':
+        return (
+          <TutorialBattle
+            onComplete={() => {
+              setTutorialDone(true);
+              localStorage.setItem('bm_tutorial_done', '1');
+              earnBadge('tutorial_clear');
+              setGameState('main_menu');
+            }}
+            onSkip={() => {
+              setTutorialDone(true);
+              localStorage.setItem('bm_tutorial_done', '1');
+              setGameState('main_menu');
+            }}
+          />
+        );
+
       case 'gamemaster':
         return db ? (
           <GameMaster db={db} onClose={() => setGameState('login_screen')} />
@@ -1239,6 +1432,36 @@ const App: React.FC = () => {
           <BadgeNotification
             badge={pendingBadge}
             onDismiss={() => setPendingBadge(null)}
+          />
+        )}
+        {showLoginBonus && (
+          <LoginBonusModal
+            loginStreak={loginStreak}
+            todayReward={getLoginReward(loginStreak)}
+            alreadyClaimed={loginBonusClaimed}
+            onClaim={handleClaimLoginBonus}
+            onClose={() => setShowLoginBonus(false)}
+          />
+        )}
+        {showClassBattle && db && (
+          <ClassBattleBoard
+            db={db}
+            onClose={() => setShowClassBattle(false)}
+            currentGrade={studentProfile?.grade}
+            currentClass={studentProfile?.classNum}
+          />
+        )}
+        {showWeaknessPanel && (
+          <WeaknessPanel onClose={() => setShowWeaknessPanel(false)} />
+        )}
+        {showItemShop && (
+          <ItemShop
+            mathPoints={mathPoints}
+            ownedItems={ownedShopItems}
+            equippedTitle={equippedTitle}
+            onPurchase={handleShopPurchase}
+            onEquipTitle={setEquippedTitle}
+            onClose={() => setShowItemShop(false)}
           />
         )}
       </div>

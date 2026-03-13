@@ -1,10 +1,11 @@
 
-import type { Problem, ProblemCard, Category, Ability, AbilityType, DailyQuestDef, BadgeDef } from './types';
+import type { Problem, ProblemCard, Category, Ability, AbilityType, DailyQuestDef, BadgeDef, ShopItemDef } from './types';
 import { geometryProblems } from './data/geometryProblems';
 import { linearFunctionsProblems } from './data/linearFunctionsProblems';
 import { polynomialProblems } from './data/polynomialProblems';
 import { probabilityProblems } from './data/probabilityProblems';
 import { simultaneousEquationsProblems } from './data/simultaneousEquations';
+import { dataAnalysisProblems } from './data/dataAnalysisProblems';
 
 export const MAX_SCORE = 5;
 export const DECK_SIZE = 20;
@@ -12,12 +13,15 @@ export const HAND_SIZE = 5;
 export const MAX_DUPLICATES = 2;
 
 // HP Battle System (aicardbattle2 integration)
-// エビデンスレベルA: Firebase Auth公式パターン + HP制カードバトル標準設計
-export const INITIAL_HP = 20;
+// エビデンスA: Testing Effect (Roediger & Butler 2011) — 想起回数が学習効果に比例
+// HP40 + 新ダメージ式 → 平均7-8ラウンド/試合（旧: 2-3ラウンド）
+export const INITIAL_HP = 40;
 
-// Damage formula: difficulty × 2 HP
-// Difficulty 1 = 2dmg, 2 = 4dmg, 3 = 6dmg, 4 = 8dmg, 5 = 10dmg
-export const calcDamage = (difficulty: number): number => difficulty * 2;
+// Damage formula: difficulty × 1.5 + 1
+// Lv1=2.5→3, Lv2=4, Lv3=5.5→6, Lv4=7, Lv5=8.5→9
+// HP40 ÷ 平均5.5dmg ≈ 7.3ラウンド（学習量2-3倍に増加）
+export const calcDamage = (difficulty: number): number =>
+  Math.round(difficulty * 1.5 + 1);
 
 // Admin settings
 export const ADMIN_EMAILS: string[] = []; // Add admin email addresses here
@@ -126,6 +130,19 @@ export const MATH_CATEGORIES: Category[] = [
                 subtopics: ["樹形図に表す", "樹形図に表す(標)", "区別できない時"]
             }
         ]
+    },
+    {
+        name: "データの活用",
+        groups: [
+            {
+                name: "四分位数と箱ひげ図",
+                subtopics: ["四分位数(基)", "四分位範囲(基)", "箱ひげ図の読み取り(基)", "箱ひげ図の読み取り(標)"]
+            },
+            {
+                name: "データの分析",
+                subtopics: ["度数分布表(基)", "ヒストグラム(基)", "平均値・中央値(基)", "代表値の比較(標)"]
+            }
+        ]
     }
 ];
 
@@ -162,6 +179,11 @@ export const difficultyMap: Record<string, number> = {
     "サイコロ1個の確率(標)": 3, "カード1枚の確率(標)": 3,
     "サイコロ2個の確率(標)": 4, "区別できない時": 4,
     "サイコロ2個の確率(応)": 5,
+
+    // --- データの活用 ---
+    "四分位数(基)": 2, "四分位範囲(基)": 2, "度数分布表(基)": 2, "ヒストグラム(基)": 2,
+    "平均値・中央値(基)": 1, "箱ひげ図の読み取り(基)": 3,
+    "箱ひげ図の読み取り(標)": 4, "代表値の比較(標)": 4,
 };
 
 const getDifficulty = (category: string): number => {
@@ -182,6 +204,7 @@ const assignAbility = (card: ProblemCard): Ability | undefined => {
         "一次関数": ['TIME_PRESSURE', 'SCORE_BOOST'],
         "連立方程式": ['TIME_PRESSURE'],
         "式の計算": ['SCORE_BOOST'],
+        "データの活用": ['DEFENSIVE_STANCE', 'SCORE_BOOST'],
     };
     const possibleTypes = abilityMap[card.mainCategory];
     if (!possibleTypes) return undefined;
@@ -201,6 +224,7 @@ const processProblems = (): ProblemCard[] => {
         { mainCat: "図形の性質", problems: geometryProblems },
         { mainCat: "一次関数", problems: linearFunctionsProblems },
         { mainCat: "確率", problems: probabilityProblems },
+        { mainCat: "データの活用", problems: dataAnalysisProblems },
     ];
     for (const set of sets) {
         for (const category in set.problems) {
@@ -240,30 +264,88 @@ export const getWeekStart = (): string => {
 // エビデンスB: 達成バッジ × 自己決定理論（有能感欲求）
 // ============================
 export const BADGE_DEFS: BadgeDef[] = [
+  // --- 正解マイルストーン ---
   { id: 'first_correct', title: '初正解', description: 'はじめて問題に正解した', icon: '⭐' },
-  { id: 'first_pvp_win', title: '初勝利', description: 'はじめてPvPで勝利した', icon: '⚔️' },
   { id: 'correct_50', title: '50問達成', description: '通算50問正解した', icon: '🎯' },
   { id: 'correct_100', title: '100問達成', description: '通算100問正解した', icon: '💯' },
   { id: 'correct_500', title: '500問達成', description: '通算500問正解した', icon: '🌟' },
+  { id: 'correct_1000', title: '1000問達成', description: '通算1000問正解した', icon: '🏅' },
+  // --- PvPバトル ---
+  { id: 'first_pvp_win', title: '初勝利', description: 'はじめてPvPで勝利した', icon: '⚔️' },
+  { id: 'pvp_10wins', title: 'PvP10勝', description: 'PvPで10勝した', icon: '🏆' },
+  { id: 'pvp_50wins', title: 'PvP50勝', description: 'PvPで50勝した', icon: '🥇' },
+  { id: 'first_cpu_win', title: 'CPU撃破', description: 'はじめてCPU戦に勝利した', icon: '🤖' },
+  { id: 'perfect_battle', title: '完全勝利', description: 'HP満タンで勝利した', icon: '💎' },
+  // --- ログインストリーク ---
   { id: 'streak_3', title: '3日連続', description: '3日連続でログインした', icon: '🔥' },
   { id: 'streak_7', title: '7日連続', description: '7日連続でログインした', icon: '🔥🔥' },
+  { id: 'streak_14', title: '14日連続', description: '14日連続でログインした', icon: '🔥🔥🔥' },
   { id: 'streak_30', title: '30日連続', description: '30日連続でログインした', icon: '👑' },
+  // --- 連鎖 ---
   { id: 'chain_5', title: '5連鎖', description: '5問連続正解した', icon: '⚡' },
   { id: 'chain_10', title: '10連鎖', description: '10問連続正解した', icon: '⚡⚡' },
-  { id: 'pvp_10wins', title: 'PvP10勝', description: 'PvPで10勝した', icon: '🏆' },
+  { id: 'chain_20', title: '20連鎖', description: '20問連続正解した', icon: '⚡⚡⚡' },
+  // --- 分野マスター ---
+  { id: 'master_polynomial', title: '式の計算マスター', description: '式の計算の正答率85%以上', icon: '📐' },
+  { id: 'master_equation', title: '連立方程式マスター', description: '連立方程式の正答率85%以上', icon: '📝' },
+  { id: 'master_geometry', title: '図形マスター', description: '図形の性質の正答率85%以上', icon: '📏' },
+  { id: 'master_function', title: '一次関数マスター', description: '一次関数の正答率85%以上', icon: '📈' },
+  { id: 'master_probability', title: '確率マスター', description: '確率の正答率85%以上', icon: '🎲' },
+  { id: 'master_data', title: 'データ活用マスター', description: 'データの活用の正答率85%以上', icon: '📊' },
+  { id: 'all_master', title: '全分野制覇', description: '全分野の正答率85%以上', icon: '🎓' },
+  // --- コレクション ---
+  { id: 'deck_full', title: 'フルデッキ', description: 'カードを50枚以上所持', icon: '🃏' },
+  { id: 'shop_first', title: '初めての買い物', description: 'ショップで初購入', icon: '🛒' },
+  { id: 'title_collector', title: '称号コレクター', description: '称号を3つ以上購入', icon: '🏷️' },
+  // --- クエスト ---
+  { id: 'daily_complete', title: 'デイリー完遂', description: '全デイリークエストを達成', icon: '📋' },
+  { id: 'weekly_complete', title: 'ウィークリー完遂', description: '全ウィークリークエストを達成', icon: '📅' },
+  // --- チュートリアル ---
+  { id: 'tutorial_clear', title: 'チュートリアル完了', description: 'チュートリアルバトルをクリア', icon: '🎮' },
+  // --- スペシャル ---
+  { id: 'speed_demon', title: 'スピードデーモン', description: '3秒以内に正解した', icon: '⏱️' },
+  { id: 'comeback', title: '逆転勝利', description: 'HP5以下から勝利した', icon: '🔄' },
 ];
 
 // ============================
 // Quest Definitions
-// エビデンスA: 目標設定理論（Locke & Latham 1990） — 3層クエスト設計
+// エビデンスA: 目標設定理論（Locke & Latham 1990, d=0.48）
+// 3層設計: Easy(確実達成) → Medium(努力で達成) → Hard(チャレンジ)
 // ============================
 export const DAILY_QUEST_DEFS: DailyQuestDef[] = [
-  { id: 'dq_3', title: '今日の3問', description: '3問正解しよう', target: 3, reward: { mp: 100, exp: 50 }, icon: '⚡' },
-  { id: 'dq_10', title: '10問突破', description: '10問正解しよう', target: 10, reward: { mp: 300, exp: 150 }, icon: '🔥' },
+  // Easy層: ほぼ全員が達成でき、毎日の起動動機になる
+  { id: 'dq_5', title: '今日の5問', description: '5問正解しよう', target: 5, reward: { mp: 150, exp: 80 }, icon: '⚡' },
+  // Medium層: 15-20分の学習を要する。目標設定理論の最適難度
+  { id: 'dq_15', title: '15問突破', description: '15問正解しよう', target: 15, reward: { mp: 400, exp: 200 }, icon: '🔥' },
+  // Hard層: 30分以上+高品質。達成感が最大のチャレンジ目標
+  { id: 'dq_30', title: '30問＆正答率80%', description: '30問正解（正答率80%以上）', target: 30, reward: { mp: 1000, exp: 500 }, icon: '💎' },
+  // PvP: 社会的動機づけ（SDT関係性欲求）
   { id: 'dq_pvp', title: 'PvP参戦', description: 'PvP対戦を1回行おう', target: 1, reward: { mp: 200, exp: 100 }, icon: '⚔️' },
 ];
 
 export const WEEKLY_QUEST_DEFS: DailyQuestDef[] = [
-  { id: 'wq_30', title: '週30問チャレンジ', description: '今週30問正解しよう', target: 30, reward: { mp: 500, exp: 300 }, icon: '🌟' },
+  { id: 'wq_50', title: '週50問チャレンジ', description: '今週50問正解しよう', target: 50, reward: { mp: 800, exp: 400 }, icon: '🌟' },
   { id: 'wq_pvp3', title: '週3回PvP', description: '今週PvPを3回行おう', target: 3, reward: { mp: 800, exp: 400 }, icon: '🏆' },
+  { id: 'wq_100', title: '週100問マスター', description: '今週100問正解しよう', target: 100, reward: { mp: 2000, exp: 1000 }, icon: '👑' },
+];
+
+/**
+ * MPシンク — 称号・ストリークシールド・テーマ
+ * エビデンスB: 仮想経済バランス（Castronova 2005）
+ *   消費先がないとインフレ → モチベーション低下
+ */
+export const SHOP_ITEMS: ShopItemDef[] = [
+  // 称号（プレイヤー名横に表示）
+  { id: 'title_beginner', name: '数学初心者', description: '最初の一歩を踏み出した証', cost: 500, icon: '🔰', type: 'title' },
+  { id: 'title_challenger', name: '挑戦者', description: '果敢に問題に挑む姿勢', cost: 1500, icon: '⚡', type: 'title' },
+  { id: 'title_strategist', name: '戦略家', description: 'デッキ構築の達人', cost: 3000, icon: '🧠', type: 'title' },
+  { id: 'title_calculator', name: '計算の鬼', description: '計算速度に定評あり', cost: 5000, icon: '🔥', type: 'title' },
+  { id: 'title_master', name: '数学マスター', description: '全分野を制覇した者', cost: 10000, icon: '👑', type: 'title' },
+  { id: 'title_legend', name: '伝説の数学者', description: '最高峰の称号', cost: 25000, icon: '🌟', type: 'title' },
+  // ストリークシールド（ログイン連続日数を1回保護）
+  { id: 'streak_shield', name: 'ストリークシールド', description: 'ログイン途切れを1回だけ防ぐ', cost: 2000, icon: '🛡️', type: 'streak_shield' },
+  // バトルテーマ
+  { id: 'theme_fire', name: '炎のテーマ', description: 'バトル画面が炎に包まれる', cost: 4000, icon: '🔴', type: 'theme' },
+  { id: 'theme_ice', name: '氷のテーマ', description: '冷徹な戦場で戦う', cost: 4000, icon: '🔵', type: 'theme' },
+  { id: 'theme_gold', name: '黄金のテーマ', description: '栄光のゴールドバトル', cost: 8000, icon: '🟡', type: 'theme' },
 ];

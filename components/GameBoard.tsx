@@ -94,6 +94,15 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
   const getOptimizedKeypadLayout = (): string[][] => {
     const type = problemCard.problem.type;
 
+    // 証明問題(穴埋め): △, ∠, A-Gなどの文字が必要
+    if (type === 'fill_in_proof') {
+      return [
+        ['A', 'B', 'C', 'D', 'E', 'F'],
+        ['G', 'H', 'M', 'N', 'O', 'P'],
+        ['△', '∠', '共通', ' ', ' ', ' '],
+      ];
+    }
+
     // Geometry angle problems
     if (['angle_diagram', 'bent_transversal_diagram', 'triangle_in_parallel_lines', 'multi_transversal_angle'].includes(type)) {
       return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '°']];
@@ -115,7 +124,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
   const problemData = problemCard.problem.data as any;
 
   return (
-    <div className="w-full max-w-4xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl p-8 flex flex-col items-center shadow-[0_0_80px_rgba(0,0,0,0.8)] relative overflow-y-auto max-h-[90vh]">
+    <div className="w-full max-w-4xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl p-4 sm:p-6 md:p-8 flex flex-col items-center shadow-[0_0_80px_rgba(0,0,0,0.8)] relative overflow-y-auto max-h-[80vh]">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
       <h3 className="text-cyan-400 font-bold text-sm mb-4">問題を解こう</h3>
 
@@ -190,7 +199,18 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
                  <div className="w-full max-w-xl mb-4">
                     <div className={`min-h-[4rem] p-4 bg-slate-950 rounded-xl border-2 border-cyan-500/30 flex items-center shadow-inner`}>
                         <span className="text-sm font-bold text-cyan-400 mr-4 whitespace-nowrap">解答:</span>
-                        <span className="text-3xl font-mono text-cyan-200 flex-grow font-bold tracking-wide" style={{ wordBreak: 'break-all' }}>{answer || <span className="text-cyan-800 text-lg">入力してください...</span>}</span>
+                        {(problemType === 'text' || !problemType) ? (
+                          <input
+                            type="text"
+                            value={answer}
+                            onChange={(e) => turnPhase === 'solving_problem' && setAnswer(e.target.value)}
+                            disabled={turnPhase !== 'solving_problem'}
+                            placeholder="ここに入力..."
+                            className="flex-grow bg-transparent text-2xl sm:text-3xl font-mono text-cyan-200 font-bold tracking-wide outline-none placeholder:text-cyan-800 placeholder:text-lg"
+                          />
+                        ) : (
+                          <span className="text-3xl font-mono text-cyan-200 flex-grow font-bold tracking-wide" style={{ wordBreak: 'break-all' }}>{answer || <span className="text-cyan-800 text-lg">入力してください...</span>}</span>
+                        )}
                     </div>
                 </div>
              )}
@@ -214,7 +234,7 @@ const HpBar: React.FC<{ hp: number; maxHp: number; label: string; isPlayer: bool
   const pct = Math.max(0, (hp / maxHp) * 100);
   const color = pct > 50 ? (isPlayer ? 'bg-cyan-400' : 'bg-red-500') : pct > 25 ? 'bg-amber-400' : 'bg-red-600';
   return (
-    <div className={`p-4 rounded-2xl border-2 flex flex-col gap-2 w-80 shadow-2xl backdrop-blur-md ${isPlayer ? 'bg-blue-900/20 border-cyan-500/40' : 'bg-slate-900/40 border-slate-700'}`}>
+    <div className={`p-3 sm:p-4 rounded-2xl border-2 flex flex-col gap-2 w-full max-w-80 shadow-2xl backdrop-blur-md ${isPlayer ? 'bg-blue-900/20 border-cyan-500/40' : 'bg-slate-900/40 border-slate-700'}`}>
       <div className="flex justify-between items-center">
         <span className={`text-xs font-bold ${isPlayer ? 'text-cyan-400' : 'text-gray-400'}`}>{label}</span>
         <span className="text-xl font-bold font-mono text-white">{hp} <span className="text-sm text-white/40">/ {maxHp} HP</span></span>
@@ -253,10 +273,13 @@ interface GameBoardProps {
   // ゲーミフィケーション拡張
   chainCount?: number;
   wrongAnswerText?: string | null;
+  /** エビデンスA: 精緻化フィードバック (Hattie & Timperley 2007, ES=0.73) */
+  playerWrongAnswer?: string | null;
+  wrongCategory?: string | null;
 }
 
 const ScoreDisplay: React.FC<{ score: number; label: string; maxScore: number; isPlayer: boolean }> = ({ score, label, maxScore, isPlayer }) => (
-  <div className={`p-5 rounded-2xl border-2 flex items-center justify-between gap-6 w-80 shadow-2xl backdrop-blur-md ${isPlayer ? 'bg-blue-900/20 border-cyan-500/40' : 'bg-slate-900/40 border-slate-700'}`}>
+  <div className={`p-3 sm:p-5 rounded-2xl border-2 flex items-center justify-between gap-4 sm:gap-6 w-full max-w-80 shadow-2xl backdrop-blur-md ${isPlayer ? 'bg-blue-900/20 border-cyan-500/40' : 'bg-slate-900/40 border-slate-700'}`}>
     <div className="flex flex-col">
       <span className={`text-[10px] font-black uppercase tracking-widest ${isPlayer ? 'text-cyan-400' : 'text-gray-500'}`}>{label}</span>
       <span className="text-3xl font-black font-mono text-white leading-none mt-1">{score} <span className="text-sm opacity-30">/ {maxScore}</span></span>
@@ -292,6 +315,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   initiative,
   chainCount = 0,
   wrongAnswerText,
+  playerWrongAnswer,
+  wrongCategory,
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -299,7 +324,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   const playerMustMatchLevel = isPlayerSecond && pcPlayedCard !== null && playerPlayedCard === null;
 
   return (
-    <div className="w-full h-full flex flex-col justify-between items-center p-6 relative overflow-hidden">
+    <div className="w-full h-full flex flex-col justify-between items-center p-3 sm:p-4 md:p-6 relative overflow-hidden overflow-y-auto">
       {/* Star Field Decorations */}
       <div className="absolute top-10 left-10 w-20 h-20 bg-blue-500/5 blur-[60px] rounded-full"></div>
       <div className="absolute bottom-20 right-20 w-32 h-32 bg-cyan-500/5 blur-[80px] rounded-full"></div>
@@ -318,8 +343,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
       </div>
 
       {/* Battle Field */}
-      <div className="w-full flex justify-center items-center h-[28rem] gap-12 relative">
-        <div className="w-56 h-80 flex items-center justify-center relative">
+      <div className="w-full flex justify-center items-center min-h-[20rem] md:min-h-[28rem] gap-4 md:gap-8 lg:gap-12 relative">
+        <div className="w-36 h-56 md:w-56 md:h-80 flex items-center justify-center relative flex-shrink-0">
           {playerPlayedCard ? (
             <div className="animate-math-fade-in"><Card card={playerPlayedCard} isSelected={true} /></div>
           ) : (
@@ -369,20 +394,32 @@ const GameBoard: React.FC<GameBoardProps> = ({
               </div>
             </div>
           )}
-          {/* Level B: Growth Mindset (Dweck, 2006) - corrective feedback */}
+          {/* エビデンスA: 精緻化フィードバック (Hattie & Timperley 2007, ES=0.73)
+              - 正解を表示するだけでなく「あなたの回答」との差分を示す
+              - カテゴリを表示して「何の分野か」を意識させる（メタ認知支援）
+              - Growth Mindset メッセージ（Dweck 2006） */}
           {wrongAnswerText && (
             <div className="mt-6 text-center animate-math-fade-in">
-              <div className="inline-block bg-red-950/60 border border-red-500/40 rounded-xl px-6 py-4 shadow-lg">
-                <div className="text-red-400 text-sm font-bold mb-2">惜しい！正解は...</div>
+              <div className="inline-block bg-red-950/60 border border-red-500/40 rounded-xl px-6 py-4 shadow-lg max-w-md">
+                {wrongCategory && (
+                  <div className="text-red-300/40 text-[10px] font-bold mb-1 tracking-wider">{wrongCategory}</div>
+                )}
+                {playerWrongAnswer && (
+                  <div className="mb-2">
+                    <span className="text-red-400/60 text-xs">あなたの回答: </span>
+                    <span className="text-red-300 font-mono text-sm line-through">{playerWrongAnswer}</span>
+                  </div>
+                )}
+                <div className="text-green-400 text-sm font-bold mb-1">正解</div>
                 <div className="text-white font-bold text-2xl font-mono">{wrongAnswerText}</div>
-                <div className="text-red-300/50 text-xs mt-2">次は正解できるよ！</div>
+                <div className="text-cyan-300/50 text-xs mt-2 italic">間違いは学びのチャンス。この問題は後で復習に出るよ！</div>
               </div>
             </div>
           )}
           {roundResult && <div className={`mt-8 text-5xl font-black text-center animate-math-fade-in tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] ${roundResult.includes('勝利') ? 'text-cyan-300' : 'text-red-500'}`}>{roundResult}</div>}
         </div>
 
-        <div className="w-56 h-80 flex items-center justify-center relative">
+        <div className="w-36 h-56 md:w-56 md:h-80 flex items-center justify-center relative flex-shrink-0">
           {pcPlayedCard ? (
             <div className="animate-math-fade-in"><Card card={pcPlayedCard} isSelected={true} /></div>
           ) : (
@@ -398,7 +435,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
       {/* Player Area */}
       <div className="w-full flex justify-center items-center flex-col space-y-6">
-       <div className="h-80 flex justify-center items-end space-x-[-3rem] pb-6" onClick={(e) => e.stopPropagation()}>
+       <div className="h-56 md:h-80 flex justify-center items-end space-x-[-2rem] md:space-x-[-3rem] pb-4 md:pb-6 overflow-x-auto" onClick={(e) => e.stopPropagation()}>
           {turnPhase === 'selecting_card' && (
             <>
               <div className="relative mr-8 group transform translate-y-4">

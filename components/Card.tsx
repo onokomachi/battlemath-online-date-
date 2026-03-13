@@ -84,7 +84,7 @@ const Card: React.FC<CardProps> = ({
   };
 
   const cardClasses = `
-    w-48 h-72 border ${styles.border} rounded-xl shadow-2xl flex flex-col justify-between p-4 transition-all duration-500 transform relative overflow-hidden group
+    w-32 h-48 sm:w-40 sm:h-60 md:w-48 md:h-72 border ${styles.border} rounded-xl shadow-2xl flex flex-col justify-between p-2 sm:p-3 md:p-4 transition-all duration-500 transform relative overflow-hidden group
     bg-slate-950/80 backdrop-blur-xl ${styles.glow}
     ${isPlayable && !isDisabled ? 'cursor-pointer' : ''}
     ${isDisabled ? 'opacity-40 saturate-0 scale-95 grayscale' : ''}
@@ -140,7 +140,7 @@ const Card: React.FC<CardProps> = ({
 
 export const CardBack: React.FC = () => {
   return (
-    <div className="w-48 h-72 bg-slate-950 border border-blue-500/40 rounded-xl shadow-2xl flex items-center justify-center p-2 overflow-hidden relative group">
+    <div className="w-32 h-48 sm:w-40 sm:h-60 md:w-48 md:h-72 bg-slate-950 border border-blue-500/40 rounded-xl shadow-2xl flex items-center justify-center p-2 overflow-hidden relative group">
        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(30,58,138,0.3)_0%,transparent_70%)]"></div>
        <div className="w-full h-full border border-blue-400/20 rounded-lg flex items-center justify-center bg-slate-900/40 relative overflow-hidden">
             <div className="text-center z-10">
