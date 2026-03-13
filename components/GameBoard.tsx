@@ -13,6 +13,13 @@ import GraphingWithTableProblemView from './GraphingWithTableProblemView';
 import GraphToEquationProblemView from './GraphToEquationProblemView';
 import GraphWithDomainProblemView from './GraphWithDomainProblemView';
 import GraphProblemView from './GraphProblemView';
+import GuidedEquationProblemView from './GuidedEquationProblemView';
+import IntersectionGuidedEquationView from './IntersectionGuidedEquationView';
+import MultiTransversalAngleDiagramView from './MultiTransversalAngleDiagramView';
+import VerticalCalculationProblemView from './VerticalCalculationProblemView';
+import ProofProblemView from './ProofProblemView';
+import SimultaneousEquationProblemView from './SimultaneousEquationProblemView';
+import TriangleInParallelLinesView from './TriangleInParallelLinesView';
 import Keypad from './Keypad';
 
 
@@ -36,7 +43,8 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
 
   const handleSubmit = useCallback((e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (answer.trim() || problemCard.problem.type === 'graphing') {
+    const autoAnswerTypes = ['graphing', 'graphing_with_table', 'proof', 'guided_equation', 'intersection_guided_equation', 'simultaneous_equation', 'vertical_calculation', 'fill_in_proof'];
+    if (answer.trim() || autoAnswerTypes.includes(problemCard.problem.type)) {
       onAnswerSubmit(answer.trim());
     }
   }, [answer, onAnswerSubmit, problemCard]);
@@ -45,7 +53,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
     if (!isSolving || turnPhase !== 'solving_problem') return;
     
     const problemType = problemCard?.problem?.type;
-    const interactiveTypes = ['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'simultaneous_equation'];
+    const interactiveTypes = ['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'simultaneous_equation', 'intersection_guided_equation', 'proof'];
 
     if (interactiveTypes.includes(problemType)) {
        problemViewRef.current?.handleKeyClick(key);
@@ -95,12 +103,27 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
     const type = problemCard.problem.type;
 
     // 証明問題(穴埋め): △, ∠, A-Gなどの文字が必要
-    if (type === 'fill_in_proof') {
+    if (type === 'fill_in_proof' || type === 'proof') {
       return [
         ['A', 'B', 'C', 'D', 'E', 'F'],
         ['G', 'H', 'M', 'N', 'O', 'P'],
         ['△', '∠', '共通', ' ', ' ', ' '],
       ];
+    }
+
+    // 連立方程式: 数字とx,y
+    if (type === 'simultaneous_equation' || type === 'guided_equation' || type === 'intersection_guided_equation') {
+      return [
+        ['7', '8', '9', 'x', 'y'],
+        ['4', '5', '6', '+', '-'],
+        ['1', '2', '3', '/', '='],
+        ['0', '.', '(', ')', ' '],
+      ];
+    }
+
+    // 縦書き計算
+    if (type === 'vertical_calculation') {
+      return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '-', '.']];
     }
 
     // Geometry angle problems
@@ -136,7 +159,14 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
       {problemType === 'graphing_with_table' && <GraphingWithTableProblemView data={problemData} onAnswerChange={setAnswer} ref={problemViewRef} />}
       {problemType === 'graph_to_equation' && <GraphToEquationProblemView data={problemData} />}
       {problemType === 'graph_with_domain' && <GraphWithDomainProblemView data={problemData} isVisualHintVisible={false} />}
-      {problemType === 'graph_with_area' && 
+      {problemType === 'guided_equation' && <GuidedEquationProblemView ref={problemViewRef} data={problemData} onAnswerChange={setAnswer} isSubmitted={false} submittedAnswer={answer} correctAnswer={problemCard.problem.answer} />}
+      {problemType === 'intersection_guided_equation' && <IntersectionGuidedEquationView ref={problemViewRef} data={problemData} onAnswerChange={setAnswer} isSubmitted={false} submittedAnswer={answer} correctAnswer={problemCard.problem.answer} />}
+      {problemType === 'multi_transversal_angle' && <MultiTransversalAngleDiagramView data={problemData} userAnswer={answer} isSubmitted={false} />}
+      {problemType === 'vertical_calculation' && <VerticalCalculationProblemView ref={problemViewRef} data={problemData} onAnswerChange={setAnswer} isSubmitted={false} submittedAnswer={answer} correctAnswer={problemCard.problem.answer} />}
+      {problemType === 'proof' && <ProofProblemView ref={problemViewRef} data={problemData} onAnswerChange={setAnswer} isSubmitted={false} />}
+      {problemType === 'simultaneous_equation' && <SimultaneousEquationProblemView ref={problemViewRef} data={problemData} onAnswerChange={setAnswer} isSubmitted={false} />}
+      {problemType === 'triangle_in_parallel_lines' && <TriangleInParallelLinesView data={problemData} userAnswer={answer} isSubmitted={false} />}
+      {problemType === 'graph_with_area' &&
           <div className="text-center w-full">
             <p className="text-2xl mb-4 font-mono">{problemData?.question || "面積を求めよ"}</p>
             <div className="w-full max-w-sm mx-auto aspect-square bg-slate-900 rounded-xl p-2 border border-cyan-500/10">
@@ -195,7 +225,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
       <form onSubmit={handleSubmit} className="w-full">
         {!['proof'].includes(problemType) && (
           <div className="w-full flex flex-col items-center mt-6">
-             {!problemData?.options && !['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'simultaneous_equation'].includes(problemType) && (
+             {!problemData?.options && !['fill_in_proof', 'graphing', 'graphing_with_table', 'vertical_calculation', 'guided_equation', 'simultaneous_equation', 'intersection_guided_equation'].includes(problemType) && (
                  <div className="w-full max-w-xl mb-4">
                     <div className={`min-h-[4rem] p-4 bg-slate-950 rounded-xl border-2 border-cyan-500/30 flex items-center shadow-inner`}>
                         <span className="text-sm font-bold text-cyan-400 mr-4 whitespace-nowrap">解答:</span>
