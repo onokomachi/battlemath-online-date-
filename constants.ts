@@ -1,5 +1,5 @@
 
-import type { Problem, ProblemCard, Category, Ability, AbilityType, DailyQuestDef, BadgeDef } from './types';
+import type { Problem, ProblemCard, Category, Ability, AbilityType, DailyQuestDef, BadgeDef, ShopItemDef } from './types';
 import { geometryProblems } from './data/geometryProblems';
 import { linearFunctionsProblems } from './data/linearFunctionsProblems';
 import { polynomialProblems } from './data/polynomialProblems';
@@ -276,4 +276,25 @@ export const WEEKLY_QUEST_DEFS: DailyQuestDef[] = [
   { id: 'wq_50', title: '週50問チャレンジ', description: '今週50問正解しよう', target: 50, reward: { mp: 800, exp: 400 }, icon: '🌟' },
   { id: 'wq_pvp3', title: '週3回PvP', description: '今週PvPを3回行おう', target: 3, reward: { mp: 800, exp: 400 }, icon: '🏆' },
   { id: 'wq_100', title: '週100問マスター', description: '今週100問正解しよう', target: 100, reward: { mp: 2000, exp: 1000 }, icon: '👑' },
+];
+
+/**
+ * MPシンク — 称号・ストリークシールド・テーマ
+ * エビデンスB: 仮想経済バランス（Castronova 2005）
+ *   消費先がないとインフレ → モチベーション低下
+ */
+export const SHOP_ITEMS: ShopItemDef[] = [
+  // 称号（プレイヤー名横に表示）
+  { id: 'title_beginner', name: '数学初心者', description: '最初の一歩を踏み出した証', cost: 500, icon: '🔰', type: 'title' },
+  { id: 'title_challenger', name: '挑戦者', description: '果敢に問題に挑む姿勢', cost: 1500, icon: '⚡', type: 'title' },
+  { id: 'title_strategist', name: '戦略家', description: 'デッキ構築の達人', cost: 3000, icon: '🧠', type: 'title' },
+  { id: 'title_calculator', name: '計算の鬼', description: '計算速度に定評あり', cost: 5000, icon: '🔥', type: 'title' },
+  { id: 'title_master', name: '数学マスター', description: '全分野を制覇した者', cost: 10000, icon: '👑', type: 'title' },
+  { id: 'title_legend', name: '伝説の数学者', description: '最高峰の称号', cost: 25000, icon: '🌟', type: 'title' },
+  // ストリークシールド（ログイン連続日数を1回保護）
+  { id: 'streak_shield', name: 'ストリークシールド', description: 'ログイン途切れを1回だけ防ぐ', cost: 2000, icon: '🛡️', type: 'streak_shield' },
+  // バトルテーマ
+  { id: 'theme_fire', name: '炎のテーマ', description: 'バトル画面が炎に包まれる', cost: 4000, icon: '🔴', type: 'theme' },
+  { id: 'theme_ice', name: '氷のテーマ', description: '冷徹な戦場で戦う', cost: 4000, icon: '🔵', type: 'theme' },
+  { id: 'theme_gold', name: '黄金のテーマ', description: '栄光のゴールドバトル', cost: 8000, icon: '🟡', type: 'theme' },
 ];

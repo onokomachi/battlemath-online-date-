@@ -26,6 +26,7 @@ import {
   CARD_DEFINITIONS, HAND_SIZE, DECK_SIZE,
   INITIAL_HP, calcDamage, ADMIN_EMAILS, GAMEMASTER_PASSWORD,
   BADGE_DEFS, DAILY_QUEST_DEFS, WEEKLY_QUEST_DEFS, getTodayStr, getWeekStart,
+  SHOP_ITEMS,
 } from './constants';
 import GameBoard from './components/GameBoard';
 import DeckBuilder from './components/DeckBuilder';
@@ -42,6 +43,11 @@ import QuestPanel from './components/QuestPanel';
 import BadgeNotification from './components/BadgeNotification';
 import LoginBonusModal, { getLoginReward } from './components/LoginBonusModal';
 import ClassBattleBoard from './components/ClassBattleBoard';
+import { addIncorrectToSrs, getDueCount } from './services/spacedRepetitionService';
+import { recordAttempt, getCategoryWeights } from './services/weaknessAnalysisService';
+import WeaknessPanel from './components/WeaknessPanel';
+import ItemShop from './components/ItemShop';
+import type { ShopItemDef } from './types';
 
 // ============================
 // Helpers
@@ -172,6 +178,8 @@ const App: React.FC = () => {
   // エビデンスA: チェインカウンター × 可変報酬スケジュール（Skinner 1938）
   const [chainCount, setChainCount] = useState(0);
   const [wrongAnswerText, setWrongAnswerText] = useState<string | null>(null);
+  const [playerWrongAnswer, setPlayerWrongAnswer] = useState<string | null>(null);
+  const [wrongCategory, setWrongCategory] = useState<string | null>(null);
   // エビデンスB: バッジ × 自己決定理論（Deci & Ryan 1985）
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
   const [pendingBadge, setPendingBadge] = useState<BadgeDef | null>(null);
@@ -181,6 +189,18 @@ const App: React.FC = () => {
   const [showLoginBonus, setShowLoginBonus] = useState(false);
   const [loginBonusClaimed, setLoginBonusClaimed] = useState(false);
   const [showClassBattle, setShowClassBattle] = useState(false);
+  const [showWeaknessPanel, setShowWeaknessPanel] = useState(false);
+  const [showItemShop, setShowItemShop] = useState(false);
+  const [ownedShopItems, setOwnedShopItems] = useState<Set<string>>(() => {
+    try {
+      const s = localStorage.getItem('bm_owned_shop_items');
+      return s ? new Set(JSON.parse(s)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [equippedTitle, setEquippedTitle] = useState<string | null>(() => {
+    try { return localStorage.getItem('bm_equipped_title') || null; }
+    catch { return null; }
+  });
   // クエスト進捗 (localStorage管理でFirestoreクォータ節約)
   const [dailyQuestProgress, setDailyQuestProgress] = useState<Record<string, number>>({});
   const [dailyQuestDone, setDailyQuestDone] = useState<Set<string>>(new Set());
@@ -204,7 +224,10 @@ const App: React.FC = () => {
     localStorage.setItem('battleMathPlayerExp', JSON.stringify(playerExp));
     localStorage.setItem('battleMathUserLevelStats', JSON.stringify(userLevelStats));
     if (studentProfile) localStorage.setItem('battleMathStudentProfile', JSON.stringify(studentProfile));
-  }, [mathPoints, ownedCardIds, playerLevel, playerExp, userLevelStats, studentProfile]);
+    localStorage.setItem('bm_owned_shop_items', JSON.stringify(Array.from(ownedShopItems)));
+    if (equippedTitle) localStorage.setItem('bm_equipped_title', equippedTitle);
+    else localStorage.removeItem('bm_equipped_title');
+  }, [mathPoints, ownedCardIds, playerLevel, playerExp, userLevelStats, studentProfile, ownedShopItems, equippedTitle]);
 
   const ownedCards = useMemo(
     () => CARD_DEFINITIONS.filter(c => ownedCardIds.has(c.id)),
@@ -510,6 +533,17 @@ const App: React.FC = () => {
     }
   }, [loginStreak, user]);
 
+  const handleShopPurchase = useCallback((item: ShopItemDef) => {
+    if (ownedShopItems.has(item.id) || mathPoints < item.cost) return;
+    setMathPoints(p => p - item.cost);
+    setOwnedShopItems(prev => new Set([...prev, item.id]));
+    if (user && db) {
+      updateDoc(doc(db, 'users', user.uid), {
+        mathPoints: increment(-item.cost),
+      }).catch(() => {});
+    }
+  }, [ownedShopItems, mathPoints, user]);
+
   const canAccessGameMaster = useMemo(() => {
     if (ADMIN_EMAILS.length === 0) return !!user;
     return user && user.email && ADMIN_EMAILS.includes(user.email);
@@ -780,9 +814,33 @@ const App: React.FC = () => {
   // ============================
   // Game Start
   // ============================
+  // ZPD重み付きデッキ構築（エビデンスA: Vygotsky 1978）
+  const buildAdaptiveCpuDeck = useCallback((): ProblemCard[] => {
+    const weights = getCategoryWeights();
+    const cards = [...CARD_DEFINITIONS];
+    // 各カードに重みを割り当て（未記録カテゴリはデフォルト2）
+    const weighted = cards.map(c => ({ card: c, weight: weights[c.category] || 2 }));
+    const totalWeight = weighted.reduce((sum, w) => sum + w.weight, 0);
+
+    // 重み付きサンプリング（復元なし）
+    const selected: ProblemCard[] = [];
+    const pool = [...weighted];
+    while (selected.length < DECK_SIZE && pool.length > 0) {
+      let roll = Math.random() * pool.reduce((s, w) => s + w.weight, 0);
+      let idx = 0;
+      for (; idx < pool.length - 1; idx++) {
+        roll -= pool[idx].weight;
+        if (roll <= 0) break;
+      }
+      selected.push(pool[idx].card);
+      pool.splice(idx, 1);
+    }
+    return selected;
+  }, []);
+
   const startGame = useCallback((playerDeckSetup: ProblemCard[], isCpu: boolean, roomData?: Room) => {
     cleanupGameSession(true);
-    const pcDeckSetup = shuffleDeck([...CARD_DEFINITIONS]).slice(0, DECK_SIZE);
+    const pcDeckSetup = isCpu ? buildAdaptiveCpuDeck() : shuffleDeck([...CARD_DEFINITIONS]).slice(0, DECK_SIZE);
     const shuffledP = shuffleDeck(playerDeckSetup);
     const shuffledC = shuffleDeck(pcDeckSetup);
     setPlayerHand(shuffledP.slice(0, HAND_SIZE));
@@ -805,7 +863,7 @@ const App: React.FC = () => {
     setInitiative(Math.random() > 0.5 ? 'player' : 'pc');
     setTurnPhase('selecting_card');
     setGameLog(['バトル開始！問題に答えてダメージを与えよう！']);
-  }, [cleanupGameSession]);
+  }, [cleanupGameSession, buildAdaptiveCpuDeck]);
 
   // ============================
   // Auto-draw helper
@@ -882,6 +940,26 @@ const App: React.FC = () => {
 
     // ゲーミフィケーション: チェイン・バッジ・クエスト更新
     onCorrectAnswerEvent(correct, pcPlayedCard.problem.answer);
+
+    // メタ認知: カテゴリ別正答率を記録（エビデンスA: Wang et al. 1993, ES=0.69）
+    recordAttempt(pcPlayedCard.category, correct);
+
+    // 精緻化フィードバック: 不正解時にプレイヤーの回答とカテゴリを記録
+    if (!correct) {
+      setPlayerWrongAnswer(answer);
+      setWrongCategory(pcPlayedCard.category);
+      // SRS: 不正解を間隔反復キューに追加（エビデンスA: Cepeda 2006, d=0.42）
+      const qData = pcPlayedCard.problem.data as Record<string, unknown>;
+      addIncorrectToSrs(
+        pcPlayedCard.category,
+        String(qData.question || '').slice(0, 50),
+        pcPlayedCard.problem.answer,
+        pcPlayedCard.problem.type
+      );
+    } else {
+      setPlayerWrongAnswer(null);
+      setWrongCategory(null);
+    }
 
     const outcome = resolveHpBattle(correct, playerPlayedCard, pcPlayedCard);
     setRoundResult(outcome === 'player_win' ? 'ラウンド勝利！' : 'ラウンド敗北...');
@@ -1098,6 +1176,10 @@ const App: React.FC = () => {
             dailyQuestDone={dailyQuestDone}
             onOpenClassBattle={() => setShowClassBattle(true)}
             hasStudentProfile={!!studentProfile}
+            srsReviewCount={getDueCount()}
+            onOpenWeakness={() => setShowWeaknessPanel(true)}
+            onOpenItemShop={() => setShowItemShop(true)}
+            equippedTitleName={equippedTitle ? SHOP_ITEMS.find(i => i.id === equippedTitle)?.name || null : null}
           />
         );
 
@@ -1197,6 +1279,8 @@ const App: React.FC = () => {
               initiative={initiative}
               chainCount={chainCount}
               wrongAnswerText={wrongAnswerText}
+              playerWrongAnswer={playerWrongAnswer}
+              wrongCategory={wrongCategory}
             />
             {/* 相手切断通知バナー */}
             {opponentDisconnected && gameMode === 'pvp' && (
@@ -1300,6 +1384,19 @@ const App: React.FC = () => {
             onClose={() => setShowClassBattle(false)}
             currentGrade={studentProfile?.grade}
             currentClass={studentProfile?.classNum}
+          />
+        )}
+        {showWeaknessPanel && (
+          <WeaknessPanel onClose={() => setShowWeaknessPanel(false)} />
+        )}
+        {showItemShop && (
+          <ItemShop
+            mathPoints={mathPoints}
+            ownedItems={ownedShopItems}
+            equippedTitle={equippedTitle}
+            onPurchase={handleShopPurchase}
+            onEquipTitle={setEquippedTitle}
+            onClose={() => setShowItemShop(false)}
           />
         )}
       </div>

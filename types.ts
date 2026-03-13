@@ -196,6 +196,16 @@ export interface UserProfile {
   createdAt?: any;
 }
 
+/** MPシンク: 購入可能アイテム定義 */
+export interface ShopItemDef {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  icon: string;
+  type: 'title' | 'streak_shield' | 'theme';
+}
+
 export type BattleMode = 'cpu' | 'pvp';
 
 export interface Room {

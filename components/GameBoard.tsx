@@ -273,6 +273,9 @@ interface GameBoardProps {
   // ゲーミフィケーション拡張
   chainCount?: number;
   wrongAnswerText?: string | null;
+  /** エビデンスA: 精緻化フィードバック (Hattie & Timperley 2007, ES=0.73) */
+  playerWrongAnswer?: string | null;
+  wrongCategory?: string | null;
 }
 
 const ScoreDisplay: React.FC<{ score: number; label: string; maxScore: number; isPlayer: boolean }> = ({ score, label, maxScore, isPlayer }) => (
@@ -312,6 +315,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   initiative,
   chainCount = 0,
   wrongAnswerText,
+  playerWrongAnswer,
+  wrongCategory,
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -389,13 +394,25 @@ const GameBoard: React.FC<GameBoardProps> = ({
               </div>
             </div>
           )}
-          {/* Level B: Growth Mindset (Dweck, 2006) - corrective feedback */}
+          {/* エビデンスA: 精緻化フィードバック (Hattie & Timperley 2007, ES=0.73)
+              - 正解を表示するだけでなく「あなたの回答」との差分を示す
+              - カテゴリを表示して「何の分野か」を意識させる（メタ認知支援）
+              - Growth Mindset メッセージ（Dweck 2006） */}
           {wrongAnswerText && (
             <div className="mt-6 text-center animate-math-fade-in">
-              <div className="inline-block bg-red-950/60 border border-red-500/40 rounded-xl px-6 py-4 shadow-lg">
-                <div className="text-red-400 text-sm font-bold mb-2">惜しい！正解は...</div>
+              <div className="inline-block bg-red-950/60 border border-red-500/40 rounded-xl px-6 py-4 shadow-lg max-w-md">
+                {wrongCategory && (
+                  <div className="text-red-300/40 text-[10px] font-bold mb-1 tracking-wider">{wrongCategory}</div>
+                )}
+                {playerWrongAnswer && (
+                  <div className="mb-2">
+                    <span className="text-red-400/60 text-xs">あなたの回答: </span>
+                    <span className="text-red-300 font-mono text-sm line-through">{playerWrongAnswer}</span>
+                  </div>
+                )}
+                <div className="text-green-400 text-sm font-bold mb-1">正解</div>
                 <div className="text-white font-bold text-2xl font-mono">{wrongAnswerText}</div>
-                <div className="text-red-300/50 text-xs mt-2">次は正解できるよ！</div>
+                <div className="text-cyan-300/50 text-xs mt-2 italic">間違いは学びのチャンス。この問題は後で復習に出るよ！</div>
               </div>
             </div>
           )}

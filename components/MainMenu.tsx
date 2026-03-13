@@ -21,10 +21,14 @@ interface MainMenuProps {
   dailyQuestDone?: Set<string>;
   onOpenClassBattle?: () => void;
   hasStudentProfile?: boolean;
+  srsReviewCount?: number;
+  onOpenWeakness?: () => void;
+  onOpenItemShop?: () => void;
+  equippedTitleName?: string | null;
 }
 
 const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
-  playerLevel, playerExp, expForNextLevel, user, mathPoints, onLogout, loginStreak, onOpenLoginBonus
+  playerLevel, playerExp, expForNextLevel, user, mathPoints, onLogout, loginStreak, onOpenLoginBonus, equippedTitleName,
 }) => {
   const expPercentage = (playerExp / expForNextLevel) * 100;
 
@@ -39,7 +43,12 @@ const PlayerStatus: React.FC<Omit<MainMenuProps, 'onSelectMode'>> = ({
             <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full border border-cyan-700/50" />
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-white font-bold truncate">{user.displayName}</p>
+            <p className="text-xs text-white font-bold truncate">
+              {user.displayName}
+              {equippedTitleName && (
+                <span className="ml-1 text-[9px] text-amber-400/80 font-bold">【{equippedTitleName}】</span>
+              )}
+            </p>
             <p className="text-[10px] text-amber-400">MP: {mathPoints?.toLocaleString()}</p>
           </div>
           {loginStreak !== undefined && loginStreak >= 1 && (
@@ -153,7 +162,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
   loginStreak, onOpenQuests, onOpenLoginBonus,
   canAccessGameMaster, onOpenGameMaster,
   dailyQuestDefs, dailyQuestProgress, dailyQuestDone,
-  onOpenClassBattle, hasStudentProfile,
+  onOpenClassBattle, hasStudentProfile, srsReviewCount, onOpenWeakness, onOpenItemShop, equippedTitleName,
 }) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
@@ -167,6 +176,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
         onOpenRanking={onOpenRanking}
         loginStreak={loginStreak}
         onOpenLoginBonus={onOpenLoginBonus}
+        equippedTitleName={equippedTitleName}
       />
 
       {/* Top-right buttons: RANKING / QUEST / ADMIN */}
@@ -185,6 +195,22 @@ const MainMenu: React.FC<MainMenuProps> = ({
             className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
           >
             <span>⚡</span> クエスト
+          </button>
+        )}
+        {onOpenWeakness && (
+          <button
+            onClick={onOpenWeakness}
+            className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
+          >
+            <span>📊</span> 弱点分析
+          </button>
+        )}
+        {onOpenItemShop && (
+          <button
+            onClick={onOpenItemShop}
+            className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
+          >
+            <span>🏪</span> アイテム
           </button>
         )}
         {onOpenClassBattle && user && hasStudentProfile && (
@@ -226,9 +252,9 @@ const MainMenu: React.FC<MainMenuProps> = ({
 
       <div className="flex flex-col md:flex-row gap-3 sm:gap-4 md:gap-6 w-full max-w-5xl px-4 sm:px-6">
         {[
-          { mode: 'deck_building' as GameState, label: 'バトル', desc: 'デッキを組んでCPUやプレイヤーと対戦', icon: '⚔' },
-          { mode: 'practice_mode' as GameState, label: '練習', desc: '分野別に問題を解いて実力アップ', icon: '📖' },
-          { mode: 'card_shop' as GameState, label: 'ショップ', desc: 'MPでカードパックを購入', icon: '🎴' },
+          { mode: 'deck_building' as GameState, label: 'バトル', desc: 'デッキを組んでCPUやプレイヤーと対戦', icon: '⚔', badge: 0 },
+          { mode: 'practice_mode' as GameState, label: '練習', desc: '分野別に問題を解いて実力アップ', icon: '📖', badge: srsReviewCount },
+          { mode: 'card_shop' as GameState, label: 'ショップ', desc: 'MPでカードパックを購入', icon: '🎴', badge: 0 },
         ].map((item, i) => (
           <button
             key={item.mode}
@@ -238,6 +264,12 @@ const MainMenu: React.FC<MainMenuProps> = ({
           >
             <div className="corner-accent lt" />
             <div className="corner-accent rb" />
+            {/* SRS復習バッジ */}
+            {(item.badge || 0) > 0 && (
+              <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-black rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse z-10">
+                {item.badge}
+              </div>
+            )}
             <div className="absolute -right-4 -bottom-4 text-6xl opacity-[0.08] group-hover:opacity-[0.15] group-hover:scale-125 transition-all duration-500">
               {item.icon}
             </div>
