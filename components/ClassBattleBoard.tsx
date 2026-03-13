@@ -173,10 +173,10 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
   };
 
   const getRankReward = (rank: number): string => {
-    if (rank === 1) return '500 MP + 限定バッジ';
-    if (rank === 2) return '300 MP';
-    if (rank === 3) return '100 MP';
-    return '50 MP (参加賞)';
+    if (rank === 1) return '3000 MP + 限定バッジ + 称号';
+    if (rank === 2) return '2000 MP + レアバッジ';
+    if (rank === 3) return '1200 MP + バッジ';
+    return '500 MP (参加賞)';
   };
 
   return (
