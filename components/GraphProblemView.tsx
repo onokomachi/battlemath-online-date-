@@ -34,7 +34,7 @@ const GraphProblemView: React.FC<GraphProblemViewProps> = ({ lines = [], polygon
     const { x: originX, y: originY } = mapCoords(0, 0, width, height);
 
     let elements = `<defs><style>
-        .grid-line { stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
+        .grid-line { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
         .axis-line { stroke: #22d3ee; stroke-width: 3; stroke-linecap: round; }
         .label-text { fill: rgba(255, 255, 255, 0.4); font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: bold; }
         .line-label { font: bold 14px 'JetBrains Mono', sans-serif; text-shadow: 0 0 5px black; }

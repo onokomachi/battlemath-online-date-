@@ -30,7 +30,7 @@ const GraphingProblemView = forwardRef<ProblemViewRef | null, GraphingProblemVie
     const centerY = height / 2;
 
     // Draw Grid Lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; // Visible but subtle grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)'; // Visible but subtle grid
     ctx.lineWidth = 1;
 
     for (let i = -numLines; i <= numLines; i++) {

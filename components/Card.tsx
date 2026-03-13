@@ -44,6 +44,12 @@ const categoryStyles: { [key: string]: { border: string, glow: string, header: s
     header: 'from-teal-900/60 to-transparent',
     accent: 'text-teal-300'
   },
+  "データの活用": {
+    border: 'border-orange-500/40',
+    glow: 'shadow-orange-500/20',
+    header: 'from-orange-900/60 to-transparent',
+    accent: 'text-orange-300'
+  },
   "default": {
     border: 'border-slate-500/40',
     glow: 'shadow-slate-500/20',

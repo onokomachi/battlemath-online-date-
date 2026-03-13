@@ -72,11 +72,13 @@ export const SVG_MAP: Record<string, string> = {
 
   // ===== /Image/30.jpg =====
   // Triangle ABC with equilateral △ABD external on AB and equilateral △ACE external on AC
-  '/Image/30.jpg': '<svg viewBox="0 0 280 200" preserveAspectRatio="xMidYMid meet"><polygon points="120,80 80,170 200,170" fill="none" stroke="white" stroke-width="1.5"/><polygon points="120,80 80,170 20,100" fill="none" stroke="white" stroke-width="1.5"/><polygon points="120,80 200,170 260,100" fill="none" stroke="white" stroke-width="1.5"/><line x1="80" y1="170" x2="260" y2="100" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><line x1="200" y1="170" x2="20" y2="100" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><text x="115" y="72" font-size="13" fill="white">A</text><text x="65" y="183" font-size="13" fill="white">B</text><text x="202" y="183" font-size="13" fill="white">C</text><text x="5" y="98" font-size="13" fill="white">D</text><text x="262" y="98" font-size="13" fill="white">E</text></svg>',
+  // Coordinates recalculated: AB=AD=BD=104, AC=AE=CE=104 (正三角形)
+  '/Image/30.jpg': '<svg viewBox="0 0 280 200" preserveAspectRatio="xMidYMid meet"><polygon points="140,90 80,175 200,175" fill="none" stroke="white" stroke-width="1.5"/><polygon points="140,90 80,175 36,81" fill="none" stroke="white" stroke-width="1.5"/><polygon points="140,90 200,175 244,81" fill="none" stroke="white" stroke-width="1.5"/><line x1="80" y1="175" x2="244" y2="81" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><line x1="200" y1="175" x2="36" y2="81" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><text x="135" y="83" font-size="13" fill="white">A</text><text x="65" y="188" font-size="13" fill="white">B</text><text x="202" y="188" font-size="13" fill="white">C</text><text x="21" y="79" font-size="13" fill="white">D</text><text x="248" y="79" font-size="13" fill="white">E</text></svg>',
 
   // ===== /Image/33.jpg =====
   // Two equilateral triangles △ABC and △CDE sharing vertex C
-  '/Image/33.jpg': '<svg viewBox="0 0 260 180" preserveAspectRatio="xMidYMid meet"><polygon points="60,30 30,150 130,150" fill="none" stroke="white" stroke-width="1.5"/><polygon points="130,150 200,30 230,150" fill="none" stroke="white" stroke-width="1.5"/><line x1="60" y1="30" x2="200" y2="30" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><line x1="30" y1="150" x2="230" y2="150" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><text x="52" y="24" font-size="13" fill="white">A</text><text x="15" y="162" font-size="13" fill="white">B</text><text x="125" y="162" font-size="13" fill="white">C</text><text x="195" y="24" font-size="13" fill="white">D</text><text x="232" y="162" font-size="13" fill="white">E</text></svg>',
+  // Coordinates recalculated: AB=BC=CA=CD=DE=EC=100 (正三角形)
+  '/Image/33.jpg': '<svg viewBox="0 0 260 180" preserveAspectRatio="xMidYMid meet"><polygon points="75,68 25,155 125,155" fill="none" stroke="white" stroke-width="1.5"/><polygon points="125,155 175,68 225,155" fill="none" stroke="white" stroke-width="1.5"/><line x1="75" y1="68" x2="175" y2="68" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><line x1="25" y1="155" x2="225" y2="155" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><text x="67" y="62" font-size="13" fill="white">A</text><text x="10" y="167" font-size="13" fill="white">B</text><text x="120" y="167" font-size="13" fill="white">C</text><text x="170" y="62" font-size="13" fill="white">D</text><text x="227" y="167" font-size="13" fill="white">E</text></svg>',
 
   // ===== /Image/60.jpg =====
   // Trapezoid ABCD (AD//BC, AD shorter on top). E midpoint of AB. F on CB extended.
@@ -88,7 +90,8 @@ export const SVG_MAP: Record<string, string> = {
 
   // ===== /Image/62.jpg =====
   // Equilateral △ABC with D on AB and E on AC, AD=CE
-  '/Image/62.jpg': '<svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 20,160 180,160" fill="none" stroke="white" stroke-width="1.5"/><line x1="20" y1="160" x2="140" y2="87" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><line x1="180" y1="160" x2="55" y2="72" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><text x="95" y="10" font-size="13" fill="white">A</text><text x="5" y="172" font-size="13" fill="white">B</text><text x="182" y="172" font-size="13" fill="white">C</text><text x="42" y="68" font-size="13" fill="white">D</text><text x="142" y="85" font-size="13" fill="white">E</text></svg>',
+  // Coordinates recalculated: AB=BC=CA=160 (正三角形, 60°-60°-60°)
+  '/Image/62.jpg': '<svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,21 20,160 180,160" fill="none" stroke="white" stroke-width="1.5"/><line x1="20" y1="160" x2="148" y2="82" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><line x1="180" y1="160" x2="52" y2="82" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><text x="95" y="15" font-size="13" fill="white">A</text><text x="5" y="172" font-size="13" fill="white">B</text><text x="182" y="172" font-size="13" fill="white">C</text><text x="39" y="78" font-size="13" fill="white">D</text><text x="150" y="78" font-size="13" fill="white">E</text></svg>',
 
   // ===== /Image/63.jpg =====
   // Isosceles △ABC, D midpoint of BC, perpendiculars DE⊥AB and DF⊥AC
@@ -96,7 +99,8 @@ export const SVG_MAP: Record<string, string> = {
 
   // ===== /Image/64.jpg =====
   // Large equilateral △ABC with smaller equilateral △DEF inscribed (D on BC, E on AB, F on AC)
-  '/Image/64.jpg': '<svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,10 15,160 185,160" fill="none" stroke="white" stroke-width="1.5"/><polygon points="75,160 55,85 145,120" fill="none" stroke="white" stroke-width="1.5"/><text x="95" y="7" font-size="13" fill="white">A</text><text x="2" y="172" font-size="13" fill="white">B</text><text x="187" y="172" font-size="13" fill="white">C</text><text x="70" y="174" font-size="13" fill="white">D</text><text x="40" y="82" font-size="13" fill="white">E</text><text x="148" y="118" font-size="13" fill="white">F</text></svg>',
+  // Outer: AB=BC=CA=170 (正三角形), Inner: DE=EF=FD=98 (正三角形, t=1/3分割)
+  '/Image/64.jpg': '<svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,18 15,165 185,165" fill="none" stroke="white" stroke-width="1.5"/><polygon points="72,165 72,67 157,116" fill="none" stroke="white" stroke-width="1.5"/><text x="95" y="13" font-size="13" fill="white">A</text><text x="2" y="177" font-size="13" fill="white">B</text><text x="187" y="177" font-size="13" fill="white">C</text><text x="65" y="179" font-size="13" fill="white">D</text><text x="57" y="64" font-size="13" fill="white">E</text><text x="160" y="114" font-size="13" fill="white">F</text></svg>',
 
   // ===== /Image/66.jpg =====
   // 6 triangles for congruence matching. DEF↔VXW(ASA), GHI↔QPR(SSS), MNO↔UTS(SAS)
@@ -128,7 +132,8 @@ export const SVG_MAP: Record<string, string> = {
 
   // ===== /Image/78.jpg =====
   // Square ABCD with equilateral △PBC inside
-  '/Image/78.jpg': '<svg viewBox="0 0 180 200" preserveAspectRatio="xMidYMid meet"><rect x="20" y="20" width="140" height="140" fill="none" stroke="white" stroke-width="1.5"/><polygon points="20,160 160,160 90,90" fill="none" stroke="white" stroke-width="1.5"/><line x1="20" y1="20" x2="90" y2="90" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><line x1="160" y1="20" x2="90" y2="90" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><text x="10" y="15" font-size="13" fill="white">A</text><text x="5" y="170" font-size="13" fill="white">B</text><text x="162" y="170" font-size="13" fill="white">C</text><text x="162" y="15" font-size="13" fill="white">D</text><text x="83" y="85" font-size="13" fill="white">P</text></svg>',
+  // Coordinates recalculated: BP=PC=BC=140 (正三角形, P at correct height)
+  '/Image/78.jpg': '<svg viewBox="0 0 180 200" preserveAspectRatio="xMidYMid meet"><rect x="20" y="20" width="140" height="140" fill="none" stroke="white" stroke-width="1.5"/><polygon points="20,160 160,160 90,39" fill="none" stroke="white" stroke-width="1.5"/><line x1="20" y1="20" x2="90" y2="39" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><line x1="160" y1="20" x2="90" y2="39" stroke="white" stroke-width="1" stroke-dasharray="4,3"/><text x="10" y="15" font-size="13" fill="white">A</text><text x="5" y="170" font-size="13" fill="white">B</text><text x="162" y="170" font-size="13" fill="white">C</text><text x="162" y="15" font-size="13" fill="white">D</text><text x="93" y="37" font-size="13" fill="white">P</text></svg>',
 
   // ===== /Image/79.jpg =====
   // Isosceles △ABC (AB=AC) with labels for vertex and base angles

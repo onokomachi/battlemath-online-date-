@@ -24,7 +24,7 @@ const GraphToEquationProblemView: React.FC<GraphToEquationProblemViewProps> = ({
     const centerY = height / 2;
 
     // Grid lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
     ctx.lineWidth = 1;
     for (let i = -numLines; i <= numLines; i++) {
       ctx.beginPath(); ctx.moveTo(centerX + i * gridSize, 0); ctx.lineTo(centerX + i * gridSize, height); ctx.stroke();
