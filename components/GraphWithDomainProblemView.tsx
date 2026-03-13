@@ -23,7 +23,7 @@ const GraphWithDomainProblemView: React.FC<GraphWithDomainProblemViewProps> = ({
     const centerY = height / 2;
 
     // Grid Lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
     ctx.lineWidth = 1;
     for (let i = -numLines; i <= numLines; i++) {
       ctx.beginPath(); ctx.moveTo(centerX + i * gridSize, 0); ctx.lineTo(centerX + i * gridSize, height); ctx.stroke();
