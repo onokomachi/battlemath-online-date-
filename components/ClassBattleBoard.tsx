@@ -9,10 +9,15 @@
  *
  * スコア計算式:
  *   総合スコア = (1人あたり平均MP × 0.4) + (平均正答率 × 0.3) + (参加率 × 0.3)
+ *
+ * Firestore最適化 (Phase 1):
+ *   - classStats/{monthKey} コレクションにキャッシュ済み集計を保存
+ *   - 表示時: キャッシュがあれば1 read、なければ全ユーザーscan + キャッシュ書き込み
+ *   - キャッシュTTL: 1時間（同日内の再表示は0 read）
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import {
-  collection, getDocs, query, where, type Firestore,
+  collection, getDocs, doc, getDoc, setDoc, query, where, type Firestore,
 } from 'firebase/firestore';
 
 interface ClassStats {
@@ -48,12 +53,14 @@ const getMonthKey = (): string => {
 };
 
 const calcCompositeScore = (avgMp: number, avgAccuracy: number, participationRate: number): number => {
-  // Normalize: avgMp typically 0-5000, accuracy 0-100, participation 0-100
   const mpComponent = avgMp * 0.4;
   const accComponent = avgAccuracy * 0.3;
   const partComponent = participationRate * 0.3;
   return mpComponent + accComponent + partComponent;
 };
+
+// キャッシュTTL: 1時間（ミリ秒）
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
   db, onClose, currentGrade, currentClass,
@@ -61,17 +68,37 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
   const [classStats, setClassStats] = useState<ClassStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGrade, setSelectedGrade] = useState<number>(currentGrade || 0);
+  const [dataSource, setDataSource] = useState<'cache' | 'live' | ''>('');
 
   useEffect(() => {
     const fetchClassData = async () => {
       setLoading(true);
+      const monthKey = getMonthKey();
+
       try {
-        // Fetch all users with studentProfile
+        // Step 1: キャッシュ確認（1 read）
+        const cacheRef = doc(db, 'classStatsCache', monthKey);
+        const cacheSnap = await getDoc(cacheRef);
+
+        if (cacheSnap.exists()) {
+          const cached = cacheSnap.data();
+          const cachedAt = cached.updatedAt || 0;
+          const age = Date.now() - cachedAt;
+
+          if (age < CACHE_TTL_MS && cached.stats) {
+            // キャッシュが新鮮 → そのまま使用（0 additional reads）
+            setClassStats(cached.stats as ClassStats[]);
+            setDataSource('cache');
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Step 2: キャッシュなし or 期限切れ → 全ユーザーscan
         const usersSnap = await getDocs(
           query(collection(db, 'users'), where('studentProfile', '!=', null))
         );
 
-        const monthKey = getMonthKey();
         const classMap = new Map<string, {
           grade: number;
           classNum: number;
@@ -103,22 +130,19 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
           const entry = classMap.get(key)!;
           entry.members++;
 
-          // Check if active this month (lastLoginDate starts with monthKey)
           const lastLogin: string = d.lastLoginDate || '';
           if (lastLogin.startsWith(monthKey)) {
             entry.active++;
           }
 
-          // Accumulate stats
           entry.totalMp += (d.mathPoints || 0);
           entry.totalCorrect += (d.totalCorrectAnswers || 0);
-          // Estimate total answered from totalCorrectAnswers and totalMatches
           const answered = (d.totalCorrectAnswers || 0) + Math.floor((d.totalMatches || 0) * 3);
           entry.totalAnswered += Math.max(answered, d.totalCorrectAnswers || 0);
         });
 
         const stats: ClassStats[] = [];
-        classMap.forEach((data, key) => {
+        classMap.forEach((data) => {
           const avgMp = data.members > 0 ? Math.round(data.totalMp / data.members) : 0;
           const avgAccuracy = data.totalAnswered > 0
             ? Math.round((data.totalCorrect / data.totalAnswered) * 100)
@@ -143,9 +167,16 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
           });
         });
 
-        // Sort by composite score descending
         stats.sort((a, b) => b.compositeScore - a.compositeScore);
         setClassStats(stats);
+        setDataSource('live');
+
+        // Step 3: キャッシュに書き込み（次回は1 readで済む）
+        setDoc(cacheRef, {
+          stats,
+          updatedAt: Date.now(),
+          month: monthKey,
+        }).catch(() => {}); // fire-and-forget
       } catch (e) {
         console.error('ClassBattle fetch error:', e);
       }
@@ -205,6 +236,7 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
           <div className="mt-3 p-2 bg-slate-900/60 rounded-lg border border-amber-900/30">
             <p className="text-[10px] text-gray-400 font-mono">
               総合スコア = 1人あたりMP(40%) + 正答率(30%) + 参加率(30%)
+              {dataSource === 'cache' && <span className="ml-2 text-gray-600">(cached)</span>}
             </p>
           </div>
         </div>

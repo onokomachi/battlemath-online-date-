@@ -1,6 +1,14 @@
 
 import React, { useEffect, useRef } from 'react';
 
+/**
+ * GravityBackground — 省電力版
+ *
+ * 改善: visibilitychange + reduced-motion対応
+ * - タブ非表示時はアニメーション完全停止（バッテリー節約）
+ * - prefers-reduced-motion設定時は静的グリッド描画のみ
+ * - requestAnimationFrame IDを保持して確実にキャンセル
+ */
 const GravityBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -11,6 +19,9 @@ const GravityBackground: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // prefers-reduced-motion チェック
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     let width = window.innerWidth;
     let height = window.innerHeight;
     canvas.width = width;
@@ -18,13 +29,15 @@ const GravityBackground: React.FC = () => {
 
     const gridSize = 60;
     const points: { x: number; y: number; ox: number; oy: number }[] = [];
-    
+
     // Pre-calculate rows and cols to match point generation exactly
-    const cols = Math.ceil((width + gridSize * 2) / gridSize) + 1;
-    const rows = Math.ceil((height + gridSize * 2) / gridSize) + 1;
+    let cols = Math.ceil((width + gridSize * 2) / gridSize) + 1;
+    let rows = Math.ceil((height + gridSize * 2) / gridSize) + 1;
 
     const initPoints = () => {
       points.length = 0;
+      cols = Math.ceil((width + gridSize * 2) / gridSize) + 1;
+      rows = Math.ceil((height + gridSize * 2) / gridSize) + 1;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const x = c * gridSize - gridSize;
@@ -38,6 +51,8 @@ const GravityBackground: React.FC = () => {
 
     let time = 0;
     let mouse = { x: width / 2, y: height / 2, active: false };
+    let animFrameId: number | null = null;
+    let isPaused = false;
 
     const handleMouseMove = (e: MouseEvent) => {
       mouse.x = e.clientX;
@@ -53,10 +68,63 @@ const GravityBackground: React.FC = () => {
       initPoints();
     };
 
+    // 省電力: タブ非表示時にアニメーション停止
+    const handleVisibility = () => {
+      if (document.hidden) {
+        isPaused = true;
+        if (animFrameId !== null) {
+          cancelAnimationFrame(animFrameId);
+          animFrameId = null;
+        }
+      } else {
+        isPaused = false;
+        if (animFrameId === null) {
+          animFrameId = requestAnimationFrame(animate);
+        }
+      }
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('resize', handleResize);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // 静的グリッド描画（reduced-motion用 or 一時停止フレーム用）
+    const drawStaticGrid = () => {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          const p = points[idx];
+          if (!p) continue;
+          if (c < cols - 1) {
+            const nextP = points[idx + 1];
+            if (nextP) { ctx.moveTo(p.ox, p.oy); ctx.lineTo(nextP.ox, nextP.oy); }
+          }
+          if (r < rows - 1) {
+            const nextP = points[idx + cols];
+            if (nextP) { ctx.moveTo(p.ox, p.oy); ctx.lineTo(nextP.ox, nextP.oy); }
+          }
+        }
+      }
+      ctx.stroke();
+    };
+
+    if (prefersReducedMotion) {
+      drawStaticGrid();
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('resize', handleResize);
+        document.removeEventListener('visibilitychange', handleVisibility);
+      };
+    }
 
     const animate = () => {
+      if (isPaused) return;
+
       time += 0.01;
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, width, height);
@@ -64,7 +132,7 @@ const GravityBackground: React.FC = () => {
       // 対角線上で同期して動く2つの重力源（ウェル）
       const offsetX = Math.cos(time * 0.4) * (width * 0.25);
       const offsetY = Math.sin(time * 0.6) * (height * 0.25);
-      
+
       const w1 = { x: width / 2 + offsetX, y: height / 2 + offsetY };
       const w2 = { x: width / 2 - offsetX, y: height / 2 - offsetY };
 
@@ -140,21 +208,23 @@ const GravityBackground: React.FC = () => {
       // 交差点の描画
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       points.forEach((p, i) => {
-        if (i % 2 === 0) { 
+        if (i % 2 === 0) {
           ctx.beginPath();
           ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
           ctx.fill();
         }
       });
 
-      requestAnimationFrame(animate);
+      animFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    animFrameId = requestAnimationFrame(animate);
 
     return () => {
+      if (animFrameId !== null) cancelAnimationFrame(animFrameId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
 

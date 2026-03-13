@@ -12,12 +12,15 @@ export const HAND_SIZE = 5;
 export const MAX_DUPLICATES = 2;
 
 // HP Battle System (aicardbattle2 integration)
-// エビデンスレベルA: Firebase Auth公式パターン + HP制カードバトル標準設計
-export const INITIAL_HP = 20;
+// エビデンスA: Testing Effect (Roediger & Butler 2011) — 想起回数が学習効果に比例
+// HP40 + 新ダメージ式 → 平均7-8ラウンド/試合（旧: 2-3ラウンド）
+export const INITIAL_HP = 40;
 
-// Damage formula: difficulty × 2 HP
-// Difficulty 1 = 2dmg, 2 = 4dmg, 3 = 6dmg, 4 = 8dmg, 5 = 10dmg
-export const calcDamage = (difficulty: number): number => difficulty * 2;
+// Damage formula: difficulty × 1.5 + 1
+// Lv1=2.5→3, Lv2=4, Lv3=5.5→6, Lv4=7, Lv5=8.5→9
+// HP40 ÷ 平均5.5dmg ≈ 7.3ラウンド（学習量2-3倍に増加）
+export const calcDamage = (difficulty: number): number =>
+  Math.round(difficulty * 1.5 + 1);
 
 // Admin settings
 export const ADMIN_EMAILS: string[] = []; // Add admin email addresses here
@@ -255,15 +258,22 @@ export const BADGE_DEFS: BadgeDef[] = [
 
 // ============================
 // Quest Definitions
-// エビデンスA: 目標設定理論（Locke & Latham 1990） — 3層クエスト設計
+// エビデンスA: 目標設定理論（Locke & Latham 1990, d=0.48）
+// 3層設計: Easy(確実達成) → Medium(努力で達成) → Hard(チャレンジ)
 // ============================
 export const DAILY_QUEST_DEFS: DailyQuestDef[] = [
-  { id: 'dq_3', title: '今日の3問', description: '3問正解しよう', target: 3, reward: { mp: 100, exp: 50 }, icon: '⚡' },
-  { id: 'dq_10', title: '10問突破', description: '10問正解しよう', target: 10, reward: { mp: 300, exp: 150 }, icon: '🔥' },
+  // Easy層: ほぼ全員が達成でき、毎日の起動動機になる
+  { id: 'dq_5', title: '今日の5問', description: '5問正解しよう', target: 5, reward: { mp: 150, exp: 80 }, icon: '⚡' },
+  // Medium層: 15-20分の学習を要する。目標設定理論の最適難度
+  { id: 'dq_15', title: '15問突破', description: '15問正解しよう', target: 15, reward: { mp: 400, exp: 200 }, icon: '🔥' },
+  // Hard層: 30分以上+高品質。達成感が最大のチャレンジ目標
+  { id: 'dq_30', title: '30問＆正答率80%', description: '30問正解（正答率80%以上）', target: 30, reward: { mp: 1000, exp: 500 }, icon: '💎' },
+  // PvP: 社会的動機づけ（SDT関係性欲求）
   { id: 'dq_pvp', title: 'PvP参戦', description: 'PvP対戦を1回行おう', target: 1, reward: { mp: 200, exp: 100 }, icon: '⚔️' },
 ];
 
 export const WEEKLY_QUEST_DEFS: DailyQuestDef[] = [
-  { id: 'wq_30', title: '週30問チャレンジ', description: '今週30問正解しよう', target: 30, reward: { mp: 500, exp: 300 }, icon: '🌟' },
+  { id: 'wq_50', title: '週50問チャレンジ', description: '今週50問正解しよう', target: 50, reward: { mp: 800, exp: 400 }, icon: '🌟' },
   { id: 'wq_pvp3', title: '週3回PvP', description: '今週PvPを3回行おう', target: 3, reward: { mp: 800, exp: 400 }, icon: '🏆' },
+  { id: 'wq_100', title: '週100問マスター', description: '今週100問正解しよう', target: 100, reward: { mp: 2000, exp: 1000 }, icon: '👑' },
 ];

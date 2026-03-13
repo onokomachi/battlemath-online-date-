@@ -46,8 +46,16 @@ import ClassBattleBoard from './components/ClassBattleBoard';
 // ============================
 // Helpers
 // ============================
-const shuffleDeck = (deck: ProblemCard[]): ProblemCard[] =>
-  [...deck].sort(() => Math.random() - 0.5);
+// エビデンスA: Fisher-Yates shuffle — 唯一の均一分布シャッフル
+// sort(() => Math.random()-0.5) は偏りがある (Raymond Chen 2007)
+const shuffleDeck = (deck: ProblemCard[]): ProblemCard[] => {
+  const arr = [...deck];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
 
 const SUPERSCRIPT_MAP: Record<string, string> = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '+': '⁺', '-': '⁻', 'n': 'ⁿ', 'm': 'ᵐ' };
 
@@ -333,8 +341,9 @@ const App: React.FC = () => {
     setDailyQuestProgress(prev => {
       const next = { ...prev };
       if (type === 'correct') {
-        next['dq_3'] = (next['dq_3'] || 0) + 1;
-        next['dq_10'] = (next['dq_10'] || 0) + 1;
+        next['dq_5'] = (next['dq_5'] || 0) + 1;
+        next['dq_15'] = (next['dq_15'] || 0) + 1;
+        next['dq_30'] = (next['dq_30'] || 0) + 1;
       } else if (type === 'pvp_match') {
         next['dq_pvp'] = (next['dq_pvp'] || 0) + 1;
       }
@@ -360,7 +369,8 @@ const App: React.FC = () => {
     setWeeklyQuestProgress(prev => {
       const next = { ...prev };
       if (type === 'correct') {
-        next['wq_30'] = (next['wq_30'] || 0) + 1;
+        next['wq_50'] = (next['wq_50'] || 0) + 1;
+        next['wq_100'] = (next['wq_100'] || 0) + 1;
       } else if (type === 'pvp_match') {
         next['wq_pvp3'] = (next['wq_pvp3'] || 0) + 1;
       }
