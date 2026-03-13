@@ -11,7 +11,7 @@ interface KeypadProps {
 const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false }) => {
   const renderKey = (key: string) => {
     if (key === ' ' || !key) {
-        return <div key={Math.random()} className="h-12 sm:h-14 w-full"></div>;
+        return <div key={Math.random()} className="h-9 sm:h-11 lg:h-12 w-full"></div>;
     }
     const isSpecial = ['=', '+', '-', '×', '(', ')', '^', '/', '°', '≤', '≥', '<', '>', ',', 'π', '²', '³', '△', '∠'].includes(key);
     const isVar = ['x', 'y', 'a', 'b'].includes(key);
@@ -24,8 +24,8 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
         onClick={() => onKeyClick(key)}
         disabled={disabled}
         className={`
-          h-12 sm:h-14 w-full flex items-center justify-center rounded-lg transition-all duration-200 border
-          text-xl sm:text-2xl font-black transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-1 focus:ring-cyan-400
+          h-9 sm:h-11 lg:h-12 w-full flex items-center justify-center rounded-lg transition-all duration-200 border
+          text-base sm:text-lg lg:text-xl font-black transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-1 focus:ring-cyan-400
           ${isSpecial || isVar
             ? 'bg-cyan-900/20 border-cyan-400/30 text-cyan-200 hover:bg-cyan-800/40 font-["JetBrains_Mono"]'
             : isLetter
@@ -49,15 +49,15 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
     colCount === 4 ? 'grid-cols-4' : 'grid-cols-3';
 
   return (
-    <div className="w-full mt-4 bg-slate-950/40 p-4 rounded-xl backdrop-blur-xl border border-cyan-500/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-      <div className={`grid ${gridColsClass} gap-2 sm:gap-3`}>
+    <div className="w-full mt-1.5 sm:mt-2 bg-slate-950/40 p-2 sm:p-3 rounded-xl backdrop-blur-xl border border-cyan-500/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+      <div className={`grid ${gridColsClass} gap-1.5 sm:gap-2`}>
         {layout.flat().map(key => renderKey(key))}
       </div>
-       <div className={`grid ${gridColsClass} gap-2 sm:gap-3 mt-3`}>
+       <div className={`grid ${gridColsClass} gap-1.5 sm:gap-2 mt-1.5 sm:mt-2`}>
          <button
             onClick={() => onKeyClick('CLEAR')}
             disabled={disabled}
-            className={`h-12 sm:h-14 w-full flex items-center justify-center rounded-lg transition-all duration-200
+            className={`h-9 sm:h-11 lg:h-12 w-full flex items-center justify-center rounded-lg transition-all duration-200
               text-xs font-black transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-red-400
               bg-red-950/20 border border-red-500/20 text-red-300 hover:bg-red-900/40 uppercase tracking-widest
               disabled:opacity-20 disabled:cursor-not-allowed shadow-lg ${colCount >= 5 ? 'col-span-3' : 'col-span-2'}`}
@@ -68,12 +68,12 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
           <button
             onClick={() => onKeyClick('BACKSPACE')}
             disabled={disabled}
-            className={`h-12 sm:h-14 w-full flex items-center justify-center rounded-lg transition-all duration-200
+            className={`h-9 sm:h-11 lg:h-12 w-full flex items-center justify-center rounded-lg transition-all duration-200
                transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-cyan-400
               bg-blue-900/20 border border-blue-500/20 text-cyan-400 hover:bg-blue-800/40
               disabled:opacity-20 disabled:cursor-not-allowed shadow-lg ${colCount >= 5 ? 'col-span-2' : 'col-span-1'}`}
           >
-            <BackspaceIcon className="w-6 h-6" />
+            <BackspaceIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
       </div>
     </div>
