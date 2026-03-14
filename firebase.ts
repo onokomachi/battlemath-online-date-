@@ -23,7 +23,7 @@ let firestoreReady = false;
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
+  db = getFirestore(app, 'default');
   storage = getStorage(app);
   googleProvider = new GoogleAuthProvider();
 } catch (error) {
