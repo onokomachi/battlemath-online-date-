@@ -168,6 +168,7 @@ const App: React.FC = () => {
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const [opponentDisconnected, setOpponentDisconnected] = useState(false);
   const unsubscribeRoomRef = useRef<(() => void) | null>(null);
   const isHostRef = useRef(isHost);
@@ -670,6 +671,15 @@ const App: React.FC = () => {
         list.push(data);
       });
       setRooms(list);
+    }, (error) => {
+      const msg = error?.message || '';
+      if (msg.includes('not found') || msg.includes('404') || error?.code === 'not-found') {
+        setFirestoreError('Firestoreデータベースが未作成です。Firebase Console で Firestore Database を有効化してください。');
+      } else if (msg.includes('offline') || msg.includes('unavailable')) {
+        setFirestoreError('サーバーに接続できません。インターネット接続を確認してください。');
+      } else {
+        setFirestoreError(`接続エラー: ${msg}`);
+      }
     });
   }, [gameState]);
 
@@ -803,6 +813,13 @@ const App: React.FC = () => {
           setGameState('end');
         }
       }
+    }, (error) => {
+      const msg = error?.message || '';
+      if (msg.includes('not found') || msg.includes('404') || error?.code === 'not-found') {
+        console.error('[BattleMath] Firestoreデータベースが未作成です');
+      } else {
+        console.error('[BattleMath] Room listener error:', msg);
+      }
     });
   };
 
@@ -846,8 +863,17 @@ const App: React.FC = () => {
       setIsHost(result === 'host');
       setCurrentRoomId(roomId);
     } catch (e: any) {
-      if (e.message === 'ROOM_FULL') alert('この部屋は満員です。');
-      else alert('入室エラーが発生しました。');
+      const msg = e?.message || '';
+      if (msg === 'ROOM_FULL') {
+        alert('この部屋は満員です。');
+      } else if (msg.includes('not found') || msg.includes('404') || e?.code === 'not-found') {
+        alert('Firestoreデータベースが未作成です。\nFirebase Console → Firestore Database → 「データベースを作成」を実行してください。');
+      } else if (msg.includes('offline') || msg.includes('unavailable')) {
+        alert('サーバーに接続できません。インターネット接続を確認してください。');
+      } else {
+        console.error('Room join error:', e);
+        alert(`入室エラー: ${msg || '不明なエラーが発生しました'}`);
+      }
     }
   };
 
@@ -1379,6 +1405,7 @@ const App: React.FC = () => {
             }}
             currentRoomId={currentRoomId}
             user={user}
+            connectionError={firestoreError}
           />
         );
 

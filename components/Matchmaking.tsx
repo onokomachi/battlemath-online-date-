@@ -8,9 +8,10 @@ interface MatchmakingProps {
   onCancel: () => void;
   currentRoomId: string | null;
   user: User | null;
+  connectionError?: string | null;
 }
 
-const Matchmaking: React.FC<MatchmakingProps> = ({ rooms, onJoinRoom, onCancel, currentRoomId, user }) => {
+const Matchmaking: React.FC<MatchmakingProps> = ({ rooms, onJoinRoom, onCancel, currentRoomId, user, connectionError }) => {
   const [customRoomId, setCustomRoomId] = useState('');
 
   const waitingRooms = rooms.filter(r => r.status === 'waiting');
@@ -54,6 +55,14 @@ const Matchmaking: React.FC<MatchmakingProps> = ({ rooms, onJoinRoom, onCancel, 
             キャンセル
           </button>
         </div>
+
+        {/* Firestore connection error */}
+        {connectionError && (
+          <div className="mb-6 p-4 rounded-xl border border-red-500/50 bg-red-950/30 text-center">
+            <p className="text-red-400 text-sm font-bold mb-1">接続エラー</p>
+            <p className="text-red-300/80 text-xs">{connectionError}</p>
+          </div>
+        )}
 
         {/* Waiting status */}
         {currentRoomId && (
