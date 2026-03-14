@@ -21,6 +21,7 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
     return (
       <button
         key={key}
+        type="button"
         onClick={() => onKeyClick(key)}
         disabled={disabled}
         className={`
@@ -55,6 +56,7 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
       </div>
        <div className={`grid ${gridColsClass} gap-1.5 sm:gap-2 mt-1.5 sm:mt-2`}>
          <button
+            type="button"
             onClick={() => onKeyClick('CLEAR')}
             disabled={disabled}
             className={`h-9 sm:h-11 lg:h-12 w-full flex items-center justify-center rounded-lg transition-all duration-200
@@ -66,6 +68,7 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
           </button>
 
           <button
+            type="button"
             onClick={() => onKeyClick('BACKSPACE')}
             disabled={disabled}
             className={`h-9 sm:h-11 lg:h-12 w-full flex items-center justify-center rounded-lg transition-all duration-200
