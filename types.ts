@@ -194,6 +194,19 @@ export interface UserProfile {
   totalMatches: number;
   ownedCardIds: number[];
   createdAt?: any;
+  // 形式別勝敗 (denormalized for single-query ranking)
+  formatWins?: {
+    best_of_3?: number;
+    best_of_5?: number;
+    best_of_7?: number;
+    master_duel?: number;
+  };
+  formatMatches?: {
+    best_of_3?: number;
+    best_of_5?: number;
+    best_of_7?: number;
+    master_duel?: number;
+  };
 }
 
 /** MPシンク: 購入可能アイテム定義 */
@@ -207,6 +220,13 @@ export interface ShopItemDef {
 }
 
 export type BattleMode = 'cpu' | 'pvp';
+export type BattleFormat = 'best_of_3' | 'best_of_5' | 'best_of_7' | 'master_duel';
+
+export interface SavedDeck {
+  name: string;
+  cardIds: number[];
+  createdAt: number;
+}
 
 export interface Room {
   roomId: string;
