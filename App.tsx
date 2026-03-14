@@ -1199,15 +1199,18 @@ const App: React.FC = () => {
 
       if (gameOver) {
         const formatLabel = battleFormat === 'best_of_3' ? '3本勝負' : battleFormat === 'best_of_5' ? '5本勝負' : battleFormat === 'best_of_7' ? '7本勝負' : 'マスターデュエル';
+        const formatWinKey = `formatWins.${battleFormat}`;
+        const formatMatchKey = `formatMatches.${battleFormat}`;
         if (isDraw) {
           setWinner('引き分け\nお互い健闘しました！');
           addExp(200);
+          saveUserToFirestore({ totalMatches: increment(1), [formatMatchKey]: increment(1) });
         } else if (isWin) {
           const winDetail = battleFormat !== 'master_duel' ? `\n${newPlayerRoundWins}-${newPcRoundWins} (${formatLabel})` : '';
           setWinner(`勝利！\nおめでとう！${winDetail}`);
           addExp(500);
           setMathPoints(p => p + 300);
-          saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1) });
+          saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1), [formatWinKey]: increment(1), [formatMatchKey]: increment(1) });
           if (gameMode === 'cpu') earnBadge('first_cpu_win');
           else earnBadge('first_pvp_win');
           if (playerHP >= INITIAL_HP) earnBadge('perfect_battle');
@@ -1217,7 +1220,7 @@ const App: React.FC = () => {
           const loseDetail = battleFormat !== 'master_duel' ? `\n${newPlayerRoundWins}-${newPcRoundWins} (${formatLabel})` : '';
           setWinner(`敗北...\n次こそ勝とう！${loseDetail}`);
           addExp(100);
-          saveUserToFirestore({ totalMatches: increment(1) });
+          saveUserToFirestore({ totalMatches: increment(1), [formatMatchKey]: increment(1) });
         }
         await flushSessionData();
         setGameState('end');

@@ -194,6 +194,19 @@ export interface UserProfile {
   totalMatches: number;
   ownedCardIds: number[];
   createdAt?: any;
+  // 形式別勝敗 (denormalized for single-query ranking)
+  formatWins?: {
+    best_of_3?: number;
+    best_of_5?: number;
+    best_of_7?: number;
+    master_duel?: number;
+  };
+  formatMatches?: {
+    best_of_3?: number;
+    best_of_5?: number;
+    best_of_7?: number;
+    master_duel?: number;
+  };
 }
 
 /** MPシンク: 購入可能アイテム定義 */
