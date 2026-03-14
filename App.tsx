@@ -602,18 +602,29 @@ const App: React.FC = () => {
   // ============================
   const expForNextLevel = useCallback((level: number) => 100 + (level - 1) * 50, []);
 
+  // Refs to break useCallback dependency cycle (prevents infinite re-render on level-up)
+  const playerLevelRef = useRef(playerLevel);
+  const playerExpRef = useRef(playerExp);
+  const mathPointsRef = useRef(mathPoints);
+  const ownedCardIdsRef = useRef(ownedCardIds);
+  useEffect(() => { playerLevelRef.current = playerLevel; }, [playerLevel]);
+  useEffect(() => { playerExpRef.current = playerExp; }, [playerExp]);
+  useEffect(() => { mathPointsRef.current = mathPoints; }, [mathPoints]);
+  useEffect(() => { ownedCardIdsRef.current = ownedCardIds; }, [ownedCardIds]);
+
   const addExp = useCallback((amount: number) => {
-    let currentExp = playerExp + amount;
-    let currentLevel = playerLevel;
+    let currentExp = playerExpRef.current + amount;
+    let currentLevel = playerLevelRef.current;
+    const oldLevel = currentLevel;
     let totalMpReward = 0;
     while (currentExp >= expForNextLevel(currentLevel)) {
       currentExp -= expForNextLevel(currentLevel);
       currentLevel++;
       totalMpReward += currentLevel * 100;
     }
-    if (currentLevel > playerLevel) {
+    if (currentLevel > oldLevel) {
       let newCard: ProblemCard | null = null;
-      const unowned = CARD_DEFINITIONS.filter(c => !ownedCardIds.has(c.id));
+      const unowned = CARD_DEFINITIONS.filter(c => !ownedCardIdsRef.current.has(c.id));
       if (unowned.length > 0) {
         newCard = shuffleDeck(unowned)[0];
         setOwnedCardIds(prev => new Set(prev).add(newCard!.id));
@@ -621,13 +632,13 @@ const App: React.FC = () => {
         totalMpReward += 500;
       }
       setMathPoints(p => p + totalMpReward);
-      setLevelUpInfo({ oldLevel: playerLevel, newLevel: currentLevel, mpReward: totalMpReward, newCard });
+      setLevelUpInfo({ oldLevel, newLevel: currentLevel, mpReward: totalMpReward, newCard });
       setPlayerLevel(currentLevel);
-      saveUserToFirestore({ playerLevel: currentLevel, mathPoints: mathPoints + totalMpReward });
+      saveUserToFirestore({ playerLevel: currentLevel, mathPoints: mathPointsRef.current + totalMpReward });
     }
     setPlayerExp(currentExp);
     saveUserToFirestore({ playerExp: currentExp });
-  }, [playerLevel, playerExp, expForNextLevel, ownedCardIds, mathPoints, saveUserToFirestore]);
+  }, [expForNextLevel, saveUserToFirestore]);
 
   // ============================
   // Room / PvP watch
