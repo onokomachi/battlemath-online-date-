@@ -73,6 +73,8 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isSolving || turnPhase !== 'solving_problem') return;
+      // Avoid double input when typing in an <input> element
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       const keyMap: Record<string, string> = {
         'Backspace': 'BACKSPACE',
@@ -308,6 +310,11 @@ interface GameBoardProps {
   wrongCategory?: string | null;
   /** レベル不一致で応戦中 */
   mismatchRound?: boolean;
+  /** バトル形式情報 */
+  battleFormat?: string;
+  playerRoundWins?: number;
+  pcRoundWins?: number;
+  currentRound?: number;
 }
 
 const ScoreDisplay: React.FC<{ score: number; label: string; maxScore: number; isPlayer: boolean }> = ({ score, label, maxScore, isPlayer }) => (
@@ -350,6 +357,10 @@ const GameBoard: React.FC<GameBoardProps> = ({
   playerWrongAnswer,
   wrongCategory,
   mismatchRound = false,
+  battleFormat,
+  playerRoundWins = 0,
+  pcRoundWins = 0,
+  currentRound = 1,
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -365,6 +376,21 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Star Field Decorations */}
       <div className="absolute top-10 left-10 w-20 h-20 bg-blue-500/5 blur-[60px] rounded-full"></div>
       <div className="absolute bottom-20 right-20 w-32 h-32 bg-cyan-500/5 blur-[80px] rounded-full"></div>
+
+      {/* Round Score (for best-of-N formats) */}
+      {battleFormat && battleFormat !== 'master_duel' && (
+        <div className="w-full flex justify-center mb-1">
+          <div className="flex items-center gap-3 bg-purple-950/40 border border-purple-500/30 rounded-xl px-4 py-1.5 backdrop-blur-sm">
+            <span className="text-[10px] text-purple-400 font-bold">
+              {battleFormat === 'best_of_3' ? '3本勝負' : battleFormat === 'best_of_5' ? '5本勝負' : '7本勝負'}
+            </span>
+            <span className="text-sm font-bold font-mono text-cyan-300">{playerRoundWins}</span>
+            <span className="text-xs text-purple-400">-</span>
+            <span className="text-sm font-bold font-mono text-red-300">{pcRoundWins}</span>
+            <span className="text-[10px] text-slate-500">第{currentRound}回戦</span>
+          </div>
+        </div>
+      )}
 
       {/* PC Area */}
       <div className="w-full flex justify-center items-center flex-col space-y-6">

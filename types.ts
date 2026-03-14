@@ -207,6 +207,13 @@ export interface ShopItemDef {
 }
 
 export type BattleMode = 'cpu' | 'pvp';
+export type BattleFormat = 'best_of_3' | 'best_of_5' | 'best_of_7' | 'master_duel';
+
+export interface SavedDeck {
+  name: string;
+  cardIds: number[];
+  createdAt: number;
+}
 
 export interface Room {
   roomId: string;

@@ -21,7 +21,7 @@ import {
   runTransaction, where, orderBy, limit, Timestamp, deleteDoc
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
-import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode, BadgeDef, StudentProfile } from './types';
+import type { ProblemCard, TurnPhase, GameState, TurnInitiative, Room, BattleMode, BattleFormat, BadgeDef, StudentProfile } from './types';
 import {
   CARD_DEFINITIONS, HAND_SIZE, DECK_SIZE,
   INITIAL_HP, calcDamage, ADMIN_EMAILS, GAMEMASTER_PASSWORD,
@@ -159,12 +159,15 @@ const App: React.FC = () => {
   const [pcAnswered, setPcAnswered] = useState(false);
   const [roundStartTime, setRoundStartTime] = useState(0);
   const [mismatchRound, setMismatchRound] = useState(false);
+  const [battleFormat, setBattleFormat] = useState<BattleFormat>('master_duel');
+  const [playerRoundWins, setPlayerRoundWins] = useState(0);
+  const [pcRoundWins, setPcRoundWins] = useState(0);
+  const [currentRound, setCurrentRound] = useState(1);
 
   // --- PvP State ---
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [currentRound, setCurrentRound] = useState(1);
   const [opponentDisconnected, setOpponentDisconnected] = useState(false);
   const unsubscribeRoomRef = useRef<(() => void) | null>(null);
   const isHostRef = useRef(isHost);
@@ -694,6 +697,9 @@ const App: React.FC = () => {
     setPlayerPlayedCard(null);
     setPcPlayedCard(null);
     setMismatchRound(false);
+    setPlayerRoundWins(0);
+    setPcRoundWins(0);
+    setCurrentRound(1);
     setTurnPhase('selecting_card');
   }, []);
 
@@ -879,7 +885,7 @@ const App: React.FC = () => {
     return selected;
   }, []);
 
-  const startGame = useCallback((playerDeckSetup: ProblemCard[], isCpu: boolean, roomData?: Room) => {
+  const startGame = useCallback((playerDeckSetup: ProblemCard[], isCpu: boolean, roomData?: Room, format?: BattleFormat) => {
     cleanupGameSession(true);
     const pcDeckSetup = isCpu ? buildAdaptiveCpuDeck() : shuffleDeck([...CARD_DEFINITIONS]).slice(0, DECK_SIZE);
     const shuffledP = shuffleDeck(playerDeckSetup);
@@ -903,7 +909,12 @@ const App: React.FC = () => {
     setPcAnswered(false);
     setInitiative(Math.random() > 0.5 ? 'player' : 'pc');
     setTurnPhase('selecting_card');
-    setGameLog(['バトル開始！問題に答えてダメージを与えよう！']);
+    if (format) setBattleFormat(format);
+    setPlayerRoundWins(0);
+    setPcRoundWins(0);
+    setCurrentRound(1);
+    const formatLabel = format === 'best_of_3' ? '【3本勝負】' : format === 'best_of_5' ? '【5本勝負】' : format === 'best_of_7' ? '【7本勝負】' : '【マスターデュエル】';
+    setGameLog([`${formatLabel} バトル開始！問題に答えてダメージを与えよう！`]);
   }, [cleanupGameSession, buildAdaptiveCpuDeck]);
 
   // ============================
@@ -1129,39 +1140,93 @@ const App: React.FC = () => {
   }, [turnPhase, pcAnswered, playerAnswered, pcPlayedCard, playerPlayedCard, userLevelStats, mismatchRound]);
 
   // ============================
-  // Round End / HP Win Check
+  // Round End / Win Check (supports both HP and round-based formats)
   // ============================
+  const getRequiredWins = useCallback((format: BattleFormat): number => {
+    if (format === 'best_of_3') return 2;
+    if (format === 'best_of_5') return 3;
+    if (format === 'best_of_7') return 4;
+    return 0; // master_duel uses HP
+  }, []);
+
   useEffect(() => {
     if (turnPhase !== 'round_end') return;
     const timer = setTimeout(async () => {
-      // HP win condition
-      if (playerHP <= 0 || pcHP <= 0) {
-        const isWin = pcHP <= 0 && playerHP > 0;
-        const isDraw = pcHP <= 0 && playerHP <= 0;
+      const isPlayerWonRound = roundResult?.includes('勝利');
+      const isPlayerLostRound = roundResult?.includes('敗北');
+
+      // Track round wins for best-of-N formats
+      let newPlayerRoundWins = playerRoundWins;
+      let newPcRoundWins = pcRoundWins;
+      if (battleFormat !== 'master_duel') {
+        if (isPlayerWonRound) {
+          newPlayerRoundWins = playerRoundWins + 1;
+          setPlayerRoundWins(newPlayerRoundWins);
+        } else if (isPlayerLostRound) {
+          newPcRoundWins = pcRoundWins + 1;
+          setPcRoundWins(newPcRoundWins);
+        }
+        setCurrentRound(prev => prev + 1);
+      }
+
+      // Determine if game is over
+      let gameOver = false;
+      let isWin = false;
+      let isDraw = false;
+
+      if (battleFormat === 'master_duel') {
+        // HP-based win condition
+        if (playerHP <= 0 || pcHP <= 0) {
+          gameOver = true;
+          isWin = pcHP <= 0 && playerHP > 0;
+          isDraw = pcHP <= 0 && playerHP <= 0;
+        }
+      } else {
+        // Round-based win condition
+        const required = getRequiredWins(battleFormat);
+        if (newPlayerRoundWins >= required || newPcRoundWins >= required) {
+          gameOver = true;
+          isWin = newPlayerRoundWins >= required;
+          isDraw = false;
+        }
+        // Also end if HP reaches 0 (knockout in round format)
+        if (!gameOver && (playerHP <= 0 || pcHP <= 0)) {
+          gameOver = true;
+          isWin = pcHP <= 0 && playerHP > 0;
+          isDraw = pcHP <= 0 && playerHP <= 0;
+        }
+      }
+
+      if (gameOver) {
+        const formatLabel = battleFormat === 'best_of_3' ? '3本勝負' : battleFormat === 'best_of_5' ? '5本勝負' : battleFormat === 'best_of_7' ? '7本勝負' : 'マスターデュエル';
         if (isDraw) {
           setWinner('引き分け\nお互い健闘しました！');
           addExp(200);
         } else if (isWin) {
-          setWinner('勝利！\nおめでとう！');
+          const winDetail = battleFormat !== 'master_duel' ? `\n${newPlayerRoundWins}-${newPcRoundWins} (${formatLabel})` : '';
+          setWinner(`勝利！\nおめでとう！${winDetail}`);
           addExp(500);
           setMathPoints(p => p + 300);
           saveUserToFirestore({ totalWins: increment(1), totalMatches: increment(1) });
           if (gameMode === 'cpu') earnBadge('first_cpu_win');
           else earnBadge('first_pvp_win');
-          // 完全勝利バッジ: HP満タン
           if (playerHP >= INITIAL_HP) earnBadge('perfect_battle');
-          // 逆転勝利バッジ: HP5以下から勝利
           if (playerHP <= 5) earnBadge('comeback');
-          // 分野マスターバッジチェック
           checkCategoryMasterBadges();
         } else {
-          setWinner('敗北...\n次こそ勝とう！');
+          const loseDetail = battleFormat !== 'master_duel' ? `\n${newPlayerRoundWins}-${newPcRoundWins} (${formatLabel})` : '';
+          setWinner(`敗北...\n次こそ勝とう！${loseDetail}`);
           addExp(100);
           saveUserToFirestore({ totalMatches: increment(1) });
         }
         await flushSessionData();
         setGameState('end');
         return;
+      }
+
+      // Round-based format: log round score
+      if (battleFormat !== 'master_duel') {
+        addLog(`第${currentRound}回戦終了 [${newPlayerRoundWins}-${newPcRoundWins}]`);
       }
 
       // PvP: update Firestore HP
@@ -1176,8 +1241,7 @@ const App: React.FC = () => {
       }
 
       // Next round setup
-      const isPlayerDefeated = roundResult?.includes('敗北');
-      setInitiative(isPlayerDefeated ? 'player' : 'pc');
+      setInitiative(isPlayerLostRound ? 'player' : 'pc');
       setPlayerHand(prev => {
         const needed = HAND_SIZE - prev.length;
         if (needed <= 0 || playerDeck.length === 0) return prev;
@@ -1202,7 +1266,7 @@ const App: React.FC = () => {
       setTurnPhase('selecting_card');
     }, 3000);
     return () => clearTimeout(timer);
-  }, [turnPhase, playerHP, pcHP, gameMode, currentRoomId, playerDeck, pcDeck, addExp, roundResult]);
+  }, [turnPhase, playerHP, pcHP, gameMode, currentRoomId, playerDeck, pcDeck, addExp, roundResult, battleFormat, playerRoundWins, pcRoundWins, currentRound, getRequiredWins]);
 
   // ============================
   // Render
@@ -1274,13 +1338,14 @@ const App: React.FC = () => {
         return (
           <DeckBuilder
             ownedCards={ownedCards}
-            onDeckSubmit={(deck, mode) => {
+            onDeckSubmit={(deck, mode, format) => {
               const bmode: BattleMode = (mode as string) === 'pvp' ? 'pvp' : 'cpu';
               setGameMode(bmode);
+              setBattleFormat(format);
               if (bmode === 'pvp') {
                 setGameState('matchmaking');
               } else {
-                startGame(deck, true);
+                startGame(deck, true, undefined, format);
                 setGameState('in_game');
               }
             }}
@@ -1359,6 +1424,10 @@ const App: React.FC = () => {
               playerWrongAnswer={playerWrongAnswer}
               wrongCategory={wrongCategory}
               mismatchRound={mismatchRound}
+              battleFormat={battleFormat}
+              playerRoundWins={playerRoundWins}
+              pcRoundWins={pcRoundWins}
+              currentRound={currentRound}
             />
             {/* 相手切断通知バナー */}
             {opponentDisconnected && gameMode === 'pvp' && (

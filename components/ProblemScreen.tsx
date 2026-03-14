@@ -278,7 +278,9 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
          if (e.key === 'Enter') handleNextProblem();
          return;
       }
-      
+      // Avoid double input when typing in an <input> element
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
       const keyMap: Record<string, string> = {
         'Backspace': 'BACKSPACE',
         'Escape': 'CLEAR',
