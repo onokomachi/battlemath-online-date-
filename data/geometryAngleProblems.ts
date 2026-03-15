@@ -178,5 +178,90 @@ export const geometryAngleProblems: ProblemSet = {
         data: { question: "正方形ABCDの内部に△PBCが正三角形になるように点Pをとる。このとき∠PAD は何度になるか。", imageUrl: "/Image/78.jpg" },
         answer: "15°"
     },
+  ],
+  "多角形と角(基)": [
+    {
+        type: 'text',
+        data: {
+            question: "四角形の内角の和は何度か。",
+            svg: '<svg viewBox="0 0 200 170" preserveAspectRatio="xMidYMid meet"><polygon points="30,140 20,50 150,20 180,130" fill="none" stroke="white" stroke-width="1.5"/><path d="M 28,126 A 14 14 0 0 1 38,134" fill="none" stroke="white" stroke-width="1"/><path d="M 33,58 A 14 14 0 0 1 24,64" fill="none" stroke="white" stroke-width="1"/><path d="M 137,25 A 14 14 0 0 1 145,33" fill="none" stroke="white" stroke-width="1"/><path d="M 173,118 A 14 14 0 0 1 167,127" fill="none" stroke="white" stroke-width="1"/></svg>',
+            options: ["180°", "360°", "540°", "720°"]
+        },
+        answer: "360°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "五角形の内角の和は何度か。",
+            svg: '<svg viewBox="0 0 200 170" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 166.6,49.4 141.2,122.6 58.8,122.6 33.4,49.4" fill="none" stroke="white" stroke-width="1.5"/><path d="M 95,29 A 12 12 0 0 1 105,29" fill="none" stroke="white" stroke-width="1"/><path d="M 155,52 A 12 12 0 0 1 157,63" fill="none" stroke="white" stroke-width="1"/><path d="M 134,114 A 12 12 0 0 1 131,121" fill="none" stroke="white" stroke-width="1"/><path d="M 69,121 A 12 12 0 0 1 66,114" fill="none" stroke="white" stroke-width="1"/><path d="M 43,63 A 12 12 0 0 1 45,52" fill="none" stroke="white" stroke-width="1"/></svg>',
+            options: ["360°", "540°", "720°", "900°"]
+        },
+        answer: "540°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "六角形の内角の和は何度か。",
+            svg: '<svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 160.6,47.5 160.6,112.5 100,145 39.4,112.5 39.4,47.5" fill="none" stroke="white" stroke-width="1.5"/><path d="M 95,29 A 12 12 0 0 1 105,29" fill="none" stroke="white" stroke-width="1"/><path d="M 150,51 A 12 12 0 0 1 152,62" fill="none" stroke="white" stroke-width="1"/><path d="M 152,100 A 12 12 0 0 1 150,111" fill="none" stroke="white" stroke-width="1"/><path d="M 105,133 A 12 12 0 0 1 95,133" fill="none" stroke="white" stroke-width="1"/><path d="M 50,111 A 12 12 0 0 1 48,100" fill="none" stroke="white" stroke-width="1"/><path d="M 48,62 A 12 12 0 0 1 50,51" fill="none" stroke="white" stroke-width="1"/></svg>',
+            options: ["540°", "720°", "900°", "1080°"]
+        },
+        answer: "720°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "正五角形の1つの内角は何度か。",
+            svg: '<svg viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 166.6,49.4 141.2,122.6 58.8,122.6 33.4,49.4" fill="none" stroke="white" stroke-width="1.5"/><path d="M 91,28 A 16 16 0 0 1 109,28" fill="#60a5fa" fill-opacity="0.2" stroke="#60a5fa" stroke-width="1.5"/><text x="90" y="46" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "108°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "正六角形の1つの内角は何度か。",
+            svg: '<svg viewBox="0 0 200 170" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 160.6,47.5 160.6,112.5 100,145 39.4,112.5 39.4,47.5" fill="none" stroke="white" stroke-width="1.5"/><path d="M 91,28 A 16 16 0 0 1 109,28" fill="#60a5fa" fill-opacity="0.2" stroke="#60a5fa" stroke-width="1.5"/><text x="90" y="46" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "120°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "正八角形の1つの内角は何度か。",
+            svg: '<svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 149.5,35.5 170,85 149.5,134.5 100,155 50.5,134.5 30,85 50.5,35.5" fill="none" stroke="white" stroke-width="1.5"/><path d="M 91,28 A 16 16 0 0 1 109,28" fill="#60a5fa" fill-opacity="0.2" stroke="#60a5fa" stroke-width="1.5"/><text x="90" y="46" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "135°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "正三角形の1つの外角は何度か。",
+            svg: '<svg viewBox="0 0 240 170" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 40,140 160,140" fill="none" stroke="white" stroke-width="1.5"/><line x1="160" y1="140" x2="220" y2="140" stroke="white" stroke-width="1.5"/><path d="M 175,140 A 15 15 0 0 0 168,127" fill="#60a5fa" fill-opacity="0.2" stroke="#60a5fa" stroke-width="1.5"/><text x="178" y="134" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "120°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "正五角形の1つの外角は何度か。",
+            svg: '<svg viewBox="0 0 230 150" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 166.6,49.4 141.2,122.6 58.8,122.6 33.4,49.4" fill="none" stroke="white" stroke-width="1.5"/><line x1="141.2" y1="122.6" x2="210" y2="122.6" stroke="white" stroke-width="1.5"/><path d="M 158,122.6 A 17 17 0 0 0 150,111" fill="#60a5fa" fill-opacity="0.2" stroke="#60a5fa" stroke-width="1.5"/><text x="162" y="117" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "72°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "四角形ABCDで∠A=85°, ∠B=100°, ∠C=95°のとき、∠D=xを求めよ。",
+            svg: '<svg viewBox="0 0 200 170" preserveAspectRatio="xMidYMid meet"><polygon points="30,140 20,40 160,20 180,130" fill="none" stroke="white" stroke-width="1.5"/><text x="10" y="155" font-size="14" fill="white">A</text><text x="8" y="35" font-size="14" fill="white">B</text><text x="162" y="16" font-size="14" fill="white">C</text><text x="182" y="140" font-size="14" fill="white">D</text><path d="M 38,132 A 14 14 0 0 1 36,126" fill="none" stroke="#f87171" stroke-width="1"/><text x="42" y="126" font-size="12" fill="#f87171">85°</text><path d="M 28,52 A 14 14 0 0 1 32,44" fill="none" stroke="#f87171" stroke-width="1"/><text x="34" y="56" font-size="12" fill="#f87171">100°</text><path d="M 148,28 A 14 14 0 0 1 155,34" fill="none" stroke="#f87171" stroke-width="1"/><text x="130" y="40" font-size="12" fill="#f87171">95°</text><path d="M 172,120 A 14 14 0 0 1 168,128" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="153" y="120" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "80°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "五角形で4つの角が100°, 110°, 120°, 90°のとき、残りの角xを求めよ。",
+            svg: '<svg viewBox="0 0 210 150" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 166.6,49.4 141.2,122.6 58.8,122.6 33.4,49.4" fill="none" stroke="white" stroke-width="1.5"/><path d="M 91,28 A 16 16 0 0 1 109,28" fill="none" stroke="#f87171" stroke-width="1"/><text x="86" y="46" font-size="11" fill="#f87171">100°</text><path d="M 156,53 A 14 14 0 0 1 158,64" fill="none" stroke="#f87171" stroke-width="1"/><text x="143" y="68" font-size="11" fill="#f87171">110°</text><path d="M 134,114 A 14 14 0 0 1 130,122" fill="none" stroke="#f87171" stroke-width="1"/><text x="130" y="138" font-size="11" fill="#f87171">120°</text><path d="M 69,122 A 14 14 0 0 1 66,114" fill="none" stroke="#f87171" stroke-width="1"/><text x="42" y="138" font-size="11" fill="#f87171">90°</text><path d="M 43,63 A 14 14 0 0 1 45,52" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="28" y="68" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "120°"
+    },
   ]
 };

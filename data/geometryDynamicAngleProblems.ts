@@ -341,6 +341,78 @@ export const geometryDynamicAngleProblems: ProblemSet = {
       },
       answer: '40'
     },
+    {
+      type: 'triangle_in_parallel_lines',
+      data: {
+        angles: [
+          { value: 55, position: 'base_left' },
+          { value: 70, position: 'base_right' }
+        ],
+        unknown: { label: 'x', position: 'top_vertex' },
+        questionText: 'l // m のとき、∠x の大きさを求めよ。'
+      },
+      answer: '55'
+    },
+    {
+      type: 'triangle_in_parallel_lines',
+      data: {
+        angles: [
+          { value: 25, position: 'base_left' },
+          { value: 85, position: 'base_right' }
+        ],
+        unknown: { label: 'x', position: 'top_vertex' },
+        questionText: 'l // m のとき、∠x の大きさを求めよ。'
+      },
+      answer: '70'
+    },
+    {
+      type: 'triangle_in_parallel_lines',
+      data: {
+        angles: [
+          { value: 60, position: 'base_left' },
+          { value: 120, position: 'base_right_exterior' }
+        ],
+        unknown: { label: 'x', position: 'top_vertex' },
+        questionText: 'l // m のとき、∠x の大きさを求めよ。'
+      },
+      answer: '60'
+    },
+    {
+      type: 'triangle_in_parallel_lines',
+      data: {
+        angles: [
+          { value: 80, position: 'base_left' },
+          { value: 45, position: 'base_right' }
+        ],
+        unknown: { label: 'x', position: 'top_vertex' },
+        questionText: 'l // m のとき、∠x の大きさを求めよ。'
+      },
+      answer: '55'
+    },
+    {
+      type: 'triangle_in_parallel_lines',
+      data: {
+        angles: [
+          { value: 35, position: 'base_left' },
+          { value: 145, position: 'base_right_exterior' }
+        ],
+        unknown: { label: 'x', position: 'top_vertex' },
+        questionText: 'l // m のとき、∠x の大きさを求めよ。'
+      },
+      answer: '110'
+    },
+    {
+      type: 'triangle_in_parallel_lines',
+      data: {
+        angles: [
+          { value: 42, position: 'base_left' },
+          { value: 68, position: 'base_right' }
+        ],
+        unknown: { label: 'x', position: 'top_vertex' },
+        questionText: 'l // m のとき、∠x の大きさを求めよ。'
+      },
+      answer: '70'
+    },
   ],
 
   // ----------------------------------------------------------
