@@ -126,6 +126,120 @@ export const geometryAngleProblems: ProblemSet = {
     { type: 'text', data: { question: "a〜eの直線のうち平行な直線の組をすべて選びなさい。", svg: '<svg viewBox="150 150 230 230" preserveAspectRatio="xMidYMid meet"><g transform="translate(260,250) rotate(-30.96) translate(-260,-250)"><line x1="200" y1="200" x2="320" y2="180" style="fill:none;stroke:white;"></line><line x1="200" y1="290" x2="320" y2="280" style="fill:none;stroke:white;"></line><line x1="200" y1="330" x2="320" y2="310" style="fill:none;stroke:white;"></line><line x1="200" y1="230" x2="320" y2="220" style="fill:none;stroke:white;"></line><line x1="280" y1="170" x2="230" y2="370" style="fill:none;stroke:white;"></line><line x1="220" y1="180" x2="340" y2="390" style="fill:none;stroke:white;"></line></g><text x="173" y="244" font-size="12" fill="white">a</text><text x="189" y="268" font-size="12" fill="white">b</text><text x="204" y="290" font-size="12" fill="white">c</text><text x="218" y="319" font-size="12" fill="white">d</text><text x="241" y="358" font-size="12" fill="white">e</text><path style="fill:none;stroke:white;" d="M 233,196 A 10 10 0 0 0 245,200"></path><path style="fill:none;stroke:white;" d="M 290,316 A 10 10 0 0 0 279,313"></path><line x1="213" y1="286" x2="308" y2="213" style="fill:none;stroke:white;"></line><text x="225" y="212" font-size="12" fill="white">67°</text><text x="280" y="310" font-size="12" fill="white">67°</text><text x="205" y="243" font-size="12" fill="white">65°</text><text x="282" y="257" font-size="12" fill="white">115°</text><path style="fill:none;stroke:white;" d="M 227,232 A 10 10 0 0 0 227,243"></path><path style="fill:none;stroke:white;" d="M 335,292 A 12 12 0 0 0 334,278"></path><text x="187" y="225" font-size="12" fill="white">f</text><text x="255" y="213" font-size="12" fill="white">g</text><text x="241" y="254" font-size="12" fill="white">h</text><text x="265" y="305" font-size="12" fill="white">i</text><text x="339" y="290" font-size="12" fill="white">j</text><text x="265" y="272" font-size="12" fill="white">51°</text></svg>', options: ["a // e", "b // d", "a // c", "c // e"], multiple: true }, answer: "a // e,b // d" },
     { type: 'text', data: { question: "∠f〜∠jのうち等しい角の組をすべて選びなさい。", svg: '<svg viewBox="150 150 230 230" preserveAspectRatio="xMidYMid meet"><g transform="translate(260,250) rotate(-30.96) translate(-260,-250)"><line x1="200" y1="200" x2="320" y2="180" style="fill:none;stroke:white;"></line><line x1="200" y1="290" x2="320" y2="280" style="fill:none;stroke:white;"></line><line x1="200" y1="330" x2="320" y2="310" style="fill:none;stroke:white;"></line><line x1="200" y1="230" x2="320" y2="220" style="fill:none;stroke:white;"></line><line x1="280" y1="170" x2="230" y2="370" style="fill:none;stroke:white;"></line><line x1="220" y1="180" x2="340" y2="390" style="fill:none;stroke:white;"></line></g><text x="173" y="244" font-size="12" fill="white">a</text><text x="189" y="268" font-size="12" fill="white">b</text><text x="204" y="290" font-size="12" fill="white">c</text><text x="218" y="319" font-size="12" fill="white">d</text><text x="241" y="358" font-size="12" fill="white">e</text><path style="fill:none;stroke:white;" d="M 233,196 A 10 10 0 0 0 245,200"></path><path style="fill:none;stroke:white;" d="M 290,316 A 10 10 0 0 0 279,313"></path><line x1="213" y1="286" x2="308" y2="213" style="fill:none;stroke:white;"></line><text x="225" y="212" font-size="12" fill="white">67°</text><text x="280" y="310" font-size="12" fill="white">67°</text><text x="205" y="243" font-size="12" fill="white">65°</text><text x="282" y="257" font-size="12" fill="white">115°</text><path style="fill:none;stroke:white;" d="M 227,232 A 10 10 0 0 0 227,243"></path><path style="fill:none;stroke:white;" d="M 335,292 A 12 12 0 0 0 334,278"></path><text x="187" y="225" font-size="12" fill="white">f</text><text x="255" y="213" font-size="12" fill="white">g</text><text x="241" y="254" font-size="12" fill="white">h</text><text x="265" y="305" font-size="12" fill="white">i</text><text x="339" y="290" font-size="12" fill="white">j</text><text x="265" y="272" font-size="12" fill="white">51°</text></svg>', options: ["∠f = ∠j", "∠g = ∠i", "∠f = ∠h", "∠g = ∠j"], multiple: true }, answer: "∠f = ∠j,∠g = ∠i" }
 ],
+  "三角形と角(基)": [
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#f87171">60°</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">80°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "40°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#f87171">45°</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">75°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "60°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#60a5fa">x</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">30°</text><rect x="160" y="135" width="10" height="10" fill="none" stroke="white" stroke-width="1"/><text x="148" y="136" font-size="14" fill="#f87171">90°</text></svg>'
+        },
+        answer: "60°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#f87171">55°</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">63°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "62°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#f87171">70°</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#60a5fa">x</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#f87171">40°</text></svg>'
+        },
+        answer: "70°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#f87171">35°</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">85°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "60°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 170,145 30,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="172" y="158" font-size="14" fill="white">C</text><text x="12" y="158" font-size="14" fill="white">B</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#60a5fa">x</text><rect x="20" y="135" width="10" height="10" fill="none" stroke="white" stroke-width="1"/><text x="35" y="136" font-size="14" fill="#f87171">90°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#f87171">52°</text></svg>'
+        },
+        answer: "38°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#f87171">48°</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">67°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "65°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#60a5fa">x</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">72°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#f87171">54°</text></svg>'
+        },
+        answer: "54°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 240 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><line x1="170" y1="145" x2="230" y2="145" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="163" y="158" font-size="14" fill="white">C</text><text x="225" y="158" font-size="14" fill="white">D</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#f87171">40°</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">65°</text><path d="M 186,145 A 18 18 0 0 1 178,132" fill="none" stroke="white" stroke-width="1"/><text x="182" y="136" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "105°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 88,40 A 20 20 0 0 1 112,40" fill="none" stroke="white" stroke-width="1"/><text x="84" y="56" font-size="14" fill="#f87171">110°</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">25°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "45°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 240 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><line x1="170" y1="145" x2="230" y2="145" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="163" y="158" font-size="14" fill="white">C</text><text x="225" y="158" font-size="14" fill="white">D</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">35°</text><path d="M 154,143 A 18 18 0 0 1 162,130" fill="none" stroke="white" stroke-width="1"/><text x="136" y="136" font-size="14" fill="#f87171">50°</text><path d="M 186,145 A 18 18 0 0 1 178,132" fill="none" stroke="white" stroke-width="1"/><text x="182" y="136" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "85°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><line x1="58" y1="67" x2="55" y2="76" stroke="white" stroke-width="1.5"/><line x1="62" y1="68" x2="59" y2="77" stroke="white" stroke-width="1.5"/><line x1="142" y1="67" x2="145" y2="76" stroke="white" stroke-width="1.5"/><line x1="138" y1="68" x2="141" y2="77" stroke="white" stroke-width="1.5"/><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#60a5fa">x</text><path d="M 46,143 A 18 18 0 0 1 38,130" fill="none" stroke="white" stroke-width="1"/><text x="44" y="136" font-size="14" fill="#f87171">65°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#f87171">65°</text></svg>'
+        },
+        answer: "50°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "∠xの大きさを求めなさい。",
+            svg: '<svg viewBox="0 0 200 165" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><text x="93" y="15" font-size="14" fill="white">A</text><text x="12" y="158" font-size="14" fill="white">B</text><text x="172" y="158" font-size="14" fill="white">C</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="white" stroke-width="1"/><text x="88" y="52" font-size="14" fill="#f87171">28°</text><rect x="20" y="135" width="10" height="10" fill="none" stroke="white" stroke-width="1"/><text x="35" y="136" font-size="14" fill="#f87171">90°</text><path d="M 162,130 A 18 18 0 0 1 154,143" fill="none" stroke="white" stroke-width="1"/><text x="140" y="136" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "62°"
+    }
+  ],
   "角度（基本）": [
     { type: 'text', data: { question: "図の∠xの大きさを求めよ。(l // m)", svg: '<svg viewBox="140 60 160 120" preserveAspectRatio="xMidYMid meet"><line x1="140" y1="80" x2="280" y2="80" style="fill:none;stroke:white;stroke-width:1.5"></line><line x1="140" y1="160" x2="280" y2="160" style="fill:none;stroke:white;stroke-width:1.5"></line><line x1="220" y1="120" x2="220" y2="40" style="fill:none;stroke:white;stroke-width:1.5" transform="translate(220,120) rotate(-26) translate(-220,-120)"></line><line x1="220" y1="120" x2="220" y2="200" style="fill:none;stroke:white;stroke-width:1.5" transform="translate(220,120) rotate(51) translate(-220,-120)"></line><path style="fill:none;stroke:white;" d="M 206,91 A 13 13 0 0 0 214,79"></path><path style="fill:none;stroke:white;" d="M 215,109 A 13 13 0 0 0 210,129"></path><path style="fill:none;stroke:white;" d="M 184,160 A 12 12 0 0 0 181,151"></path><text x="277" y="79" font-size="12" fill="white">l</text><text x="273" y="159" font-size="12" fill="white">m</text><text x="213" y="96" font-size="12" fill="white">64°</text><text x="188" y="158" font-size="12" fill="white">39°</text><text x="198" y="123" font-size="12" fill="white">x</text></svg>' }, answer: "103°" },
     { type: 'text', data: { question: "図の∠xの大きさを求めよ。(l // m)", svg: '<svg viewBox="160 50 160 130" preserveAspectRatio="xMidYMid meet"><line x1="160" y1="80" x2="300" y2="80" style="fill:none;stroke:white;stroke-width:1.5"></line><line x1="160" y1="160" x2="300" y2="160" style="fill:none;stroke:white;stroke-width:1.5"></line><line x1="240" y1="120" x2="240" y2="40" style="fill:none;stroke:white;stroke-width:1.5" transform="translate(240,120) rotate(-38) translate(-240,-120)"></line><line x1="240" y1="120" x2="240" y2="190" style="fill:none;stroke:white;stroke-width:1.5" transform="translate(240,120) rotate(18) translate(-240,-120)"></line><path style="fill:none;stroke:white;" d="M 203,80 A 9 9 0 0 0 215,87"></path><path style="fill:none;stroke:white;" d="M 234,113 A 10 10 0 0 0 237,129"></path><path style="fill:none;stroke:white;" d="M 230,152 A 10 10 0 0 0 217,160"></path><text x="177" y="94" font-size="12" fill="white">128°</text><text x="203" y="125" font-size="12" fill="white">134°</text><text x="211" y="155" font-size="12" fill="white">x</text><text x="297" y="77" font-size="12" fill="white">l</text><text x="289" y="156" font-size="12" fill="white">m</text></svg>' }, answer: "98°" },
