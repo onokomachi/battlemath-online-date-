@@ -118,9 +118,9 @@ const AngleDiagramView: React.FC<AngleDiagramViewProps> = ({ data, userAnswer, i
             <svg width="100%" style={{ maxHeight: '220px' }} viewBox={`0 0 ${width} ${height}`}>
                 {/* Parallel lines */}
                 <line x1="0" y1={y_l} x2={width} y2={y_l} stroke="#666" strokeWidth="2" />
-                <text x="5" y={y_l - 8} className="text-gray-400 font-sans text-base">l</text>
+                <text x="5" y={y_l - 8} className="text-gray-400 font-sans text-base" fill="#9ca3af">l</text>
                 <line x1="0" y1={y_m} x2={width} y2={y_m} stroke="#666" strokeWidth="2" />
-                <text x="5" y={y_m - 8} className="text-gray-400 font-sans text-base">m</text>
+                <text x="5" y={y_m - 8} className="text-gray-400 font-sans text-base" fill="#9ca3af">m</text>
                 
                 {/* Parallel line markers */}
                 <path d={`M ${width*0.6} ${y_l} l 8 -4 l 0 8 z`} fill="#aaa" />
@@ -135,7 +135,7 @@ const AngleDiagramView: React.FC<AngleDiagramViewProps> = ({ data, userAnswer, i
                     if (!pos) return null;
                     return (
                         <g key={`known-${angle.position}`}>
-                            <text x={pos.textPos[0]} y={pos.textPos[1]} textAnchor="middle" dominantBaseline="middle" className="font-bold text-lg font-mono text-white">{angle.value}°</text>
+                            <text x={pos.textPos[0]} y={pos.textPos[1]} textAnchor="middle" dominantBaseline="middle" className="font-bold text-lg font-mono text-white" fill="white">{angle.value}°</text>
                         </g>
                     );
                 })}
@@ -146,7 +146,7 @@ const AngleDiagramView: React.FC<AngleDiagramViewProps> = ({ data, userAnswer, i
                     if (!pos) return null;
                     return (
                         <g>
-                            <text x={pos.textPos[0]} y={pos.textPos[1]} textAnchor="middle" dominantBaseline="middle" className="font-bold text-xl text-amber-400" style={{fontFamily: "'Playfair Display', serif"}}>{unknown.name}</text>
+                            <text x={pos.textPos[0]} y={pos.textPos[1]} textAnchor="middle" dominantBaseline="middle" className="font-bold text-xl text-amber-400" fill="#fbbf24" style={{fontFamily: "'Playfair Display', serif"}}>{unknown.name}</text>
                         </g>
                     );
                 })()}

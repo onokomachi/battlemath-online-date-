@@ -53,7 +53,7 @@ const AngleDisplay: React.FC<AngleDisplayProps> = ({ center, v1, v2, text, isUnk
     return (
         <g>
             <path d={arcPath} stroke="#C0A062" strokeWidth="1.5" fill="none" />
-            <text x={textPos.x} y={textPos.y} textAnchor="middle" dominantBaseline="middle" className={isUnknown ? "font-bold text-xl text-amber-400" : "font-bold text-base text-white font-mono"}>
+            <text x={textPos.x} y={textPos.y} textAnchor="middle" dominantBaseline="middle" className={isUnknown ? "font-bold text-xl text-amber-400" : "font-bold text-base text-white font-mono"} fill={isUnknown ? "#fbbf24" : "white"}>
                 {displayText}
             </text>
         </g>
@@ -143,9 +143,9 @@ const BentTransversalDiagramView: React.FC<BentTransversalDiagramViewProps> = ({
         const elements = (
             <>
                 <line x1={minX - padding * 2} y1={y_l} x2={maxX + padding * 2} y2={y_l} stroke="#666" strokeWidth="2" />
-                <text x={minX - padding + 10} y={y_l - 8} className="text-gray-400 font-sans text-base">l</text>
+                <text x={minX - padding + 10} y={y_l - 8} className="text-gray-400 font-sans text-base" fill="#9ca3af">l</text>
                 <line x1={minX - padding * 2} y1={y_m} x2={maxX + padding * 2} y2={y_m} stroke="#666" strokeWidth="2" />
-                <text x={minX - padding + 10} y={y_m - 8} className="text-gray-400 font-sans text-base">m</text>
+                <text x={minX - padding + 10} y={y_m - 8} className="text-gray-400 font-sans text-base" fill="#9ca3af">m</text>
                 
                 <path d={`M ${maxX + padding - 20} ${y_l} l 8 -4 l 0 8 z`} fill="#aaa" />
                 <path d={`M ${maxX + padding - 20} ${y_m} l 8 -4 l 0 8 z`} fill="#aaa" />

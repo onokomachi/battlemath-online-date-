@@ -15,7 +15,7 @@ export const geometryDynamicAngleProblems: ProblemSet = {
   // 位置: 1=上左, 2=上右, 3=下左(lの下), 4=下右(lの下)
   //       5=上左(mの上), 6=上右(mの上), 7=下左, 8=下右
   // ----------------------------------------------------------
-  "平行線と角(動的1)": [
+  "平行線と角①": [
     // --- 同位角（corresponding angles） ---
     {
       type: 'angle_diagram',
@@ -158,7 +158,7 @@ export const geometryDynamicAngleProblems: ProblemSet = {
   // ----------------------------------------------------------
   // 折れ曲がった横断線 - bent_transversal_diagram 使用
   // ----------------------------------------------------------
-  "平行線と角(動的2)": [
+  "平行線と角②": [
     {
       type: 'bent_transversal_diagram',
       data: {
