@@ -126,20 +126,6 @@ export const geometryAngleProblems: ProblemSet = {
     { type: 'text', data: { question: "a〜eの直線のうち平行な直線の組をすべて選びなさい。", svg: '<svg viewBox="150 150 230 230" preserveAspectRatio="xMidYMid meet"><g transform="translate(260,250) rotate(-30.96) translate(-260,-250)"><line x1="200" y1="200" x2="320" y2="180" style="fill:none;stroke:white;"></line><line x1="200" y1="290" x2="320" y2="280" style="fill:none;stroke:white;"></line><line x1="200" y1="330" x2="320" y2="310" style="fill:none;stroke:white;"></line><line x1="200" y1="230" x2="320" y2="220" style="fill:none;stroke:white;"></line><line x1="280" y1="170" x2="230" y2="370" style="fill:none;stroke:white;"></line><line x1="220" y1="180" x2="340" y2="390" style="fill:none;stroke:white;"></line></g><text x="173" y="244" font-size="12" fill="white">a</text><text x="189" y="268" font-size="12" fill="white">b</text><text x="204" y="290" font-size="12" fill="white">c</text><text x="218" y="319" font-size="12" fill="white">d</text><text x="241" y="358" font-size="12" fill="white">e</text><path style="fill:none;stroke:white;" d="M 233,196 A 10 10 0 0 0 245,200"></path><path style="fill:none;stroke:white;" d="M 290,316 A 10 10 0 0 0 279,313"></path><line x1="213" y1="286" x2="308" y2="213" style="fill:none;stroke:white;"></line><text x="225" y="212" font-size="12" fill="white">67°</text><text x="280" y="310" font-size="12" fill="white">67°</text><text x="205" y="243" font-size="12" fill="white">65°</text><text x="282" y="257" font-size="12" fill="white">115°</text><path style="fill:none;stroke:white;" d="M 227,232 A 10 10 0 0 0 227,243"></path><path style="fill:none;stroke:white;" d="M 335,292 A 12 12 0 0 0 334,278"></path><text x="187" y="225" font-size="12" fill="white">f</text><text x="255" y="213" font-size="12" fill="white">g</text><text x="241" y="254" font-size="12" fill="white">h</text><text x="265" y="305" font-size="12" fill="white">i</text><text x="339" y="290" font-size="12" fill="white">j</text><text x="265" y="272" font-size="12" fill="white">51°</text></svg>', options: ["a // e", "b // d", "a // c", "c // e"], multiple: true }, answer: "a // e,b // d" },
     { type: 'text', data: { question: "∠f〜∠jのうち等しい角の組をすべて選びなさい。", svg: '<svg viewBox="150 150 230 230" preserveAspectRatio="xMidYMid meet"><g transform="translate(260,250) rotate(-30.96) translate(-260,-250)"><line x1="200" y1="200" x2="320" y2="180" style="fill:none;stroke:white;"></line><line x1="200" y1="290" x2="320" y2="280" style="fill:none;stroke:white;"></line><line x1="200" y1="330" x2="320" y2="310" style="fill:none;stroke:white;"></line><line x1="200" y1="230" x2="320" y2="220" style="fill:none;stroke:white;"></line><line x1="280" y1="170" x2="230" y2="370" style="fill:none;stroke:white;"></line><line x1="220" y1="180" x2="340" y2="390" style="fill:none;stroke:white;"></line></g><text x="173" y="244" font-size="12" fill="white">a</text><text x="189" y="268" font-size="12" fill="white">b</text><text x="204" y="290" font-size="12" fill="white">c</text><text x="218" y="319" font-size="12" fill="white">d</text><text x="241" y="358" font-size="12" fill="white">e</text><path style="fill:none;stroke:white;" d="M 233,196 A 10 10 0 0 0 245,200"></path><path style="fill:none;stroke:white;" d="M 290,316 A 10 10 0 0 0 279,313"></path><line x1="213" y1="286" x2="308" y2="213" style="fill:none;stroke:white;"></line><text x="225" y="212" font-size="12" fill="white">67°</text><text x="280" y="310" font-size="12" fill="white">67°</text><text x="205" y="243" font-size="12" fill="white">65°</text><text x="282" y="257" font-size="12" fill="white">115°</text><path style="fill:none;stroke:white;" d="M 227,232 A 10 10 0 0 0 227,243"></path><path style="fill:none;stroke:white;" d="M 335,292 A 12 12 0 0 0 334,278"></path><text x="187" y="225" font-size="12" fill="white">f</text><text x="255" y="213" font-size="12" fill="white">g</text><text x="241" y="254" font-size="12" fill="white">h</text><text x="265" y="305" font-size="12" fill="white">i</text><text x="339" y="290" font-size="12" fill="white">j</text><text x="265" y="272" font-size="12" fill="white">51°</text></svg>', options: ["∠f = ∠j", "∠g = ∠i", "∠f = ∠h", "∠g = ∠j"], multiple: true }, answer: "∠f = ∠j,∠g = ∠i" }
 ],
-  "三角形と角（基本）": [
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/34.jpg" }, answer: "82" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/35.jpg" }, answer: "107" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/36.jpg" }, answer: "39" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/37.jpg" }, answer: "55" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/39.jpg" }, answer: "66" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/38.jpg" }, answer: "38" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/41.jpg" }, answer: "73" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/42.jpg" }, answer: "108" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/43.jpg" }, answer: "119" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/44.jpg" }, answer: "71" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/40.jpg" }, answer: "109" },
-    { type: 'text', data: { question: "次の図の∠xの大きさを求めなさい。", imageUrl: "/Image/73.jpg" }, answer: "89" }
-  ],
   "角度（基本）": [
     { type: 'text', data: { question: "図の∠xの大きさを求めよ。(l // m)", svg: '<svg viewBox="140 60 160 120" preserveAspectRatio="xMidYMid meet"><line x1="140" y1="80" x2="280" y2="80" style="fill:none;stroke:white;stroke-width:1.5"></line><line x1="140" y1="160" x2="280" y2="160" style="fill:none;stroke:white;stroke-width:1.5"></line><line x1="220" y1="120" x2="220" y2="40" style="fill:none;stroke:white;stroke-width:1.5" transform="translate(220,120) rotate(-26) translate(-220,-120)"></line><line x1="220" y1="120" x2="220" y2="200" style="fill:none;stroke:white;stroke-width:1.5" transform="translate(220,120) rotate(51) translate(-220,-120)"></line><path style="fill:none;stroke:white;" d="M 206,91 A 13 13 0 0 0 214,79"></path><path style="fill:none;stroke:white;" d="M 215,109 A 13 13 0 0 0 210,129"></path><path style="fill:none;stroke:white;" d="M 184,160 A 12 12 0 0 0 181,151"></path><text x="277" y="79" font-size="12" fill="white">l</text><text x="273" y="159" font-size="12" fill="white">m</text><text x="213" y="96" font-size="12" fill="white">64°</text><text x="188" y="158" font-size="12" fill="white">39°</text><text x="198" y="123" font-size="12" fill="white">x</text></svg>' }, answer: "103°" },
     { type: 'text', data: { question: "図の∠xの大きさを求めよ。(l // m)", svg: '<svg viewBox="160 50 160 130" preserveAspectRatio="xMidYMid meet"><line x1="160" y1="80" x2="300" y2="80" style="fill:none;stroke:white;stroke-width:1.5"></line><line x1="160" y1="160" x2="300" y2="160" style="fill:none;stroke:white;stroke-width:1.5"></line><line x1="240" y1="120" x2="240" y2="40" style="fill:none;stroke:white;stroke-width:1.5" transform="translate(240,120) rotate(-38) translate(-240,-120)"></line><line x1="240" y1="120" x2="240" y2="190" style="fill:none;stroke:white;stroke-width:1.5" transform="translate(240,120) rotate(18) translate(-240,-120)"></line><path style="fill:none;stroke:white;" d="M 203,80 A 9 9 0 0 0 215,87"></path><path style="fill:none;stroke:white;" d="M 234,113 A 10 10 0 0 0 237,129"></path><path style="fill:none;stroke:white;" d="M 230,152 A 10 10 0 0 0 217,160"></path><text x="177" y="94" font-size="12" fill="white">128°</text><text x="203" y="125" font-size="12" fill="white">134°</text><text x="211" y="155" font-size="12" fill="white">x</text><text x="297" y="77" font-size="12" fill="white">l</text><text x="289" y="156" font-size="12" fill="white">m</text></svg>' }, answer: "98°" },
@@ -179,26 +165,6 @@ export const geometryAngleProblems: ProblemSet = {
     { type: 'text', data: { question: "ひし形ABCDで、∠A=120°のとき、∠ABDは何度ですか？", svg: '<svg viewBox="0 0 210 150" preserveAspectRatio="xMidYMid meet"><polygon points="105,15 185,75 105,135 25,75" fill="none" stroke="white" stroke-width="1.5"/><line x1="62" y1="48" x2="70" y2="42" stroke="white" stroke-width="1.5"/><line x1="70" y1="42" x2="78" y2="48" stroke="white" stroke-width="1.5"/><line x1="140" y1="48" x2="132" y2="42" stroke="white" stroke-width="1.5"/><line x1="132" y1="42" x2="124" y2="48" stroke="white" stroke-width="1.5"/><line x1="62" y1="102" x2="70" y2="108" stroke="white" stroke-width="1.5"/><line x1="70" y1="108" x2="78" y2="102" stroke="white" stroke-width="1.5"/><line x1="140" y1="102" x2="132" y2="108" stroke="white" stroke-width="1.5"/><line x1="132" y1="108" x2="124" y2="102" stroke="white" stroke-width="1.5"/><line x1="105" y1="15" x2="105" y2="135" stroke="white" stroke-width="0.8" stroke-dasharray="4,3"/><line x1="25" y1="75" x2="185" y2="75" stroke="white" stroke-width="0.8" stroke-dasharray="4,3"/><path d="M 125,22 A 22 22 0 0 1 125,68" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="128" y="48" font-size="11" fill="#f87171">120°</text><text x="100" y="10" font-size="13" fill="white">A</text><text x="187" y="79" font-size="13" fill="white">B</text><text x="100" y="143" font-size="13" fill="white">C</text><text x="10" y="79" font-size="13" fill="white">D</text></svg>' }, answer: "30°" },
     {
         type: 'text',
-        data: { question: "x の大きさを求めよ。ただし同じ印をつけた辺は等しいとする。", imageUrl: "/Image/72.jpg" },
-        answer: "40°"
-    },
-    {
-        type: 'text',
-        data: { question: "x の大きさを求めよ。ただし同じ印をつけた辺は等しいとする。", imageUrl: "/Image/73.jpg" },
-        answer: "30°"
-    },
-    {
-        type: 'text',
-        data: { question: "図で AB=BC=CD=DE=EF で∠GEF=95°である。∠CAB の大きさを求めなさい。", imageUrl: "/Image/74.jpg" },
-        answer: "19°"
-    },
-    {
-        type: 'text',
-        data: { question: "x の大きさを求めよ。ただし、同じ印のついた角や辺は同じ大きさである。", imageUrl: "/Image/75.jpg" },
-        answer: "48°"
-    },
-    {
-        type: 'text',
         data: { question: "x の大きさを求めよ。ただし、同じ印のついた角や辺は同じ大きさである。", imageUrl: "/Image/76.jpg" },
         answer: "36°"
     },
@@ -212,24 +178,5 @@ export const geometryAngleProblems: ProblemSet = {
         data: { question: "正方形ABCDの内部に△PBCが正三角形になるように点Pをとる。このとき∠PAD は何度になるか。", imageUrl: "/Image/78.jpg" },
         answer: "15°"
     },
-    {
-        type: 'text',
-        data: { question: "AB=AC,AD=BD=BCのときxを求めよ。", imageUrl: "/Image/83.jpg" },
-        answer: "36°"
-    },
-    {
-        type: 'text',
-        data: { 
-            question: "図でAB=BC=CD=DEである。∠A=aとするとき∠EDFをaで表せ。", 
-            imageUrl: "/Image/84.jpg",
-            keypadLayout: [
-                ['7', '8', '9'],
-                ['4', '5', '6'],
-                ['1', '2', '3'],
-                ['0', 'a' , ' '],
-            ]
-        },
-        answer: "4a"
-    }
   ]
 };
