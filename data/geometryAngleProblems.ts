@@ -573,5 +573,220 @@ export const geometryAngleProblems: ProblemSet = {
         },
         answer: "60°"
     },
-  ]
-};
+  ],
+
+  "二等辺三角形(角度・応用)": [
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。AB=AC, ∠A=80°のとき∠ABCの外角xを求めよ。",
+        svg: '<svg viewBox="0 0 260 170" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><line x1="30" y1="145" x2="200" y2="145" stroke="white" stroke-width="1.5"/><line x1="60" y1="92" x2="68" y2="79" stroke="white" stroke-width="2"/><line x1="140" y1="92" x2="132" y2="79" stroke="white" stroke-width="2"/><text x="93" y="14" font-size="14" fill="white">A</text><text x="17" y="158" font-size="14" fill="white">B</text><text x="170" y="158" font-size="14" fill="white">C</text><text x="200" y="158" font-size="14" fill="white">D</text><path d="M 91,34 A 14 14 0 0 1 109,34" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="86" y="55" font-size="12" fill="#f87171">80°</text><path d="M 48,145 A 18 18 0 0 0 40,132" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="50" y="132" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "130°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。AB=BC, ∠ABC=50°のとき∠BACをxとして求めよ。",
+        svg: '<svg viewBox="0 0 200 170" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><line x1="62" y1="68" x2="52" y2="88" stroke="white" stroke-width="2"/><line x1="138" y1="68" x2="148" y2="88" stroke="white" stroke-width="2"/><text x="93" y="14" font-size="14" fill="white">A</text><text x="17" y="158" font-size="14" fill="white">B</text><text x="170" y="158" font-size="14" fill="white">C</text><path d="M 42,135 A 16 16 0 0 1 56,133" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="48" y="128" font-size="12" fill="#f87171">50°</text><path d="M 92,38 A 18 18 0 0 1 108,38" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="88" y="55" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "65°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。AB=AC, ∠B=55°のとき∠ACDを求めよ。(DはBCの延長上の点)",
+        svg: '<svg viewBox="0 0 260 170" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,145 170,145" fill="none" stroke="white" stroke-width="1.5"/><line x1="170" y1="145" x2="230" y2="145" stroke="white" stroke-width="1.5"/><line x1="60" y1="92" x2="68" y2="79" stroke="white" stroke-width="2"/><line x1="140" y1="92" x2="132" y2="79" stroke="white" stroke-width="2"/><text x="93" y="14" font-size="14" fill="white">A</text><text x="17" y="158" font-size="14" fill="white">B</text><text x="163" y="158" font-size="14" fill="white">C</text><text x="228" y="158" font-size="14" fill="white">D</text><path d="M 43,133 A 17 17 0 0 1 57,131" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="50" y="127" font-size="12" fill="#f87171">55°</text><path d="M 186,145 A 18 18 0 0 0 178,132" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="182" y="132" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "110°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。AB=AC=CD, ∠BAC=40°のとき∠ADCを求めよ。",
+        svg: '<svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid meet"><line x1="30" y1="150" x2="130" y2="20" stroke="white" stroke-width="1.5"/><line x1="130" y1="20" x2="210" y2="150" stroke="white" stroke-width="1.5"/><line x1="30" y1="150" x2="210" y2="150" stroke="white" stroke-width="1.5"/><line x1="130" y1="20" x2="130" y2="150" stroke="white" stroke-width="1.5"/><line x1="70" y1="90" x2="62" y2="100" stroke="white" stroke-width="2"/><line x1="74" y1="86" x2="66" y2="96" stroke="white" stroke-width="2"/><line x1="188" y1="90" x2="196" y2="100" stroke="white" stroke-width="2"/><line x1="184" y1="86" x2="192" y2="96" stroke="white" stroke-width="2"/><text x="123" y="15" font-size="14" fill="white">A</text><text x="15" y="162" font-size="14" fill="white">B</text><text x="123" y="162" font-size="14" fill="white">D</text><text x="213" y="162" font-size="14" fill="white">C</text><path d="M 122,38 A 14 14 0 0 1 138,38" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="116" y="54" font-size="12" fill="#f87171">40°</text><path d="M 138,150 A 18 18 0 0 0 130,136" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="142" y="140" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "70°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。AB=AC, ∠BAC=40°, Dは辺BC上の点でAD⊥BCのとき、∠DAC=x",
+        svg: '<svg viewBox="0 0 220 180" preserveAspectRatio="xMidYMid meet"><polygon points="110,20 30,150 190,150" fill="none" stroke="white" stroke-width="1.5"/><line x1="110" y1="20" x2="110" y2="150" stroke="white" stroke-width="1.5"/><rect x="100" y="140" width="10" height="10" fill="none" stroke="white" stroke-width="1"/><line x1="60" y1="90" x2="68" y2="78" stroke="white" stroke-width="2"/><line x1="160" y1="90" x2="152" y2="78" stroke="white" stroke-width="2"/><text x="103" y="14" font-size="14" fill="white">A</text><text x="14" y="163" font-size="14" fill="white">B</text><text x="193" y="163" font-size="14" fill="white">C</text><text x="113" y="163" font-size="14" fill="white">D</text><path d="M 102,38 A 14 14 0 0 1 118,38" fill="none" stroke="#f87171" stroke-width="1.5"/><text x="96" y="56" font-size="12" fill="#f87171">40°</text><path d="M 118,38 A 24 24 0 0 1 122,58" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="126" y="52" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "20°"
+    },
+  ],
+
+  "多角形と角(基2)": [
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。",
+        svg: '<svg viewBox="0 0 260 200" preserveAspectRatio="xMidYMid meet"><line x1="30" y1="170" x2="200" y2="170" stroke="white" stroke-width="1.5"/><line x1="30" y1="170" x2="120" y2="40" stroke="white" stroke-width="1.5"/><line x1="120" y1="40" x2="200" y2="170" stroke="white" stroke-width="1.5"/><line x1="75" y1="105" x2="200" y2="170" stroke="white" stroke-width="1.5"/><path d="M 113,58 A 18 18 0 0 1 127,58" fill="none" stroke="#f87171" stroke-width="1"/><text x="108" y="74" font-size="14" fill="#f87171">110°</text><path d="M 46,170 A 20 20 0 0 0 40,157" fill="none" stroke="#f87171" stroke-width="1"/><text x="44" y="155" font-size="14" fill="#f87171">80°</text><path d="M 97,112 A 12 12 0 0 0 90,119" fill="none" stroke="#f87171" stroke-width="1"/><text x="75" y="112" font-size="14" fill="#f87171">60°</text><path d="M 186,170 A 16 16 0 0 0 180,160" fill="none" stroke="#f87171" stroke-width="1"/><text x="156" y="162" font-size="14" fill="#f87171">160°</text><path d="M 47,170 A 36 36 0 0 1 44,155" fill="none" stroke="#60a5fa" stroke-width="1.5" opacity="0"/><text x="20" y="145" font-size="14" fill="#60a5fa">x</text><path d="M 116,166 A 20 20 0 0 0 126,158" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="128" y="158" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "70°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。",
+        svg: '<svg viewBox="0 0 260 200" preserveAspectRatio="xMidYMid meet"><line x1="30" y1="170" x2="210" y2="170" stroke="white" stroke-width="1.5"/><line x1="30" y1="170" x2="120" y2="40" stroke="white" stroke-width="1.5"/><line x1="120" y1="40" x2="210" y2="170" stroke="white" stroke-width="1.5"/><line x1="80" y1="110" x2="210" y2="170" stroke="white" stroke-width="1.5"/><path d="M 113,58 A 18 18 0 0 1 127,58" fill="none" stroke="#f87171" stroke-width="1"/><text x="108" y="74" font-size="14" fill="#f87171">80°</text><path d="M 46,170 A 20 20 0 0 0 40,157" fill="none" stroke="#f87171" stroke-width="1"/><text x="44" y="155" font-size="14" fill="#f87171">40°</text><path d="M 102,117 A 12 12 0 0 0 95,124" fill="none" stroke="#f87171" stroke-width="1"/><text x="78" y="116" font-size="14" fill="#f87171">50°</text><path d="M 194,170 A 18 18 0 0 0 188,160" fill="none" stroke="#f87171" stroke-width="1"/><text x="160" y="162" font-size="14" fill="#f87171">155°</text><path d="M 118,166 A 20 20 0 0 0 128,158" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="130" y="158" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "65°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。(三角形の内部を走る折れ線)",
+        svg: '<svg viewBox="0 0 240 190" preserveAspectRatio="xMidYMid meet"><polygon points="120,20 30,160 210,160" fill="none" stroke="white" stroke-width="1.5"/><line x1="70" y1="106" x2="175" y2="160" stroke="white" stroke-width="1.5"/><line x1="70" y1="106" x2="120" y2="20" stroke="white" stroke-width="0" opacity="0"/><path d="M 113,38 A 18 18 0 0 1 127,38" fill="none" stroke="#f87171" stroke-width="1"/><text x="108" y="55" font-size="14" fill="#f87171">40°</text><path d="M 46,160 A 20 20 0 0 0 40,147" fill="none" stroke="#f87171" stroke-width="1"/><text x="44" y="145" font-size="14" fill="#f87171">75°</text><path d="M 82,110 A 14 14 0 0 0 76,120" fill="none" stroke="#f87171" stroke-width="1"/><text x="58" y="110" font-size="14" fill="#f87171">65°</text><path d="M 165,156 A 16 16 0 0 0 162,148" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="168" y="148" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "180°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "四角形ABCDで、対角線ACとBDが点Oで交わっている。∠xを求めよ。∠BAC=35°, ∠ADB=55°, ∠ACD=40°",
+        svg: '<svg viewBox="0 0 240 200" preserveAspectRatio="xMidYMid meet"><polygon points="50,160 50,40 190,40 190,160" fill="none" stroke="white" stroke-width="1.5"/><line x1="50" y1="40" x2="190" y2="160" stroke="white" stroke-width="1.5"/><line x1="50" y1="160" x2="190" y2="40" stroke="white" stroke-width="1.5"/><text x="34" y="34" font-size="14" fill="white">A</text><text x="193" y="34" font-size="14" fill="white">B</text><text x="193" y="167" font-size="14" fill="white">C</text><text x="34" y="167" font-size="14" fill="white">D</text><text x="113" y="108" font-size="14" fill="white">O</text><path d="M 62,48 A 18 18 0 0 1 72,53" fill="none" stroke="#f87171" stroke-width="1"/><text x="74" y="53" font-size="12" fill="#f87171">35°</text><path d="M 62,150 A 18 18 0 0 0 68,140" fill="none" stroke="#f87171" stroke-width="1"/><text x="70" y="140" font-size="12" fill="#f87171">55°</text><path d="M 178,52 A 18 18 0 0 0 170,60" fill="none" stroke="#f87171" stroke-width="1"/><text x="152" y="60" font-size="12" fill="#f87171">40°</text><path d="M 118,98 A 14 14 0 0 0 123,112" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="126" y="110" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "90°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。平行四辺形ABCDで、E,FはそれぞれAB,CD上の点。∠AEF=115°, ∠CFE=80°のとき∠A=x。",
+        svg: '<svg viewBox="0 0 260 160" preserveAspectRatio="xMidYMid meet"><polygon points="40,130 80,30 200,30 160,130" fill="none" stroke="white" stroke-width="1.5"/><line x1="64" y1="72" x2="170" y2="90" stroke="white" stroke-width="1.5"/><text x="24" y="142" font-size="14" fill="white">A</text><text x="76" y="24" font-size="14" fill="white">B</text><text x="202" y="24" font-size="14" fill="white">C</text><text x="160" y="142" font-size="14" fill="white">D</text><text x="55" y="68" font-size="14" fill="white">E</text><text x="174" y="92" font-size="14" fill="white">F</text><path d="M 66,82 A 14 14 0 0 1 74,76" fill="none" stroke="#f87171" stroke-width="1"/><text x="76" y="84" font-size="12" fill="#f87171">115°</text><path d="M 165,84 A 14 14 0 0 0 159,78" fill="none" stroke="#f87171" stroke-width="1"/><text x="142" y="78" font-size="12" fill="#f87171">80°</text><path d="M 52,122 A 14 14 0 0 1 56,114" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="58" y="112" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "15°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。三角形ABCの辺AB,BC上にそれぞれD,Eがあり、DEの延長がACの延長と交わる点をFとする。∠A=60°, ∠B=50°, ∠DEA=80°のとき∠DFC=x。",
+        svg: '<svg viewBox="0 0 270 200" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 30,160 210,160" fill="none" stroke="white" stroke-width="1.5"/><line x1="65" y1="104" x2="155" y2="160" stroke="white" stroke-width="1.5"/><line x1="155" y1="160" x2="235" y2="128" stroke="white" stroke-width="1.5"/><line x1="210" y1="160" x2="235" y2="128" stroke="white" stroke-width="0.8" stroke-dasharray="4,3"/><text x="93" y="14" font-size="14" fill="white">A</text><text x="14" y="172" font-size="14" fill="white">B</text><text x="212" y="172" font-size="14" fill="white">C</text><text x="49" y="100" font-size="14" fill="white">D</text><text x="157" y="158" font-size="14" fill="white">E</text><text x="238" y="128" font-size="14" fill="white">F</text><path d="M 92,38 A 14 14 0 0 1 106,38" fill="none" stroke="#f87171" stroke-width="1"/><text x="88" y="54" font-size="12" fill="#f87171">60°</text><path d="M 44,160 A 18 18 0 0 0 40,147" fill="none" stroke="#f87171" stroke-width="1"/><text x="44" y="145" font-size="12" fill="#f87171">50°</text><path d="M 78,110 A 12 12 0 0 0 73,118" fill="none" stroke="#f87171" stroke-width="1"/><text x="58" y="114" font-size="12" fill="#f87171">80°</text><path d="M 224,136 A 16 16 0 0 0 220,126" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="208" y="124" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "30°"
+    },
+  ],
+
+  "交差する三角形": [
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。2つの三角形ABXとCDXが点Xで交わっている（蝶ネクタイ型）。∠A=35°, ∠B=45°, ∠D=40°のとき∠C=x。",
+        svg: '<svg viewBox="0 0 260 200" preserveAspectRatio="xMidYMid meet"><line x1="30" y1="40" x2="230" y2="160" stroke="white" stroke-width="1.5"/><line x1="230" y1="40" x2="30" y2="160" stroke="white" stroke-width="1.5"/><line x1="30" y1="40" x2="230" y2="40" stroke="white" stroke-width="1.5"/><line x1="30" y1="160" x2="230" y2="160" stroke="white" stroke-width="1.5"/><text x="14" y="36" font-size="14" fill="white">A</text><text x="232" y="36" font-size="14" fill="white">B</text><text x="14" y="168" font-size="14" fill="white">C</text><text x="232" y="168" font-size="14" fill="white">D</text><text x="122" y="108" font-size="14" fill="white">X</text><path d="M 42,46 A 16 16 0 0 1 48,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="50" y="56" font-size="12" fill="#f87171">35°</text><path d="M 218,46 A 16 16 0 0 0 212,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="194" y="56" font-size="12" fill="#f87171">45°</text><path d="M 218,154 A 16 16 0 0 0 212,144" fill="none" stroke="#f87171" stroke-width="1"/><text x="194" y="144" font-size="12" fill="#f87171">40°</text><path d="M 42,154 A 16 16 0 0 1 48,144" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="50" y="144" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "40°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。2つの三角形が交差（蝶ネクタイ型）。∠A=50°, ∠B=30°, ∠C=35°のとき∠D=x。",
+        svg: '<svg viewBox="0 0 260 200" preserveAspectRatio="xMidYMid meet"><line x1="30" y1="40" x2="230" y2="160" stroke="white" stroke-width="1.5"/><line x1="230" y1="40" x2="30" y2="160" stroke="white" stroke-width="1.5"/><line x1="30" y1="40" x2="230" y2="40" stroke="white" stroke-width="1.5"/><line x1="30" y1="160" x2="230" y2="160" stroke="white" stroke-width="1.5"/><text x="14" y="36" font-size="14" fill="white">A</text><text x="232" y="36" font-size="14" fill="white">B</text><text x="14" y="168" font-size="14" fill="white">C</text><text x="232" y="168" font-size="14" fill="white">D</text><text x="122" y="108" font-size="14" fill="white">X</text><path d="M 42,46 A 16 16 0 0 1 48,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="50" y="56" font-size="12" fill="#f87171">50°</text><path d="M 218,46 A 16 16 0 0 0 212,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="194" y="56" font-size="12" fill="#f87171">30°</text><path d="M 42,154 A 16 16 0 0 1 48,144" fill="none" stroke="#f87171" stroke-width="1"/><text x="50" y="144" font-size="12" fill="#f87171">35°</text><path d="M 218,154 A 16 16 0 0 0 212,144" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="194" y="144" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "45°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。2つの三角形が交差。∠A=55°, ∠B=40°, ∠D=65°のとき∠C=x。",
+        svg: '<svg viewBox="0 0 260 200" preserveAspectRatio="xMidYMid meet"><line x1="30" y1="40" x2="230" y2="160" stroke="white" stroke-width="1.5"/><line x1="230" y1="40" x2="30" y2="160" stroke="white" stroke-width="1.5"/><line x1="30" y1="40" x2="230" y2="40" stroke="white" stroke-width="1.5"/><line x1="30" y1="160" x2="230" y2="160" stroke="white" stroke-width="1.5"/><text x="14" y="36" font-size="14" fill="white">A</text><text x="232" y="36" font-size="14" fill="white">B</text><text x="14" y="168" font-size="14" fill="white">C</text><text x="232" y="168" font-size="14" fill="white">D</text><text x="122" y="108" font-size="14" fill="white">X</text><path d="M 42,46 A 16 16 0 0 1 48,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="50" y="56" font-size="12" fill="#f87171">55°</text><path d="M 218,46 A 16 16 0 0 0 212,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="194" y="56" font-size="12" fill="#f87171">40°</text><path d="M 218,154 A 16 16 0 0 0 212,144" fill="none" stroke="#f87171" stroke-width="1"/><text x="194" y="144" font-size="12" fill="#f87171">65°</text><path d="M 42,154 A 16 16 0 0 1 48,144" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="50" y="144" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "30°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。2つの三角形が頂点を共有して交差（蝶ネクタイ型）。上の三角形∠A=40°, ∠B=45°。下の三角形∠D=35°のとき∠C=x。",
+        svg: '<svg viewBox="0 0 240 210" preserveAspectRatio="xMidYMid meet"><line x1="30" y1="100" x2="210" y2="100" stroke="white" stroke-width="1.5"/><line x1="30" y1="100" x2="120" y2="30" stroke="white" stroke-width="1.5"/><line x1="210" y1="100" x2="120" y2="30" stroke="white" stroke-width="1.5"/><line x1="30" y1="100" x2="120" y2="180" stroke="white" stroke-width="1.5"/><line x1="210" y1="100" x2="120" y2="180" stroke="white" stroke-width="1.5"/><text x="113" y="24" font-size="14" fill="white">P</text><text x="14" y="104" font-size="14" fill="white">A</text><text x="213" y="104" font-size="14" fill="white">B</text><text x="14" y="108" font-size="0" fill="white">C</text><text x="113" y="192" font-size="14" fill="white">Q</text><text x="8" y="116" font-size="14" fill="white">C</text><text x="213" y="116" font-size="14" fill="white">D</text><path d="M 42,98 A 16 16 0 0 0 44,88" fill="none" stroke="#f87171" stroke-width="1"/><text x="46" y="86" font-size="12" fill="#f87171">40°</text><path d="M 198,98 A 16 16 0 0 1 196,88" fill="none" stroke="#f87171" stroke-width="1"/><text x="172" y="86" font-size="12" fill="#f87171">45°</text><path d="M 198,102 A 16 16 0 0 0 196,112" fill="none" stroke="#f87171" stroke-width="1"/><text x="172" y="118" font-size="12" fill="#f87171">35°</text><path d="M 42,102 A 16 16 0 0 1 44,112" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="46" y="120" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "50°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。図の2つの三角形が交差している。∠A=50°, ∠B=45°, ∠C=35°のとき交差点の角∠X=x。",
+        svg: '<svg viewBox="0 0 260 200" preserveAspectRatio="xMidYMid meet"><line x1="30" y1="40" x2="230" y2="160" stroke="white" stroke-width="1.5"/><line x1="230" y1="40" x2="30" y2="160" stroke="white" stroke-width="1.5"/><line x1="30" y1="40" x2="230" y2="40" stroke="white" stroke-width="1.5"/><line x1="30" y1="160" x2="230" y2="160" stroke="white" stroke-width="1.5"/><text x="14" y="36" font-size="14" fill="white">A</text><text x="232" y="36" font-size="14" fill="white">B</text><text x="14" y="168" font-size="14" fill="white">C</text><text x="232" y="168" font-size="14" fill="white">D</text><path d="M 42,46 A 16 16 0 0 1 48,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="50" y="56" font-size="12" fill="#f87171">50°</text><path d="M 218,46 A 16 16 0 0 0 212,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="194" y="56" font-size="12" fill="#f87171">45°</text><path d="M 42,154 A 16 16 0 0 1 48,144" fill="none" stroke="#f87171" stroke-width="1"/><text x="50" y="144" font-size="12" fill="#f87171">35°</text><path d="M 118,96 A 12 12 0 0 0 126,106" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="128" y="104" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "85°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。図の三角形ABCでDE//BCとなるように点D,Eをとり、BA,CAを延長した先に三角形を作る。∠B=65°, ∠C=50°のとき∠A=xを求めよ。",
+        svg: '<svg viewBox="0 0 240 190" preserveAspectRatio="xMidYMid meet"><polygon points="120,20 40,150 200,150" fill="none" stroke="white" stroke-width="1.5"/><line x1="120" y1="20" x2="20" y2="100" stroke="white" stroke-width="1.5"/><line x1="120" y1="20" x2="220" y2="100" stroke="white" stroke-width="1.5"/><line x1="20" y1="100" x2="220" y2="100" stroke="white" stroke-width="1.5"/><text x="113" y="14" font-size="14" fill="white">A</text><text x="24" y="162" font-size="14" fill="white">B</text><text x="202" y="162" font-size="14" fill="white">C</text><text x="6" y="100" font-size="14" fill="white">D</text><text x="222" y="100" font-size="14" fill="white">E</text><path d="M 52,150 A 18 18 0 0 0 48,138" fill="none" stroke="#f87171" stroke-width="1"/><text x="52" y="136" font-size="12" fill="#f87171">65°</text><path d="M 188,150 A 18 18 0 0 1 192,138" fill="none" stroke="#f87171" stroke-width="1"/><text x="178" y="136" font-size="12" fill="#f87171">50°</text><path d="M 112,38 A 14 14 0 0 1 128,38" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="108" y="55" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "65°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。点P,Qは三角形ABCの辺上の点。∠BAC=70°, ∠ABQ=55°, ∠ACR=50°（RはBC延長上）のとき、∠APQ=x。",
+        svg: '<svg viewBox="0 0 250 190" preserveAspectRatio="xMidYMid meet"><polygon points="120,20 30,160 200,160" fill="none" stroke="white" stroke-width="1.5"/><line x1="30" y1="160" x2="170" y2="80" stroke="white" stroke-width="1.5"/><line x1="120" y1="20" x2="165" y2="160" stroke="white" stroke-width="1.5"/><text x="113" y="14" font-size="14" fill="white">A</text><text x="14" y="172" font-size="14" fill="white">B</text><text x="202" y="172" font-size="14" fill="white">C</text><text x="173" y="78" font-size="14" fill="white">P</text><text x="155" y="158" font-size="14" fill="white">Q</text><path d="M 112,38 A 16 16 0 0 1 128,38" fill="none" stroke="#f87171" stroke-width="1"/><text x="108" y="55" font-size="12" fill="#f87171">70°</text><path d="M 44,160 A 18 18 0 0 0 44,147" fill="none" stroke="#f87171" stroke-width="1"/><text x="46" y="145" font-size="12" fill="#f87171">55°</text><path d="M 165,162 A 16 16 0 0 0 161,152" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="150" y="150" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "125°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "∠xの大きさを求めなさい。2直線が交わって生じる角度。∠a=60°, ∠b=80°のとき対頂角の関係から交差する三角形で生じる角x（右図の三角形の角）を求めよ。∠p=35°のとき∠q=x。",
+        svg: '<svg viewBox="0 0 260 210" preserveAspectRatio="xMidYMid meet"><line x1="30" y1="40" x2="230" y2="170" stroke="white" stroke-width="1.5"/><line x1="230" y1="40" x2="30" y2="170" stroke="white" stroke-width="1.5"/><line x1="30" y1="40" x2="230" y2="40" stroke="white" stroke-width="1.5"/><line x1="30" y1="170" x2="230" y2="170" stroke="white" stroke-width="1.5"/><text x="14" y="36" font-size="14" fill="white">A</text><text x="232" y="36" font-size="14" fill="white">B</text><text x="14" y="178" font-size="14" fill="white">C</text><text x="232" y="178" font-size="14" fill="white">D</text><text x="118" y="115" font-size="14" fill="white">X</text><path d="M 42,46 A 16 16 0 0 1 48,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="50" y="56" font-size="12" fill="#f87171">60°</text><path d="M 218,46 A 16 16 0 0 0 212,56" fill="none" stroke="#f87171" stroke-width="1"/><text x="192" y="56" font-size="12" fill="#f87171">80°</text><path d="M 42,164 A 16 16 0 0 1 48,154" fill="none" stroke="#f87171" stroke-width="1"/><text x="50" y="152" font-size="12" fill="#f87171">35°</text><path d="M 218,164 A 16 16 0 0 0 212,154" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="194" y="155" font-size="14" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "105°"
+    },
+  ],
+
+  "星形多角形の角度": [
+    {
+      type: 'text',
+      data: {
+        question: "星形五角形（☆）の5つの先端の角の和を求めよ。",
+        svg: '<svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet"><polygon points="110,15 130,75 190,75 143,112 161,172 110,135 59,172 77,112 30,75 90,75" fill="none" stroke="white" stroke-width="1.5"/><path d="M 104,25 A 12 12 0 0 1 116,25" fill="none" stroke="#60a5fa" stroke-width="1"/><path d="M 182,70 A 12 12 0 0 0 186,80" fill="none" stroke="#60a5fa" stroke-width="1"/><path d="M 152,166 A 12 12 0 0 0 160,173" fill="none" stroke="#60a5fa" stroke-width="1"/><path d="M 60,173 A 12 12 0 0 0 68,166" fill="none" stroke="#60a5fa" stroke-width="1"/><path d="M 34,80 A 12 12 0 0 1 38,70" fill="none" stroke="#60a5fa" stroke-width="1"/><text x="55" y="110" font-size="14" fill="white">5つの先端の</text><text x="55" y="128" font-size="14" fill="white">角の和 = ?</text></svg>',
+        options: ["180°", "360°", "540°", "720°"]
+      },
+      answer: "180°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "星形五角形の1つの先端の角が全て等しいとき、その1つの角は何度か。",
+        svg: '<svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet"><polygon points="110,15 130,75 190,75 143,112 161,172 110,135 59,172 77,112 30,75 90,75" fill="none" stroke="white" stroke-width="1.5"/><path d="M 104,25 A 12 12 0 0 1 116,25" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="120" y="26" font-size="12" fill="#60a5fa">x</text></svg>'
+      },
+      answer: "36°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "星形五角形の先端のうち4つの角が28°, 38°, 36°, 42°のとき、残り1つの角xを求めよ。",
+        svg: '<svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet"><polygon points="110,15 130,75 190,75 143,112 161,172 110,135 59,172 77,112 30,75 90,75" fill="none" stroke="white" stroke-width="1.5"/><text x="100" y="28" font-size="10" fill="#60a5fa">x</text><text x="180" y="80" font-size="10" fill="#f87171">28°</text><text x="152" y="172" font-size="10" fill="#f87171">38°</text><text x="52" y="172" font-size="10" fill="#f87171">36°</text><text x="22" y="80" font-size="10" fill="#f87171">42°</text></svg>'
+      },
+      answer: "36°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "右図のような星形（☆）で、印をつけた5つの角の和を求めよ。ヒント：三角形の外角定理を使う。",
+        svg: '<svg viewBox="0 0 240 230" preserveAspectRatio="xMidYMid meet"><polyline points="110,15 59,172 190,75 30,75 161,172 110,15" fill="none" stroke="white" stroke-width="1.5"/><path d="M 104,26 A 10 10 0 0 1 116,26" fill="none" stroke="#60a5fa" stroke-width="1.5"/><path d="M 180,72 A 10 10 0 0 0 184,80" fill="none" stroke="#60a5fa" stroke-width="1.5"/><path d="M 153,167 A 10 10 0 0 0 161,173" fill="none" stroke="#60a5fa" stroke-width="1.5"/><path d="M 60,173 A 10 10 0 0 0 67,167" fill="none" stroke="#60a5fa" stroke-width="1.5"/><path d="M 36,79 A 10 10 0 0 1 40,71" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="80" y="120" font-size="14" fill="white">a+b+c+d+e = ?</text></svg>',
+        options: ["90°", "180°", "270°", "360°"]
+      },
+      answer: "180°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "図の☆形で∠a=25°, ∠b=30°, ∠c=40°, ∠d=35°のとき∠e=x を求めよ。",
+        svg: '<svg viewBox="0 0 240 230" preserveAspectRatio="xMidYMid meet"><polyline points="110,15 59,172 190,75 30,75 161,172 110,15" fill="none" stroke="white" stroke-width="1.5"/><text x="104" y="28" font-size="12" fill="#60a5fa">x</text><text x="179" y="86" font-size="12" fill="#f87171">25°</text><text x="154" y="173" font-size="12" fill="#f87171">30°</text><text x="55" y="173" font-size="12" fill="#f87171">40°</text><text x="30" y="83" font-size="12" fill="#f87171">35°</text></svg>'
+      },
+      answer: "50°"
+    },
+    {
+      type: 'text',
+      data: {
+        question: "図のような四角形の頂点から対角線を引いて作った「凧型」の先端4角の和を求めよ（6角のうち先端4つ）。",
+        svg: '<svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet"><polygon points="110,15 190,110 110,205 30,110" fill="none" stroke="white" stroke-width="1.5"/><line x1="110" y1="15" x2="110" y2="205" stroke="white" stroke-width="1.5"/><line x1="30" y1="110" x2="190" y2="110" stroke="white" stroke-width="1.5"/><path d="M 104,26 A 10 10 0 0 1 116,26" fill="none" stroke="#60a5fa" stroke-width="1.5"/><path d="M 182,105 A 10 10 0 0 0 182,115" fill="none" stroke="#60a5fa" stroke-width="1.5"/><path d="M 116,196 A 10 10 0 0 0 104,196" fill="none" stroke="#60a5fa" stroke-width="1.5"/><path d="M 38,115 A 10 10 0 0 1 38,105" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="80" y="112" font-size="13" fill="white">先端4角の和=?</text></svg>',
+        options: ["180°", "360°", "540°", "720°"]
+      },
+      answer: "360°"
+    },
+  ],
+};
