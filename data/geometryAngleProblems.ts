@@ -377,5 +377,87 @@ export const geometryAngleProblems: ProblemSet = {
         },
         answer: "120°"
     },
+  ],
+  "多角形と角(標)": [
+    {
+        type: 'text',
+        data: {
+            question: "正十角形の1つの内角は何度か。",
+            svg: '<svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 141.1,33.4 166.6,68.4 166.6,111.6 141.1,146.6 100,160 58.9,146.6 33.4,111.6 33.4,68.4 58.9,33.4" fill="none" stroke="white" stroke-width="1.5"/><path d="M 91,33 A 16 16 0 0 1 109,33" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="90" y="50" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "144°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "正十二角形の1つの内角は何度か。",
+            svg: '<svg viewBox="0 0 200 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 135,29.4 160.6,55 170,90 160.6,125 135,150.6 100,160 65,150.6 39.4,125 30,90 39.4,55 65,29.4" fill="none" stroke="white" stroke-width="1.5"/><path d="M 91,33 A 16 16 0 0 1 109,33" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="90" y="50" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "150°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "正十角形の1つの外角は何度か。",
+            svg: '<svg viewBox="0 0 240 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 141.1,33.4 166.6,68.4 166.6,111.6 141.1,146.6 100,160 58.9,146.6 33.4,111.6 33.4,68.4 58.9,33.4" fill="none" stroke="white" stroke-width="1.5"/><line x1="141.1" y1="146.6" x2="210" y2="146.6" stroke="white" stroke-width="1.5"/><path d="M 158,146.6 A 17 17 0 0 0 150,134" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="162" y="141" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "36°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "n角形の内角の和が1440°のとき、nを求めよ。",
+            svg: '<svg viewBox="0 0 200 170" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 160,35 180,100 140,150 60,150 20,100 40,35" fill="none" stroke="white" stroke-width="1.5"/><text x="62" y="100" font-size="13" fill="white">内角の和</text><text x="62" y="118" font-size="13" fill="white">=1440°</text></svg>'
+        },
+        answer: "10"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "n角形の内角の和が1800°のとき、nを求めよ。",
+            svg: '<svg viewBox="0 0 200 170" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 160,35 180,100 140,150 60,150 20,100 40,35" fill="none" stroke="white" stroke-width="1.5"/><text x="62" y="100" font-size="13" fill="white">内角の和</text><text x="62" y="118" font-size="13" fill="white">=1800°</text></svg>'
+        },
+        answer: "12"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "正n角形の1つの内角が140°のとき、nを求めよ。",
+            svg: '<svg viewBox="0 0 200 170" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 160,35 180,100 140,150 60,150 20,100 40,35" fill="none" stroke="white" stroke-width="1.5"/><path d="M 91,28 A 16 16 0 0 1 109,28" fill="none" stroke="#f87171" stroke-width="1"/><text x="80" y="46" font-size="12" fill="#f87171">140°</text></svg>'
+        },
+        answer: "9"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "四角形ABCDで∠A=110°, ∠B=70°, ∠D=95°のとき、∠C=xを求めよ。",
+            svg: '<svg viewBox="0 0 210 170" preserveAspectRatio="xMidYMid meet"><polygon points="40,30 20,120 180,140 170,20" fill="none" stroke="white" stroke-width="1.5"/><text x="22" y="26" font-size="14" fill="white">A</text><text x="2" y="130" font-size="14" fill="white">B</text><text x="182" y="150" font-size="14" fill="white">C</text><text x="172" y="16" font-size="14" fill="white">D</text><path d="M 48,38 A 14 14 0 0 1 42,44" fill="none" stroke="#f87171" stroke-width="1"/><text x="46" y="54" font-size="11" fill="#f87171">110°</text><path d="M 28,112 A 14 14 0 0 1 34,118" fill="none" stroke="#f87171" stroke-width="1"/><text x="36" y="110" font-size="11" fill="#f87171">70°</text><path d="M 164,28 A 14 14 0 0 1 160,22" fill="none" stroke="#f87171" stroke-width="1"/><text x="146" y="38" font-size="11" fill="#f87171">95°</text><path d="M 170,132 A 14 14 0 0 1 168,138" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="156" y="128" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "85°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "五角形ABCDEで∠A=120°, ∠B=95°, ∠C=130°, ∠D=110°のとき、∠E=xを求めよ。",
+            svg: '<svg viewBox="0 0 210 160" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 170,50 150,130 55,130 30,50" fill="none" stroke="white" stroke-width="1.5"/><text x="92" y="12" font-size="14" fill="white">A</text><text x="173" y="50" font-size="14" fill="white">B</text><text x="152" y="142" font-size="14" fill="white">C</text><text x="36" y="142" font-size="14" fill="white">D</text><text x="12" y="50" font-size="14" fill="white">E</text><path d="M 91,28 A 14 14 0 0 1 109,28" fill="none" stroke="#f87171" stroke-width="1"/><text x="84" y="44" font-size="11" fill="#f87171">120°</text><path d="M 160,54 A 14 14 0 0 1 162,64" fill="none" stroke="#f87171" stroke-width="1"/><text x="148" y="68" font-size="11" fill="#f87171">95°</text><path d="M 143,122 A 14 14 0 0 1 139,130" fill="none" stroke="#f87171" stroke-width="1"/><text x="128" y="118" font-size="11" fill="#f87171">130°</text><path d="M 65,130 A 14 14 0 0 1 62,122" fill="none" stroke="#f87171" stroke-width="1"/><text x="58" y="146" font-size="11" fill="#f87171">110°</text><path d="M 38,56 A 14 14 0 0 1 40,46" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="24" y="66" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "85°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "六角形で5つの角がそれぞれ 110°, 130°, 140°, 100°, 125° のとき、残りの角xを求めよ。",
+            svg: '<svg viewBox="0 0 210 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,15 170,40 185,115 130,160 50,155 25,80" fill="none" stroke="white" stroke-width="1.5"/><path d="M 91,28 A 14 14 0 0 1 109,28" fill="none" stroke="#f87171" stroke-width="1"/><text x="84" y="44" font-size="11" fill="#f87171">110°</text><path d="M 160,44 A 14 14 0 0 1 164,54" fill="none" stroke="#f87171" stroke-width="1"/><text x="148" y="58" font-size="11" fill="#f87171">130°</text><path d="M 178,108 A 14 14 0 0 1 174,118" fill="none" stroke="#f87171" stroke-width="1"/><text x="158" y="110" font-size="11" fill="#f87171">140°</text><path d="M 123,152 A 14 14 0 0 1 118,148" fill="none" stroke="#f87171" stroke-width="1"/><text x="118" y="170" font-size="11" fill="#f87171">100°</text><path d="M 58,148 A 14 14 0 0 1 55,140" fill="none" stroke="#f87171" stroke-width="1"/><text x="36" y="160" font-size="11" fill="#f87171">125°</text><path d="M 32,88 A 14 14 0 0 1 34,78" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="10" y="88" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "115°"
+    },
+    {
+        type: 'text',
+        data: {
+            question: "正六角形の1つの外角の大きさを求めよ。",
+            svg: '<svg viewBox="0 0 230 180" preserveAspectRatio="xMidYMid meet"><polygon points="100,20 160.6,55 160.6,125 100,160 39.4,125 39.4,55" fill="none" stroke="white" stroke-width="1.5"/><line x1="160.6" y1="125" x2="215" y2="125" stroke="white" stroke-width="1.5"/><path d="M 178,125 A 17 17 0 0 0 168,112" fill="none" stroke="#60a5fa" stroke-width="1.5"/><text x="180" y="119" font-size="14" fill="#60a5fa">x</text></svg>'
+        },
+        answer: "60°"
+    },
   ]
 };
