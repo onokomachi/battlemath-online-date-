@@ -1241,6 +1241,9 @@ const App: React.FC = () => {
       }
 
       if (gameOver) {
+        // Immediately exit 'round_end' phase to prevent this effect from re-firing
+        // when state updates (addExp, setPlayerRoundWins, etc.) trigger a re-render
+        setTurnPhase('selecting_card');
         const formatLabel = battleFormat === 'best_of_3' ? '3本勝負' : battleFormat === 'best_of_5' ? '5本勝負' : battleFormat === 'best_of_7' ? '7本勝負' : 'マスターデュエル';
         const formatWinKey = `formatWins.${battleFormat}`;
         const formatMatchKey = `formatMatches.${battleFormat}`;
