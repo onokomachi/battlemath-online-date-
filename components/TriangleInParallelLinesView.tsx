@@ -155,9 +155,9 @@ const TriangleInParallelLinesView: React.FC<TriangleInParallelLinesViewProps> = 
     
 
     return (
-        <div className="flex flex-col items-center">
-            <p className="text-2xl mb-4 font-mono">{questionText || `直線 a と b が平行なとき、∠${unknown.label}の角度を求めなさい。`}</p>
-            <svg width="100%" style={{ maxHeight: '240px' }} viewBox={viewBox}>
+        <div className="flex flex-col items-center w-full">
+            <p className="text-sm sm:text-lg md:text-xl mb-2 sm:mb-4 font-mono text-center">{questionText || `直線 a と b が平行なとき、∠${unknown.label}の角度を求めなさい。`}</p>
+            <svg width="100%" style={{ maxHeight: 'min(240px, 35vh)' }} viewBox={viewBox}>
                  <defs>
                     <style>{`
                         .angle-known-text { font: bold 16px 'Roboto Mono', monospace; fill: white; }
@@ -167,14 +167,14 @@ const TriangleInParallelLinesView: React.FC<TriangleInParallelLinesViewProps> = 
                 </defs>
                 {viewElements}
             </svg>
-            <div className="mt-4 flex items-baseline">
-                <span className="text-3xl font-bold text-white font-['Playfair_Display']">{unknown.label} = </span>
-                <span 
-                    className={`text-4xl font-mono min-w-[120px] text-center border-b-2 pb-1 transition-colors text-amber-300 ${isSubmitted ? 'border-transparent' : 'border-amber-400'}`}
+            <div className="mt-2 sm:mt-4 flex items-baseline">
+                <span className="text-xl sm:text-3xl font-bold text-white font-['Playfair_Display']">{unknown.label} = </span>
+                <span
+                    className={`text-2xl sm:text-4xl font-mono min-w-[80px] sm:min-w-[120px] text-center border-b-2 pb-1 transition-colors text-amber-300 ${isSubmitted ? 'border-transparent' : 'border-amber-400'}`}
                 >
                     {userAnswer}
                 </span>
-                 <span className="text-4xl font-mono text-amber-300">°</span>
+                 <span className="text-2xl sm:text-4xl font-mono text-amber-300">°</span>
             </div>
         </div>
     );
