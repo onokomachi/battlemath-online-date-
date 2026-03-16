@@ -149,7 +149,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
   const problemData = problemCard.problem.data as any;
 
   return (
-    <div className="w-full max-w-4xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl p-4 sm:p-6 md:p-8 flex flex-col items-center shadow-[0_0_80px_rgba(0,0,0,0.8)] relative overflow-y-auto max-h-[80vh]">
+    <div className="w-full max-w-4xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl p-3 sm:p-5 md:p-8 flex flex-col items-center shadow-[0_0_80px_rgba(0,0,0,0.8)] relative overflow-y-auto max-h-[75vh] sm:max-h-[80vh]">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
       <h3 className="text-cyan-400 font-bold text-sm mb-4">問題を解こう</h3>
 
@@ -170,18 +170,18 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
       {problemType === 'triangle_in_parallel_lines' && <TriangleInParallelLinesView data={problemData} userAnswer={answer} isSubmitted={false} />}
       {problemType === 'graph_with_area' &&
           <div className="text-center w-full">
-            <p className="text-2xl mb-4 font-mono">{problemData?.question || "面積を求めよ"}</p>
-            <div className="w-full max-w-sm mx-auto aspect-square bg-slate-900 rounded-xl p-2 border border-cyan-500/10">
+            <p className="text-base sm:text-xl md:text-2xl mb-2 sm:mb-4 font-mono">{problemData?.question || "面積を求めよ"}</p>
+            <div className="w-full max-w-[200px] sm:max-w-[280px] md:max-w-sm mx-auto aspect-square bg-slate-900 rounded-xl p-2 border border-cyan-500/10">
              <GraphProblemView lines={problemData?.graphLines || []} polygon={problemData?.polygon} />
             </div>
           </div>
       }
       {(problemType === 'text' || !problemType) && (
-        <div className="w-full min-h-[12rem] bg-slate-900/50 border border-cyan-500/5 rounded-xl p-6 mb-6 flex flex-col items-center justify-center text-center text-white text-3xl font-mono tracking-tight">
+        <div className="w-full min-h-[6rem] sm:min-h-[10rem] bg-slate-900/50 border border-cyan-500/5 rounded-xl p-3 sm:p-6 mb-4 sm:mb-6 flex flex-col items-center justify-center text-center text-white text-base sm:text-xl md:text-2xl font-mono tracking-tight">
           <p>{problemData?.question || problemData?.questionText || "数式を解析せよ"}</p>
-          {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-48 mx-auto rounded-lg border border-cyan-500/10 p-1 bg-slate-900 my-4" />}
+          {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-32 sm:max-h-48 mx-auto rounded-lg border border-cyan-500/10 p-1 bg-slate-900 my-2 sm:my-4" />}
           {problemData?.svg && (
-            <div className="svg-container w-full max-w-sm h-auto my-6 p-4 bg-slate-950 rounded-lg border border-cyan-500/10 max-h-[240px] flex items-center justify-center" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
+            <div className="svg-container w-full max-w-xs sm:max-w-sm h-auto my-3 sm:my-6 p-2 sm:p-4 bg-slate-950 rounded-lg border border-cyan-500/10 max-h-[160px] sm:max-h-[220px] md:max-h-[240px] flex items-center justify-center" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
           )}
           {problemData?.options && (
             <div className="grid gap-2 w-full max-w-lg mt-4 text-lg">
@@ -406,8 +406,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
       </div>
 
       {/* Battle Field */}
-      <div className="w-full flex justify-center items-center min-h-[20rem] md:min-h-[28rem] gap-4 md:gap-8 lg:gap-12 relative">
-        <div className="w-36 h-56 md:w-56 md:h-80 flex items-center justify-center relative flex-shrink-0">
+      <div className="w-full flex justify-center items-center min-h-[16rem] sm:min-h-[20rem] md:min-h-[28rem] gap-2 sm:gap-4 md:gap-8 lg:gap-12 relative">
+        <div className="w-24 h-40 sm:w-36 sm:h-56 md:w-56 md:h-80 flex items-center justify-center relative flex-shrink-0">
           {playerPlayedCard ? (
             <div className="animate-math-fade-in"><Card card={playerPlayedCard} isSelected={true} /></div>
           ) : (
@@ -494,7 +494,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           {roundResult && <div className={`mt-8 text-5xl font-black text-center animate-math-fade-in tracking-tighter drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] ${roundResult.includes('勝利') ? 'text-cyan-300' : 'text-red-500'}`}>{roundResult}</div>}
         </div>
 
-        <div className="w-36 h-56 md:w-56 md:h-80 flex items-center justify-center relative flex-shrink-0">
+        <div className="w-24 h-40 sm:w-36 sm:h-56 md:w-56 md:h-80 flex items-center justify-center relative flex-shrink-0">
           {pcPlayedCard ? (
             <div className="animate-math-fade-in"><Card card={pcPlayedCard} isSelected={true} /></div>
           ) : (

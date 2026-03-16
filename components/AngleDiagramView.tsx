@@ -113,9 +113,9 @@ const AngleDiagramView: React.FC<AngleDiagramViewProps> = ({ data, userAnswer, i
     };
 
     return (
-        <div className="flex flex-col items-center">
-             <p className="text-xl mb-4 font-mono">{question || `直線lとmが平行なとき、∠${unknown.name} の角度を求めなさい。`}</p>
-            <svg width="100%" style={{ maxHeight: '220px' }} viewBox={`0 0 ${width} ${height}`}>
+        <div className="flex flex-col items-center w-full">
+             <p className="text-sm sm:text-lg md:text-xl mb-2 sm:mb-4 font-mono text-center">{question || `直線lとmが平行なとき、∠${unknown.name} の角度を求めなさい。`}</p>
+            <svg width="100%" style={{ maxHeight: 'min(220px, 35vh)' }} viewBox={`0 0 ${width} ${height}`}>
                 {/* Parallel lines */}
                 <line x1="0" y1={y_l} x2={width} y2={y_l} stroke="#666" strokeWidth="2" />
                 <text x="5" y={y_l - 8} className="text-gray-400 font-sans text-base" fill="#9ca3af">l</text>
@@ -151,14 +151,14 @@ const AngleDiagramView: React.FC<AngleDiagramViewProps> = ({ data, userAnswer, i
                     );
                 })()}
             </svg>
-            <div className="mt-4 flex items-baseline">
-                <span className="text-3xl font-bold text-white" style={{fontFamily: "'Playfair Display', serif"}}>{unknown.name} = </span>
-                <span 
-                    className={`text-4xl font-mono min-w-[120px] text-center border-b-2 pb-1 transition-colors text-amber-300 ${isSubmitted ? 'border-transparent' : 'border-amber-400'}`}
+            <div className="mt-2 sm:mt-4 flex items-baseline">
+                <span className="text-xl sm:text-3xl font-bold text-white" style={{fontFamily: "'Playfair Display', serif"}}>{unknown.name} = </span>
+                <span
+                    className={`text-2xl sm:text-4xl font-mono min-w-[80px] sm:min-w-[120px] text-center border-b-2 pb-1 transition-colors text-amber-300 ${isSubmitted ? 'border-transparent' : 'border-amber-400'}`}
                 >
                     {userAnswer}
                 </span>
-                <span className="text-4xl font-mono text-amber-300">°</span>
+                <span className="text-2xl sm:text-4xl font-mono text-amber-300">°</span>
             </div>
         </div>
     );
