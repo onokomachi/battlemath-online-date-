@@ -1016,7 +1016,14 @@ const App: React.FC = () => {
     if (playerAnswered || pcAnswered || !pcPlayedCard || !playerPlayedCard) return;
     setPlayerAnswered(true);
     const solveTime = Date.now() - roundStartTime;
-    const correct = normalizeAnswer(answer) === normalizeAnswer(pcPlayedCard.problem.answer);
+    // Proof problems are auto-correct (same as practice mode)
+    // Multiple-choice: compare as sorted sets so answer order doesn't matter
+    const problemData = pcPlayedCard.problem.data as any;
+    const correct = pcPlayedCard.problem.type === 'proof'
+      ? true
+      : problemData?.multiple
+        ? normalizeAnswer(answer).split(',').sort().join(',') === normalizeAnswer(pcPlayedCard.problem.answer).split(',').sort().join(',')
+        : normalizeAnswer(answer) === normalizeAnswer(pcPlayedCard.problem.answer);
 
     if (correct) {
       // Update DDA stats
