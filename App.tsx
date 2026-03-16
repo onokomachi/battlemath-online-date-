@@ -1203,7 +1203,6 @@ const App: React.FC = () => {
           newPcRoundWins = pcRoundWins + 1;
           setPcRoundWins(newPcRoundWins);
         }
-        setCurrentRound(prev => prev + 1);
       }
 
       // Determine if game is over
@@ -1264,8 +1263,9 @@ const App: React.FC = () => {
         return;
       }
 
-      // Round-based format: log round score
+      // Round-based format: advance round counter and log score
       if (battleFormat !== 'master_duel') {
+        setCurrentRound(prev => prev + 1);
         addLog(`第${currentRound}回戦終了 [${newPlayerRoundWins}-${newPcRoundWins}]`);
       }
 
