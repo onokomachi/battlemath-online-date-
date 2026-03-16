@@ -6,6 +6,12 @@ import { polynomialProblems } from './data/polynomialProblems';
 import { probabilityProblems } from './data/probabilityProblems';
 import { simultaneousEquationsProblems } from './data/simultaneousEquations';
 import { dataAnalysisProblems } from './data/dataAnalysisProblems';
+import { SVG_MAP } from './data/svgDefinitions';
+import svgMap from './data/geometrySvgMap';
+import { geometryProofFigures } from './data/geometryProofFigures';
+
+// Merge all SVG maps for enriching card problems with inline SVGs
+const ALL_SVG: Record<string, string> = { ...SVG_MAP, ...svgMap, ...geometryProofFigures };
 
 export const MAX_SCORE = 5;
 export const DECK_SIZE = 20;
@@ -230,12 +236,21 @@ const processProblems = (): ProblemCard[] => {
         for (const category in set.problems) {
             const difficulty = getDifficulty(category);
             for (const problem of (set.problems as any)[category]) {
+                // Enrich with SVG: if problem has imageUrl but no svg, populate from SVG maps
+                const enriched = (() => {
+                    const p = problem as Problem;
+                    const data = p.data as any;
+                    if (data?.imageUrl && !data.svg && ALL_SVG[data.imageUrl]) {
+                        return { ...p, data: { ...data, svg: ALL_SVG[data.imageUrl] } };
+                    }
+                    return p;
+                })();
                 const card: ProblemCard = {
                     id: idCounter++,
                     mainCategory: set.mainCat,
                     category,
                     difficulty,
-                    problem: problem as Problem,
+                    problem: enriched,
                 };
                 card.ability = assignAbility(card);
                 allProblems.push(card);
