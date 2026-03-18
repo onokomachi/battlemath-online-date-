@@ -26,6 +26,8 @@ import ProofProblemView from './ProofProblemView';
 import SimultaneousEquationProblemView from './SimultaneousEquationProblemView';
 import TriangleInParallelLinesView from './TriangleInParallelLinesView';
 import GraphProblemView from './GraphProblemView';
+import BoxPlotView from './BoxPlotView';
+import HistogramView from './HistogramView';
 
 interface ProblemScreenProps {
   category: string;
@@ -417,6 +419,48 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
                     {currentProblem?.type === 'proof' && <ProofProblemView ref={problemViewRef} data={problemData} onAnswerChange={setUserAnswer} isSubmitted={showAnswer} />}
                     {currentProblem?.type === 'simultaneous_equation' && <SimultaneousEquationProblemView ref={problemViewRef} data={problemData} onAnswerChange={setUserAnswer} isSubmitted={showAnswer} />}
                     {currentProblem?.type === 'triangle_in_parallel_lines' && <TriangleInParallelLinesView data={problemData} userAnswer={userAnswer} isSubmitted={showAnswer} />}
+                    {currentProblem?.type === 'box_plot' && (
+                      <div className="w-full text-center">
+                        <p className="text-base sm:text-lg lg:text-xl leading-snug mb-2 sm:mb-3 font-mono tracking-tight">{problemData?.question}</p>
+                        <BoxPlotView datasets={problemData?.datasets || []} hideValue={problemData?.hideValue} />
+                        {problemData?.options && (
+                          <div className="grid gap-2 max-w-lg mx-auto mt-2">
+                            {(problemData.options as string[]).map((opt: string, i: number) => {
+                              const isSelected = userAnswer === opt;
+                              return (
+                                <button key={i} onClick={() => { if (!showAnswer) setUserAnswer(opt); }} disabled={showAnswer}
+                                  className={`w-full text-left px-4 py-2.5 rounded-xl border-2 transition-all text-sm sm:text-base font-mono
+                                    ${isSelected ? 'border-cyan-400 bg-cyan-900/30 text-cyan-200 shadow-[0_0_15px_rgba(34,211,238,0.2)]' : 'border-cyan-900/30 bg-slate-900/60 text-white hover:border-cyan-600/50 hover:bg-slate-800/60'}
+                                    ${showAnswer ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                  <span className="text-cyan-500 mr-2 font-bold">{String.fromCharCode(65 + i)}.</span>{opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {currentProblem?.type === 'histogram' && (
+                      <div className="w-full text-center">
+                        <p className="text-base sm:text-lg lg:text-xl leading-snug mb-2 sm:mb-3 font-mono tracking-tight">{problemData?.question}</p>
+                        <HistogramView bars={problemData?.bars || []} xLabel={problemData?.xLabel} yLabel={problemData?.yLabel} />
+                        {problemData?.options && (
+                          <div className="grid gap-2 max-w-lg mx-auto mt-2">
+                            {(problemData.options as string[]).map((opt: string, i: number) => {
+                              const isSelected = userAnswer === opt;
+                              return (
+                                <button key={i} onClick={() => { if (!showAnswer) setUserAnswer(opt); }} disabled={showAnswer}
+                                  className={`w-full text-left px-4 py-2.5 rounded-xl border-2 transition-all text-sm sm:text-base font-mono
+                                    ${isSelected ? 'border-cyan-400 bg-cyan-900/30 text-cyan-200 shadow-[0_0_15px_rgba(34,211,238,0.2)]' : 'border-cyan-900/30 bg-slate-900/60 text-white hover:border-cyan-600/50 hover:bg-slate-800/60'}
+                                    ${showAnswer ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                  <span className="text-cyan-500 mr-2 font-bold">{String.fromCharCode(65 + i)}.</span>{opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {currentProblem?.type === 'graph_with_area' &&
                         <div className="text-center w-full">
                           <p className="text-sm sm:text-base lg:text-lg mb-2 font-mono">{problemData?.question || "面積を求めよ"}</p>

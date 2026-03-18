@@ -156,6 +156,37 @@ export interface IntersectionGuidedEquationData {
 }
 
 
+// --- Data Analysis Problem Types ---
+export interface BoxPlotDataDef {
+  min: number;
+  q1: number;
+  median: number;
+  q3: number;
+  max: number;
+  label?: string;
+}
+
+export interface BoxPlotProblemData {
+  question: string;
+  datasets: BoxPlotDataDef[];
+  hideValue?: string;
+  options?: string[];
+}
+
+export interface HistogramBarDef {
+  from: number;
+  to: number;
+  freq: number;
+}
+
+export interface HistogramProblemData {
+  question: string;
+  bars: HistogramBarDef[];
+  xLabel?: string;
+  yLabel?: string;
+  options?: string[];
+}
+
 // --- Student Profile (学年・組・番号) ---
 export interface StudentProfile {
   grade: number;    // 学年 (1, 2, 3)
@@ -281,7 +312,9 @@ export interface Problem {
     | ProofProblemData
     | SimultaneousEquationData
     | TriangleInParallelLinesData
-    | MultiTransversalAngleData;
+    | MultiTransversalAngleData
+    | BoxPlotProblemData
+    | HistogramProblemData;
   answer: string;
 }
 
