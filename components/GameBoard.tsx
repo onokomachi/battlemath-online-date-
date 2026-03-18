@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { ProblemCard, TurnPhase, ProblemViewRef, TurnInitiative } from '../types';
+import { generateBattleKeypadLayout } from '../utils/keypadLayoutGenerator';
 import Card, { CardBack } from './Card';
 import GameLog from './GameLog';
 import AngleDiagramView from './AngleDiagramView';
@@ -101,49 +102,10 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeypadClick, isSolving, turnPhase, handleSubmit]);
 
-  const getOptimizedKeypadLayout = (): string[][] => {
-    const type = problemCard.problem.type;
-
-    // 証明問題(穴埋め): △, ∠, A-Gなどの文字が必要
-    if (type === 'fill_in_proof' || type === 'proof') {
-      return [
-        ['A', 'B', 'C', 'D', 'E', 'F'],
-        ['G', 'H', 'M', 'N', 'O', 'P'],
-        ['△', '∠', '共通', ' ', ' ', ' '],
-      ];
-    }
-
-    // 連立方程式: 数字とx,y
-    if (type === 'simultaneous_equation' || type === 'guided_equation' || type === 'intersection_guided_equation') {
-      return [
-        ['7', '8', '9', 'x', 'y'],
-        ['4', '5', '6', '+', '-'],
-        ['1', '2', '3', '/', '='],
-        ['0', '.', '(', ')', ' '],
-      ];
-    }
-
-    // 縦書き計算
-    if (type === 'vertical_calculation') {
-      return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '-', '.']];
-    }
-
-    // Geometry angle problems
-    if (['angle_diagram', 'bent_transversal_diagram', 'triangle_in_parallel_lines', 'multi_transversal_angle'].includes(type)) {
-      return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '°']];
-    }
-    if (type === 'graph_with_domain') {
-      return [['7', '8', '9', 'y'], ['4', '5', '6', '≤', '≥'], ['1', '2', '3', '<', '>'], ['0', '.', '-', ' ']];
-    }
-
-    // Default algebraic layout for battle mode (consistent, doesn't leak answer)
-    return [
-      ['7', '8', '9', 'x', 'y'],
-      ['4', '5', '6', '+', '-'],
-      ['1', '2', '3', '/', '^'],
-      ['0', '.', '=', '(', ')']
-    ];
-  };
+  // バトルモード用: 個別問題の正解から動的にキーセットを生成（デコイ多め）
+  const battleKeypadLayout = useMemo(() => {
+    return generateBattleKeypadLayout(problemCard.problem);
+  }, [problemCard]);
 
   const problemType = problemCard.problem.type;
   const problemData = problemCard.problem.data as any;
@@ -246,7 +208,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
                     </div>
                 </div>
              )}
-            {!problemData?.options && <Keypad onKeyClick={handleKeypadClick} layout={getOptimizedKeypadLayout()} disabled={turnPhase !== 'solving_problem'} />}
+            {!problemData?.options && <Keypad onKeyClick={handleKeypadClick} layout={battleKeypadLayout} disabled={turnPhase !== 'solving_problem'} />}
              <button
               type="submit"
               disabled={!isSolving || turnPhase !== 'solving_problem'}
