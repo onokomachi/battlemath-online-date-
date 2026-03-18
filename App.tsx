@@ -1323,8 +1323,21 @@ const App: React.FC = () => {
   // ============================
   if (authLoading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-gray-950 text-cyan-400 font-mono font-bold tracking-widest">
-        CONNECTING...
+      <div className="h-screen w-full flex items-center justify-center bg-gray-950">
+        <div className="text-center animate-[fadeIn_1.5s_ease-in-out]">
+          <p className="text-lg text-gray-400 font-mono tracking-[0.3em] opacity-80">
+            presented by
+          </p>
+          <p className="text-2xl text-white font-bold font-mono tracking-[0.2em] mt-2">
+            onokomachi
+          </p>
+        </div>
+        <style>{`
+          @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
       </div>
     );
   }
