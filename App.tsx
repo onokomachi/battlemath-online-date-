@@ -91,6 +91,7 @@ const App: React.FC = () => {
   // --- Auth ---
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
   // --- Student Profile (学年・組・番号) ---
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(() => {
@@ -243,6 +244,12 @@ const App: React.FC = () => {
     () => CARD_DEFINITIONS.filter(c => ownedCardIds.has(c.id)),
     [ownedCardIds]
   );
+
+  // Splash screen timer (minimum 2 seconds)
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // ============================
   // Firebase Auth
@@ -1321,7 +1328,7 @@ const App: React.FC = () => {
   // ============================
   // Render
   // ============================
-  if (authLoading) {
+  if (authLoading || showSplash) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-gray-950">
         <div className="text-center animate-[fadeIn_1.5s_ease-in-out]">
