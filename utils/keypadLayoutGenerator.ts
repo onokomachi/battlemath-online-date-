@@ -83,16 +83,9 @@ function addDecoyKeys(required: Set<string>, decoyCount: number = 3): Set<string
   const requiredGeom = GEOMETRY_SYMBOL_POOL.filter(g => required.has(g));
   const requiredInequality = INEQUALITY_POOL.filter(i => required.has(i));
 
-  // 数字: 使われていない数字をデコイとして追加
+  // 数字: 1つでも数字が必要なら全数字(0-9)を表示（自然なテンキー配置のため）
   if (requiredDigits.length > 0) {
-    const unusedDigits = DIGIT_POOL.filter(d => !required.has(d));
-    const digitDecoys = shuffleArray(unusedDigits).slice(0, Math.min(decoyCount, unusedDigits.length));
-    // 数字が多い場合は全数字を入れる（自然なテンキーのため）
-    if (requiredDigits.length >= 6) {
-      DIGIT_POOL.forEach(d => all.add(d));
-    } else {
-      digitDecoys.forEach(d => all.add(d));
-    }
+    DIGIT_POOL.forEach(d => all.add(d));
   }
 
   // 変数: 使われていない変数を1-2個追加
