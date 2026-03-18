@@ -50,7 +50,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ランキング用: 公開読み取りのみ
-    // (usersコレクションのtotalWinsで代替)
+    // ランキング用 (月次サブトピック別): 認証ユーザーが読み書き可
+    // ドキュメントID: {YYYY-MM}_{subtopic}_{uid}
+    match /rankings/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+    }
   }
 }

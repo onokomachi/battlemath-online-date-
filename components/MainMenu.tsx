@@ -194,7 +194,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
             onClick={onOpenQuests}
             className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
           >
-            <span>⚡</span> クエスト
+            クエスト
           </button>
         )}
         {onOpenWeakness && (
@@ -202,7 +202,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
             onClick={onOpenWeakness}
             className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
           >
-            <span>📊</span> 弱点分析
+            弱点分析
           </button>
         )}
         {onOpenItemShop && (
@@ -210,7 +210,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
             onClick={onOpenItemShop}
             className="btn-tactical px-5 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
           >
-            <span>🏪</span> アイテム
+            アイテム
           </button>
         )}
         {onOpenClassBattle && user && hasStudentProfile && (
@@ -218,7 +218,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
             onClick={onOpenClassBattle}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold border border-amber-500/30 text-amber-400 hover:bg-amber-900/20 transition-colors"
           >
-            <span>⚔</span> クラス対抗
+            クラス対抗
           </button>
         )}
         {canAccessGameMaster && onOpenGameMaster && (
@@ -307,6 +307,11 @@ const MainMenu: React.FC<MainMenuProps> = ({
 
       <div className="absolute bottom-10 flex flex-col items-center gap-2">
         <div className="w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
+      </div>
+
+      {/* Presented by */}
+      <div className="absolute bottom-3 right-4 text-[10px] text-gray-500 font-mono tracking-wider opacity-60">
+        presented by onokomachi
       </div>
     </div>
   );
