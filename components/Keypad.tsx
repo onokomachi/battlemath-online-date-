@@ -13,7 +13,7 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
     if (key === ' ' || !key) {
         return <div key={Math.random()} className="h-9 sm:h-11 lg:h-12 w-full"></div>;
     }
-    const isSpecial = ['=', '+', '-', '×', '(', ')', '^', '/', '°', '≤', '≥', '<', '>', ',', 'π', '²', '³', '△', '∠'].includes(key);
+    const isSpecial = ['=', '+', '-', '×', '(', ')', '^', '/', '°', '≤', '≥', '<', '>', ',', 'π', '²', '³', '△', '∠', '≡'].includes(key);
     const isVar = ['x', 'y', 'a', 'b'].includes(key);
     const isLetter = /^[A-Z]$/.test(key);
     const isJapanese = key === '共通' || key === '対応';
@@ -44,10 +44,11 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
   };
   
   const colCount = layout[0]?.length || 3;
-  const gridColsClass = 
-    colCount >= 6 ? 'grid-cols-6' : 
-    colCount === 5 ? 'grid-cols-5' : 
-    colCount === 4 ? 'grid-cols-4' : 'grid-cols-3';
+  const gridColsClass =
+    colCount >= 6 ? 'grid-cols-6' :
+    colCount === 5 ? 'grid-cols-5' :
+    colCount === 4 ? 'grid-cols-4' :
+    colCount === 2 ? 'grid-cols-2' : 'grid-cols-3';
 
   return (
     <div className="w-full mt-1.5 sm:mt-2 bg-slate-950/40 p-2 sm:p-3 rounded-xl backdrop-blur-xl border border-cyan-500/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
@@ -62,7 +63,7 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyClick, layout, disabled = false })
             className={`h-9 sm:h-11 lg:h-12 w-full flex items-center justify-center rounded-lg transition-all duration-200
               text-xs font-black transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-red-400
               bg-red-950/20 border border-red-500/20 text-red-300 hover:bg-red-900/40 uppercase tracking-widest
-              disabled:opacity-20 disabled:cursor-not-allowed shadow-lg ${colCount >= 5 ? 'col-span-3' : 'col-span-2'}`}
+              disabled:opacity-20 disabled:cursor-not-allowed shadow-lg ${colCount >= 5 ? 'col-span-3' : colCount >= 3 ? 'col-span-2' : 'col-span-1'}`}
           >
             Clear
           </button>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Problem, SessionStats, ProblemViewRef } from '../types';
 import { getShuffledProblemSet } from '../services/problemService';
 import { difficultyMap, MATH_CATEGORIES } from '../constants';
@@ -8,6 +8,7 @@ import Keypad from './Keypad';
 import ProblemControls from './ProblemControls';
 import ProblemResultDisplay from './ProblemResultDisplay';
 import { BackIcon, PencilIcon, HomeIcon, TrophyIcon, ClockIcon } from './Icons';
+import { generateSubtopicKeypadLayout } from '../utils/keypadLayoutGenerator';
 
 // Sub-views
 import AngleDiagramView from './AngleDiagramView';
@@ -152,17 +153,35 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
   const [isLoading, setIsLoading] = useState(true);
   const [isFinished, setIsFinished] = useState(false);
   const [vfxClass, setVfxClass] = useState('');
-  // セッション経過時間タイマー
+  // セッション経過時間タイマー（結果確認中は一時停止）
   const [sessionStartTime] = useState<number>(Date.now());
   const [elapsedDisplay, setElapsedDisplay] = useState('0:00');
+  const pausedTimeRef = useRef<number>(0);     // 一時停止した累計時間
+  const pauseStartRef = useRef<number | null>(null); // 一時停止開始時刻
 
   const problemViewRef = useRef<ProblemViewRef>(null);
 
-  // セッション経過時間の表示更新
+  // 結果表示時にタイマーを一時停止
+  useEffect(() => {
+    if (showAnswer) {
+      // 一時停止開始
+      pauseStartRef.current = Date.now();
+    } else {
+      // 一時停止解除（累計に加算）
+      if (pauseStartRef.current !== null) {
+        pausedTimeRef.current += Date.now() - pauseStartRef.current;
+        pauseStartRef.current = null;
+      }
+    }
+  }, [showAnswer]);
+
+  // セッション経過時間の表示更新（一時停止中はカウントしない）
   useEffect(() => {
     if (isFinished) return;
     const timer = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+      const now = Date.now();
+      const totalPaused = pausedTimeRef.current + (pauseStartRef.current !== null ? now - pauseStartRef.current : 0);
+      const elapsed = Math.floor((now - sessionStartTime - totalPaused) / 1000);
       const min = Math.floor(elapsed / 60);
       const sec = elapsed % 60;
       setElapsedDisplay(`${min}:${sec.toString().padStart(2, '0')}`);
@@ -306,70 +325,12 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeypadClick, showAnswer, handleNextProblem, checkAnswer, userAnswer]);
 
-  const getOptimizedKeypadLayout = (): string[][] => {
-    if (!currentProblem) return [[]];
-    const type = currentProblem.type;
-
-    // 証明問題(穴埋め): △, ∠, A-Gなどの文字が必要
-    if (type === 'fill_in_proof') {
-      return [
-        ['A', 'B', 'C', 'D', 'E', 'F'],
-        ['G', 'H', 'M', 'N', 'O', 'P'],
-        ['△', '∠', '共通', ' ', ' ', ' '],
-      ];
-    }
-
-    // Geometry angle problems - consistent layout
-    if (['angle_diagram', 'bent_transversal_diagram', 'triangle_in_parallel_lines', 'multi_transversal_angle'].includes(type)) {
-      return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '.', '°']];
-    }
-
-    // Probability - consistent layout with fraction support
-    if (category === '確率') {
-      return [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['0', '/', ' ']];
-    }
-
-    // Graph with domain
-    if (type === 'graph_with_domain') {
-      return [['7', '8', '9', 'y'], ['4', '5', '6', '≤', '≥'], ['1', '2', '3', '<', '>'], ['0', '.', '-', ' ']];
-    }
-
-    // Category-based layouts (don't leak answer info)
-    if (category === '式の計算') {
-      return [
-        ['7', '8', '9', 'x', 'y'],
-        ['4', '5', '6', 'a', 'b'],
-        ['1', '2', '3', '^', '/'],
-        ['0', '.', '-', '(', ')']
-      ];
-    }
-
-    if (category === '連立方程式') {
-      return [
-        ['7', '8', '9', 'x', 'y'],
-        ['4', '5', '6', '=', ','],
-        ['1', '2', '3', '+', '/'],
-        ['0', '.', '-', '(', ')']
-      ];
-    }
-
-    if (category === '一次関数') {
-      return [
-        ['7', '8', '9', 'x', 'y'],
-        ['4', '5', '6', '=', '/'],
-        ['1', '2', '3', '+', '-'],
-        ['0', '.', ' ', '(', ')']
-      ];
-    }
-
-    // Default algebraic layout
-    return [
-      ['7', '8', '9', 'x', 'y'],
-      ['4', '5', '6', '+', '-'],
-      ['1', '2', '3', '/', '^'],
-      ['0', '.', '=', '(', ')']
-    ];
-  };
+  // subtopic内の全問題から共通キーセットを生成（メモ化でセッション中は固定）
+  const subtopicKeypadLayout = useMemo(() => {
+    if (problems.length === 0) return [['0']];
+    const dominantType = problems[0]?.type || 'text';
+    return generateSubtopicKeypadLayout(problems, dominantType);
+  }, [problems]);
 
   if (isLoading) {
     return (
@@ -380,7 +341,7 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
     );
   }
 
-  const sessionElapsedSec = Math.floor((Date.now() - sessionStartTime) / 1000);
+  const sessionElapsedSec = Math.floor((Date.now() - sessionStartTime - pausedTimeRef.current) / 1000);
 
   if (isFinished) {
       return (
@@ -534,7 +495,7 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
                         </div>
                     )}
                     <div className="w-full max-w-lg">
-                      <Keypad onKeyClick={handleKeypadClick} layout={getOptimizedKeypadLayout()} disabled={showAnswer} />
+                      <Keypad onKeyClick={handleKeypadClick} layout={subtopicKeypadLayout} disabled={showAnswer} />
                     </div>
                   </div>
                 )}
