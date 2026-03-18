@@ -21,6 +21,8 @@ import VerticalCalculationProblemView from './VerticalCalculationProblemView';
 import ProofProblemView from './ProofProblemView';
 import SimultaneousEquationProblemView from './SimultaneousEquationProblemView';
 import TriangleInParallelLinesView from './TriangleInParallelLinesView';
+import BoxPlotView from './BoxPlotView';
+import HistogramView from './HistogramView';
 import Keypad from './Keypad';
 
 
@@ -130,6 +132,52 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
       {problemType === 'proof' && <ProofProblemView ref={problemViewRef} data={problemData} onAnswerChange={setAnswer} isSubmitted={false} />}
       {problemType === 'simultaneous_equation' && <SimultaneousEquationProblemView ref={problemViewRef} data={problemData} onAnswerChange={setAnswer} isSubmitted={false} />}
       {problemType === 'triangle_in_parallel_lines' && <TriangleInParallelLinesView data={problemData} userAnswer={answer} isSubmitted={false} />}
+      {problemType === 'box_plot' && (
+        <div className="w-full text-center">
+          <p className="text-base sm:text-xl md:text-2xl mb-2 sm:mb-4 font-mono">{problemData?.question}</p>
+          <BoxPlotView datasets={problemData?.datasets || []} hideValue={problemData?.hideValue} />
+          {problemData?.options && (
+            <div className="grid gap-2 w-full max-w-lg mt-4 text-lg">
+              {(problemData.options as string[]).map((opt: string, i: number) => {
+                const isSelected = answer === opt;
+                return (
+                  <button key={i} type="button"
+                    onClick={() => { if (turnPhase === 'solving_problem') setAnswer(opt); }}
+                    disabled={turnPhase !== 'solving_problem'}
+                    className={`w-full text-left px-4 py-3 rounded-lg border transition-all
+                      ${isSelected ? 'border-cyan-400 bg-cyan-900/30 text-cyan-200' : 'border-cyan-900/30 bg-slate-900/60 text-white hover:border-cyan-600/50'}
+                      disabled:opacity-50`}>
+                    <span className="text-cyan-500 mr-2 font-bold">{String.fromCharCode(65 + i)}.</span>{opt}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+      {problemType === 'histogram' && (
+        <div className="w-full text-center">
+          <p className="text-base sm:text-xl md:text-2xl mb-2 sm:mb-4 font-mono">{problemData?.question}</p>
+          <HistogramView bars={problemData?.bars || []} xLabel={problemData?.xLabel} yLabel={problemData?.yLabel} />
+          {problemData?.options && (
+            <div className="grid gap-2 w-full max-w-lg mt-4 text-lg">
+              {(problemData.options as string[]).map((opt: string, i: number) => {
+                const isSelected = answer === opt;
+                return (
+                  <button key={i} type="button"
+                    onClick={() => { if (turnPhase === 'solving_problem') setAnswer(opt); }}
+                    disabled={turnPhase !== 'solving_problem'}
+                    className={`w-full text-left px-4 py-3 rounded-lg border transition-all
+                      ${isSelected ? 'border-cyan-400 bg-cyan-900/30 text-cyan-200' : 'border-cyan-900/30 bg-slate-900/60 text-white hover:border-cyan-600/50'}
+                      disabled:opacity-50`}>
+                    <span className="text-cyan-500 mr-2 font-bold">{String.fromCharCode(65 + i)}.</span>{opt}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
       {problemType === 'graph_with_area' &&
           <div className="text-center w-full">
             <p className="text-base sm:text-xl md:text-2xl mb-2 sm:mb-4 font-mono">{problemData?.question || "面積を求めよ"}</p>
