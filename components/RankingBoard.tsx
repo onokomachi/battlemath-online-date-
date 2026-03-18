@@ -18,12 +18,15 @@ interface RankingEntry {
   photoURL?: string;
   formatWins?: Record<string, number>;
   formatMatches?: Record<string, number>;
+  practiceScore?: number;
+  practiceSessions?: number;
 }
 
-type RankingTab = 'total' | BattleFormat;
+type RankingTab = 'total' | 'practice' | BattleFormat;
 
 const TAB_DEFS: { key: RankingTab; label: string; shortLabel: string }[] = [
   { key: 'total', label: '総合', shortLabel: '総合' },
+  { key: 'practice', label: '練習', shortLabel: '練習' },
   { key: 'best_of_3', label: '3本勝負', shortLabel: '3本' },
   { key: 'best_of_5', label: '5本勝負', shortLabel: '5本' },
   { key: 'best_of_7', label: '7本勝負', shortLabel: '7本' },
@@ -58,6 +61,8 @@ const RankingBoard: React.FC<RankingBoardProps> = ({ onClose, db, currentUserId 
           photoURL: d.photoURL,
           formatWins: d.formatWins || {},
           formatMatches: d.formatMatches || {},
+          practiceScore: d.practiceScore || 0,
+          practiceSessions: d.practiceSessions || 0,
         });
       });
       setAllEntries(list);
@@ -69,6 +74,11 @@ const RankingBoard: React.FC<RankingBoardProps> = ({ onClose, db, currentUserId 
   const getEntriesForTab = (tab: RankingTab): RankingEntry[] => {
     if (tab === 'total') {
       return [...allEntries].sort((a, b) => b.totalWins - a.totalWins);
+    }
+    if (tab === 'practice') {
+      return [...allEntries]
+        .filter(e => (e.practiceSessions || 0) > 0)
+        .sort((a, b) => (b.practiceScore || 0) - (a.practiceScore || 0));
     }
     return [...allEntries]
       .map(e => ({
@@ -93,13 +103,17 @@ const RankingBoard: React.FC<RankingBoardProps> = ({ onClose, db, currentUserId 
     }
   }
 
+  const isPracticeTab = activeTab === 'practice';
+
   const getWins = (entry: RankingEntry): number => {
     if (activeTab === 'total') return entry.totalWins;
+    if (isPracticeTab) return entry.practiceScore || 0;
     return (entry.formatWins as Record<string, number>)?.[activeTab] || 0;
   };
 
   const getMatches = (entry: RankingEntry): number => {
     if (activeTab === 'total') return entry.totalMatches;
+    if (isPracticeTab) return entry.practiceSessions || 0;
     return (entry.formatMatches as Record<string, number>)?.[activeTab] || 0;
   };
 
@@ -158,11 +172,17 @@ const RankingBoard: React.FC<RankingBoardProps> = ({ onClose, db, currentUserId 
           {entry.playerLevel}
         </td>
         <td className="p-2 sm:p-3 text-center">
-          <span className="text-amber-400 font-bold text-xs sm:text-sm">{wins}</span>
-          <span className="text-gray-500 text-[10px] sm:text-xs"> / {matches}戦</span>
+          {isPracticeTab ? (
+            <span className="text-amber-400 font-bold text-xs sm:text-sm">{wins}pt</span>
+          ) : (
+            <>
+              <span className="text-amber-400 font-bold text-xs sm:text-sm">{wins}</span>
+              <span className="text-gray-500 text-[10px] sm:text-xs"> / {matches}戦</span>
+            </>
+          )}
         </td>
         <td className="p-2 sm:p-3 text-center text-xs sm:text-sm font-mono text-green-400">
-          {winRate(wins, matches)}
+          {isPracticeTab ? `${matches}回` : winRate(wins, matches)}
         </td>
       </tr>
     );
@@ -213,6 +233,8 @@ const RankingBoard: React.FC<RankingBoardProps> = ({ onClose, db, currentUserId 
               <p className="text-xs mt-2 text-gray-600">
                 {activeTab === 'total'
                   ? '対戦に勝利してランキングに入ろう！'
+                  : activeTab === 'practice'
+                  ? '練習モードで問題を解いてランキングに入ろう！'
                   : `${TAB_DEFS.find(t => t.key === activeTab)?.label}で対戦してランキングに入ろう！`}
               </p>
             </div>
@@ -241,8 +263,8 @@ const RankingBoard: React.FC<RankingBoardProps> = ({ onClose, db, currentUserId 
                     <th className="p-2 sm:p-3 text-center w-10 sm:w-12">Rank</th>
                     <th className="p-2 sm:p-3">プレイヤー</th>
                     <th className="p-2 sm:p-3 text-center">Lv</th>
-                    <th className="p-2 sm:p-3 text-center">勝利</th>
-                    <th className="p-2 sm:p-3 text-center">勝率</th>
+                    <th className="p-2 sm:p-3 text-center">{isPracticeTab ? 'スコア' : '勝利'}</th>
+                    <th className="p-2 sm:p-3 text-center">{isPracticeTab ? '回数' : '勝率'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800/50">
