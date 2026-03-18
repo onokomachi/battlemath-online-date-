@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import type { SessionStats, StudentProfile } from '../types';
 import type { User } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import MenuScreen from './MenuScreen';
 import ProblemScreen from './ProblemScreen';
 import RecordsScreen from './RecordsScreen';
@@ -85,6 +85,11 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete, db, user
         // ランキング送信（ログインユーザーのみ）
         if (db && user && stats.totalScore > 0) {
           submitRanking(db, user, studentProfile, selectedTopic.subTopic, stats.totalScore);
+          // usersドキュメントにも練習スコアを反映（RankingBoardで表示するため）
+          updateDoc(doc(db, 'users', user.uid), {
+            practiceScore: increment(stats.totalScore),
+            practiceSessions: increment(1),
+          }).catch(() => {});
         }
     }
     setScreen('menu');
