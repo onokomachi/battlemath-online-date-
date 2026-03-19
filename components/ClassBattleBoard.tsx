@@ -78,23 +78,28 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
       try {
         // Step 1: キャッシュ確認（1 read）
         const cacheRef = doc(db, 'classStatsCache', monthKey);
-        const cacheSnap = await getDoc(cacheRef);
+        try {
+          const cacheSnap = await getDoc(cacheRef);
 
-        if (cacheSnap.exists()) {
-          const cached = cacheSnap.data();
-          const cachedAt = cached.updatedAt || 0;
-          const age = Date.now() - cachedAt;
+          if (cacheSnap.exists()) {
+            const cached = cacheSnap.data();
+            const cachedAt = cached.updatedAt || 0;
+            const age = Date.now() - cachedAt;
 
-          if (age < CACHE_TTL_MS && cached.stats) {
-            // キャッシュが新鮮 → そのまま使用（0 additional reads）
-            setClassStats(cached.stats as ClassStats[]);
-            setDataSource('cache');
-            setLoading(false);
-            return;
+            if (age < CACHE_TTL_MS && cached.stats) {
+              // キャッシュが新鮮 → そのまま使用（0 additional reads）
+              setClassStats(cached.stats as ClassStats[]);
+              setDataSource('cache');
+              setLoading(false);
+              return;
+            }
           }
+        } catch (cacheErr) {
+          // キャッシュ読み取り失敗（権限エラー等）→ ライブデータにフォールバック
+          console.warn('ClassBattle cache read failed, falling back to live scan:', cacheErr);
         }
 
-        // Step 2: キャッシュなし or 期限切れ → 全ユーザーscan
+        // Step 2: キャッシュなし or 期限切れ or キャッシュ読み取り失敗 → 全ユーザーscan
         const usersSnap = await getDocs(
           query(collection(db, 'users'), where('studentProfile', '!=', null))
         );
@@ -137,8 +142,11 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
 
           entry.totalMp += (d.mathPoints || 0);
           entry.totalCorrect += (d.totalCorrectAnswers || 0);
-          const answered = (d.totalCorrectAnswers || 0) + Math.floor((d.totalMatches || 0) * 3);
-          entry.totalAnswered += Math.max(answered, d.totalCorrectAnswers || 0);
+          // totalAnsweredフィールドがあればそれを使用、なければ推定
+          const answered = d.totalAnswered
+            ? d.totalAnswered
+            : Math.max((d.totalCorrectAnswers || 0), (d.totalMatches || 0) * 5);
+          entry.totalAnswered += answered;
         });
 
         const stats: ClassStats[] = [];
