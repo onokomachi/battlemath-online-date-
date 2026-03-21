@@ -30,7 +30,7 @@ export const calcDamage = (difficulty: number): number =>
   Math.round(difficulty * 1.5 + 1);
 
 // Admin settings
-export const ADMIN_EMAILS: string[] = []; // Add admin email addresses here
+export const ADMIN_EMAILS: string[] = ['ono.yosuke@isesaki-school.ed.jp']; // firestore.rules の isAdmin() と同期すること
 export const GAMEMASTER_PASSWORD = '215124'; // Change in production
 
 export const DECK_CONSTRAINTS: Record<number, number> = {

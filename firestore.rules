@@ -14,12 +14,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ユーザーデータ: 自分のデータのみ読み書き可
+    // 管理者判定: ADMIN_EMAILS (constants.ts) と同期すること
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in [
+          'ono.yosuke@isesaki-school.ed.jp'
+        ];
+    }
+
+    // ユーザーデータ: 自分のデータのみ読み書き可 / 管理者は全操作可
     match /users/{userId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false; // 削除は管理者コンソールのみ
+      allow update: if request.auth != null
+        && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
     }
 
     // PvPルーム: 認証済みユーザーが読み書き可
@@ -32,22 +41,23 @@ service cloud.firestore {
       allow delete: if request.auth != null
         && (resource.data.hostId == request.auth.uid
             || resource.data.guestId == request.auth.uid
-            || resource.data.status == 'finished');
+            || resource.data.status == 'finished'
+            || isAdmin());
     }
 
-    // ゲーム設定: 誰でも読める / 書込み不可 (管理者コンソールで設定)
+    // ゲーム設定: 誰でも読める / 管理者のみ書込み可
     match /config/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
-    // クラスチーム: 認証済みユーザーが読み書き可
+    // クラスチーム: 認証済みユーザーが読み書き可 / 管理者は削除可
     // エビデンスB: 協力設計 × オキシトシン系（Zak 2012）
     match /classes/{classId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update: if request.auth != null;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // ランキング用 (月次サブトピック別): 認証ユーザーが読み書き可
@@ -56,7 +66,7 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update: if request.auth != null
-        && resource.data.uid == request.auth.uid;
+        && (resource.data.uid == request.auth.uid || isAdmin());
     }
   }
 }

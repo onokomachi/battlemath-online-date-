@@ -219,6 +219,7 @@ const App: React.FC = () => {
   const [weeklyQuestDone, setWeeklyQuestDone] = useState<Set<string>>(new Set());
   // セッション蓄積 refs (書き込み最小化)
   const sessionCorrectRef = useRef(0);
+  const sessionAnsweredRef = useRef(0);
 
   // Sync refs
   useEffect(() => { isHostRef.current = isHost; }, [isHost]);
@@ -316,6 +317,7 @@ const App: React.FC = () => {
               ownedCardIds: Array.from(ownedCardIds),
               earnedBadgeIds: [],
               totalCorrectAnswers: 0,
+              totalAnswered: 0,
               loginStreak: 1,
               lastLoginDate: getTodayStr(),
               loginBonusClaimedDate: '',
@@ -438,6 +440,8 @@ const App: React.FC = () => {
   // チェイン・バッジ・クエスト・クラス蓄積
   // ============================
   const onCorrectAnswerEvent = useCallback((isCorrect: boolean, correctAnswer: string) => {
+    // 全回答数をトラック（正答率計算用）
+    sessionAnsweredRef.current += 1;
     if (isCorrect) {
       // チェインカウンター更新
       setChainCount(prev => {
@@ -492,6 +496,10 @@ const App: React.FC = () => {
     if (sessionCorrectRef.current > 0) {
       updates.totalCorrectAnswers = increment(sessionCorrectRef.current);
       sessionCorrectRef.current = 0;
+    }
+    if (sessionAnsweredRef.current > 0) {
+      updates.totalAnswered = increment(sessionAnsweredRef.current);
+      sessionAnsweredRef.current = 0;
     }
     if (Object.keys(updates).length > 0) {
       await updateDoc(doc(db, 'users', user.uid), updates).catch(() => {});
