@@ -48,7 +48,9 @@ import { recordAttempt, getCategoryWeights } from './services/weaknessAnalysisSe
 import WeaknessPanel from './components/WeaknessPanel';
 import ItemShop from './components/ItemShop';
 import TutorialBattle from './components/TutorialBattle';
-import type { ShopItemDef } from './types';
+import SpeedDuelSetup from './components/SpeedDuelSetup';
+import SpeedDuelBoard from './components/SpeedDuelBoard';
+import type { ShopItemDef, BattleType, Problem } from './types';
 import { getCategoryStats } from './services/weaknessAnalysisService';
 
 // ============================
@@ -164,6 +166,24 @@ const App: React.FC = () => {
   const [playerRoundWins, setPlayerRoundWins] = useState(0);
   const [pcRoundWins, setPcRoundWins] = useState(0);
   const [currentRound, setCurrentRound] = useState(1);
+
+  // --- Speed Duel State ---
+  const [battleType, setBattleType] = useState<BattleType>('card_battle');
+  const [speedCategories, setSpeedCategories] = useState<string[]>([]);
+  const [speedProblems, setSpeedProblems] = useState<Problem[]>([]);
+  const [speedRound, setSpeedRound] = useState(1);
+  const [speedTotalRounds, setSpeedTotalRounds] = useState(5);
+  const [speedPlayerScore, setSpeedPlayerScore] = useState(0);
+  const [speedOpponentScore, setSpeedOpponentScore] = useState(0);
+  const [speedPhase, setSpeedPhase] = useState<'countdown' | 'answering' | 'round_result' | 'match_over'>('countdown');
+  const [speedRoundWinner, setSpeedRoundWinner] = useState<'player' | 'opponent' | 'draw' | null>(null);
+  const [speedPlayerAnswered, setSpeedPlayerAnswered] = useState(false);
+  const [speedOpponentAnswered, setSpeedOpponentAnswered] = useState(false);
+  const [speedTimeLeft, setSpeedTimeLeft] = useState(30);
+  const [speedGameResult, setSpeedGameResult] = useState<'win' | 'lose' | 'draw' | null>(null);
+  const speedTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const speedCpuTimerRef = useRef<NodeJS.Timeout | null>(null);
+
 
   // --- PvP State ---
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
@@ -796,17 +816,71 @@ const App: React.FC = () => {
       // ルームが外部要因で finished になった場合（相手離脱・管理者終了等）
       if (data.status === 'finished' && data.winnerId === 'abandoned') {
         cleanupGameSession();
-        setGameState('deck_building');
+        setGameState(battleType === 'speed_duel' ? 'speed_duel_setup' : 'deck_building');
         return;
       }
 
       if (data.status === 'playing' && gameState === 'matchmaking') {
         setCurrentRound(1);
         processedMatchIdRef.current = null;
-        setTimeout(() => {
-          startGame(playerDeck, false, data);
-          setGameState('in_game');
-        }, 500);
+
+        if (data.battleType === 'speed_duel' && data.speedProblems) {
+          // Speed Duel PvP: load problems from room and start
+          setBattleType('speed_duel');
+          setSpeedProblems(data.speedProblems as Problem[]);
+          setSpeedTotalRounds(data.speedTotalRounds || 5);
+          setBattleFormat((data.speedFormat as BattleFormat) || 'best_of_5');
+          setSpeedRound(1);
+          setSpeedPlayerScore(0);
+          setSpeedOpponentScore(0);
+          setSpeedPlayerAnswered(false);
+          setSpeedOpponentAnswered(false);
+          setSpeedRoundWinner(null);
+          setSpeedGameResult(null);
+          setSpeedPhase('countdown');
+          setGameState('speed_duel');
+          setTimeout(() => {
+            setSpeedPhase('answering');
+            setSpeedTimeLeft(30);
+          }, 2000);
+        } else {
+          setTimeout(() => {
+            startGame(playerDeck, false, data);
+            setGameState('in_game');
+          }, 500);
+        }
+      }
+
+      // Speed Duel PvP: sync round results from Firestore
+      if (gameState === 'speed_duel' && data.battleType === 'speed_duel') {
+        const myScore = isHostVal ? (data.speedP1Score || 0) : (data.speedP2Score || 0);
+        const oppScore = isHostVal ? (data.speedP2Score || 0) : (data.speedP1Score || 0);
+        setSpeedPlayerScore(myScore);
+        setSpeedOpponentScore(oppScore);
+
+        const oppAnswer = isHostVal ? data.speedP2Answer : data.speedP1Answer;
+        if (oppAnswer) setSpeedOpponentAnswered(true);
+
+        // Round resolved by opponent's correct answer
+        if (data.speedRoundWinner && speedPhase === 'answering') {
+          if (speedTimerRef.current) clearInterval(speedTimerRef.current);
+          const winner = data.speedRoundWinner;
+          if ((winner === 'host' && isHostVal) || (winner === 'guest' && !isHostVal)) {
+            setSpeedRoundWinner('player');
+          } else {
+            setSpeedRoundWinner('opponent');
+          }
+          setSpeedPhase('round_result');
+        }
+
+        // Match finished
+        if (data.winnerId && processedMatchIdRef.current !== roomId) {
+          processedMatchIdRef.current = roomId;
+          const isWinner = (data.winnerId === 'host' && isHostVal) || (data.winnerId === 'guest' && !isHostVal);
+          setSpeedGameResult(data.winnerId === 'draw' ? 'draw' : isWinner ? 'win' : 'lose');
+          setSpeedPhase('match_over');
+          flushSessionData().catch(() => {});
+        }
       }
 
       if (gameState === 'in_game') {
@@ -906,15 +980,32 @@ const App: React.FC = () => {
       const roomRef = doc(db, 'rooms', roomId);
       const result = await runTransaction(db, async (tx) => {
         const roomDoc = await tx.get(roomRef);
-        const base = {
+        const base: Record<string, any> = {
           roomId, status: 'waiting', hostId: uid,
           hostName: user.displayName || 'Player',
           guestId: null, guestName: null,
           createdAt: serverTimestamp(), hostLastActive: serverTimestamp(),
           guestLastActive: null, hostReady: true, guestReady: false,
           round: 1, p1Move: null, p2Move: null,
-          p1Hp: INITIAL_HP, p2Hp: INITIAL_HP, winnerId: null
+          p1Hp: INITIAL_HP, p2Hp: INITIAL_HP, winnerId: null,
+          battleType: battleType || 'card_battle',
         };
+        // Speed duel: add categories and problems to room
+        if (battleType === 'speed_duel') {
+          const total = getSpeedTotalRounds(battleFormat);
+          const problems = generateSpeedProblems(speedCategories, total);
+          base.speedCategories = speedCategories;
+          base.speedFormat = battleFormat;
+          base.speedRound = 1;
+          base.speedTotalRounds = total;
+          base.speedP1Score = 0;
+          base.speedP2Score = 0;
+          base.speedProblems = problems.map(p => ({ type: p.type, data: p.data, answer: p.answer }));
+          base.speedP1Answer = null;
+          base.speedP2Answer = null;
+          base.speedRoundWinner = null;
+          base.speedRoundActive = false;
+        }
         if (!roomDoc.exists() || (roomDoc.data() as Room).status === 'finished') {
           tx.set(roomRef, base);
           return 'host';
@@ -1025,6 +1116,207 @@ const App: React.FC = () => {
     const formatLabel = format === 'best_of_3' ? '【3本勝負】' : format === 'best_of_5' ? '【5本勝負】' : format === 'best_of_7' ? '【7本勝負】' : '【マスターデュエル】';
     setGameLog([`${formatLabel} バトル開始！問題に答えてダメージを与えよう！`]);
   }, [cleanupGameSession, buildAdaptiveCpuDeck]);
+
+  // ============================
+  // Speed Duel Logic
+  // ============================
+  const generateSpeedProblems = useCallback((categories: string[], count: number): Problem[] => {
+    const eligible = CARD_DEFINITIONS.filter(c => categories.includes(c.mainCategory));
+    const shuffled = [...eligible].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, shuffled.length)).map(c => c.problem);
+  }, []);
+
+  const getSpeedTotalRounds = useCallback((format: BattleFormat): number => {
+    if (format === 'best_of_3') return 3;
+    if (format === 'best_of_5') return 5;
+    if (format === 'best_of_7') return 7;
+    return 10; // master_duel
+  }, []);
+
+  const getSpeedRequiredWins = useCallback((format: BattleFormat): number => {
+    if (format === 'best_of_3') return 2;
+    if (format === 'best_of_5') return 3;
+    if (format === 'best_of_7') return 4;
+    return 0; // master_duel: most wins after all rounds
+  }, []);
+
+  const startSpeedDuel = useCallback((categories: string[], format: BattleFormat, mode: 'cpu' | 'pvp') => {
+    setBattleType('speed_duel');
+    setSpeedCategories(categories);
+    setBattleFormat(format);
+    const bmode = mode === 'pvp' ? 'pvp' : 'cpu';
+    setGameMode(bmode as any);
+
+    if (bmode === 'pvp') {
+      setGameState('matchmaking');
+      return;
+    }
+
+    // CPU mode: generate problems and start
+    const total = getSpeedTotalRounds(format);
+    const problems = generateSpeedProblems(categories, total);
+    setSpeedProblems(problems);
+    setSpeedTotalRounds(total);
+    setSpeedRound(1);
+    setSpeedPlayerScore(0);
+    setSpeedOpponentScore(0);
+    setSpeedPlayerAnswered(false);
+    setSpeedOpponentAnswered(false);
+    setSpeedRoundWinner(null);
+    setSpeedGameResult(null);
+    setSpeedPhase('countdown');
+    setGameState('speed_duel');
+
+    // Countdown then start
+    setTimeout(() => {
+      setSpeedPhase('answering');
+      setSpeedTimeLeft(30);
+    }, 1500);
+  }, [generateSpeedProblems, getSpeedTotalRounds]);
+
+  // Speed Duel timer
+  useEffect(() => {
+    if (gameState !== 'speed_duel' || speedPhase !== 'answering') return;
+    speedTimerRef.current = setInterval(() => {
+      setSpeedTimeLeft(prev => {
+        if (prev <= 1) {
+          // Time's up - resolve round
+          clearInterval(speedTimerRef.current!);
+          if (speedCpuTimerRef.current) clearTimeout(speedCpuTimerRef.current);
+          setSpeedPhase('round_result');
+          if (!speedPlayerAnswered && !speedOpponentAnswered) {
+            setSpeedRoundWinner('draw');
+          } else if (speedPlayerAnswered && !speedOpponentAnswered) {
+            // Player already answered (might be correct or wrong, handled in answer handler)
+          } else if (!speedPlayerAnswered && speedOpponentAnswered) {
+            // CPU already answered correctly
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (speedTimerRef.current) clearInterval(speedTimerRef.current); };
+  }, [gameState, speedPhase, speedRound]);
+
+  // Speed Duel CPU answer (simulated)
+  useEffect(() => {
+    if (gameState !== 'speed_duel' || speedPhase !== 'answering' || gameMode !== 'cpu') return;
+    // CPU answers after a random delay (difficulty-based)
+    const problem = speedProblems[speedRound - 1];
+    if (!problem) return;
+    const baseDelay = 5000 + Math.random() * 15000; // 5-20 seconds
+    speedCpuTimerRef.current = setTimeout(() => {
+      if (speedPhase !== 'answering') return;
+      setSpeedOpponentAnswered(true);
+      // CPU has ~65% chance of correct answer
+      const cpuCorrect = Math.random() < 0.65;
+      if (cpuCorrect && !speedPlayerAnswered) {
+        // CPU wins this round
+        if (speedTimerRef.current) clearInterval(speedTimerRef.current);
+        setSpeedRoundWinner('opponent');
+        setSpeedOpponentScore(prev => prev + 1);
+        setSpeedPhase('round_result');
+      }
+    }, baseDelay);
+    return () => { if (speedCpuTimerRef.current) clearTimeout(speedCpuTimerRef.current); };
+  }, [gameState, speedPhase, speedRound, gameMode, speedProblems]);
+
+  const handleSpeedAnswer = useCallback(async (answer: string) => {
+    if (speedPhase !== 'answering' || speedPlayerAnswered) return;
+    const problem = speedProblems[speedRound - 1];
+    if (!problem) return;
+
+    setSpeedPlayerAnswered(true);
+
+    // Check correctness
+    const correctAnswer = problem.answer.toLowerCase().replace(/\s/g, '');
+    const userAnswer = answer.toLowerCase().replace(/\s/g, '');
+    const correctAnswers = correctAnswer.split(';').map(a => a.trim());
+    const isCorrect = correctAnswers.some(ca => ca === userAnswer);
+
+    // Track for stats
+    sessionAnsweredRef.current += 1;
+    if (isCorrect) {
+      sessionCorrectRef.current += 1;
+      handleQuestProgress('correct');
+    }
+
+    if (gameMode === 'pvp' && currentRoomId && db) {
+      // PvP: write answer to Firestore, use transaction for atomicity
+      const answerField = isHostRef.current ? 'speedP1Answer' : 'speedP2Answer';
+      const myRole = isHostRef.current ? 'host' : 'guest';
+      try {
+        await runTransaction(db, async (tx) => {
+          const roomSnap = await tx.get(doc(db, 'rooms', currentRoomId));
+          if (!roomSnap.exists()) return;
+          const roomData = roomSnap.data() as Room;
+          // Already resolved?
+          if (roomData.speedRoundWinner) return;
+          const update: Record<string, any> = {
+            [answerField]: { answer, correct: isCorrect, answeredAt: Date.now() },
+          };
+          if (isCorrect && !roomData.speedRoundWinner) {
+            update.speedRoundWinner = myRole;
+            const scoreField = isHostRef.current ? 'speedP1Score' : 'speedP2Score';
+            update[scoreField] = (isHostRef.current ? (roomData.speedP1Score || 0) : (roomData.speedP2Score || 0)) + 1;
+          }
+          tx.update(doc(db, 'rooms', currentRoomId), update);
+        });
+      } catch (e) {
+        console.error('Speed duel PvP answer error:', e);
+      }
+      // State will be updated by the room listener
+      return;
+    }
+
+    // CPU mode: resolve locally
+    if (isCorrect) {
+      if (speedTimerRef.current) clearInterval(speedTimerRef.current);
+      if (speedCpuTimerRef.current) clearTimeout(speedCpuTimerRef.current);
+      setSpeedRoundWinner('player');
+      setSpeedPlayerScore(prev => prev + 1);
+      setSpeedPhase('round_result');
+    }
+    // If wrong, player can't retry - wait for CPU or timeout
+  }, [speedPhase, speedPlayerAnswered, speedProblems, speedRound, handleQuestProgress, gameMode, currentRoomId, db]);
+
+  const handleSpeedNextRound = useCallback(() => {
+    const format = battleFormat;
+    const required = getSpeedRequiredWins(format);
+    const newPlayerScore = speedPlayerScore + (speedRoundWinner === 'player' ? 0 : 0); // already incremented
+    const newOpponentScore = speedOpponentScore + (speedRoundWinner === 'opponent' ? 0 : 0);
+
+    // Check if match is over
+    if (required > 0) {
+      // best-of-N: check if either player reached required wins
+      if (speedPlayerScore >= required || speedOpponentScore >= required) {
+        setSpeedGameResult(speedPlayerScore >= required ? 'win' : 'lose');
+        setSpeedPhase('match_over');
+        return;
+      }
+    }
+
+    // Check if all rounds played (master_duel or remaining rounds exhausted)
+    if (speedRound >= speedTotalRounds) {
+      if (speedPlayerScore > speedOpponentScore) setSpeedGameResult('win');
+      else if (speedPlayerScore < speedOpponentScore) setSpeedGameResult('lose');
+      else setSpeedGameResult('draw');
+      setSpeedPhase('match_over');
+      return;
+    }
+
+    // Next round
+    setSpeedRound(prev => prev + 1);
+    setSpeedPlayerAnswered(false);
+    setSpeedOpponentAnswered(false);
+    setSpeedRoundWinner(null);
+    setSpeedPhase('countdown');
+    setTimeout(() => {
+      setSpeedPhase('answering');
+      setSpeedTimeLeft(30);
+    }, 1500);
+  }, [battleFormat, speedPlayerScore, speedOpponentScore, speedRound, speedTotalRounds, getSpeedRequiredWins, speedRoundWinner]);
 
   // ============================
   // Auto-draw helper
@@ -1477,6 +1769,7 @@ const App: React.FC = () => {
               const bmode: BattleMode = (mode as string) === 'pvp' ? 'pvp' : 'cpu';
               setGameMode(bmode);
               setBattleFormat(format);
+              setBattleType('card_battle');
               if (bmode === 'pvp') {
                 setGameState('matchmaking');
               } else {
@@ -1496,11 +1789,52 @@ const App: React.FC = () => {
             onCancel={async () => {
               await leaveRoom(currentRoomId, isHost);
               cleanupGameSession();
-              setGameState('deck_building');
+              setGameState(battleType === 'speed_duel' ? 'speed_duel_setup' : 'deck_building');
             }}
             currentRoomId={currentRoomId}
             user={user}
             connectionError={firestoreError}
+            battleType={battleType}
+          />
+        );
+
+      case 'speed_duel_setup':
+        return (
+          <SpeedDuelSetup
+            onStart={(categories, format, mode) => {
+              setBattleType('speed_duel');
+              startSpeedDuel(categories, format, mode);
+            }}
+            onBack={() => { setBattleType('card_battle'); setGameState('main_menu'); }}
+            isLoggedIn={!!user}
+          />
+        );
+
+      case 'speed_duel':
+        return (
+          <SpeedDuelBoard
+            problem={speedProblems[speedRound - 1] || null}
+            playerScore={speedPlayerScore}
+            opponentScore={speedOpponentScore}
+            round={speedRound}
+            totalRounds={speedTotalRounds}
+            format={battleFormat}
+            phase={speedPhase}
+            onAnswer={handleSpeedAnswer}
+            onNextRound={handleSpeedNextRound}
+            onExit={() => {
+              if (speedTimerRef.current) clearInterval(speedTimerRef.current);
+              if (speedCpuTimerRef.current) clearTimeout(speedCpuTimerRef.current);
+              setBattleType('card_battle');
+              setGameState('main_menu');
+            }}
+            roundWinner={speedRoundWinner}
+            playerName={user?.displayName || 'あなた'}
+            opponentName={gameMode === 'cpu' ? 'CPU' : '相手'}
+            isPlayerAnswered={speedPlayerAnswered}
+            isOpponentAnswered={speedOpponentAnswered}
+            timeLeft={speedTimeLeft}
+            gameResult={speedGameResult}
           />
         );
 
