@@ -16,7 +16,7 @@ import {
   type User
 } from 'firebase/auth';
 import {
-  doc, getDoc, setDoc, updateDoc, increment, arrayUnion,
+  doc, getDoc, getDocs, setDoc, updateDoc, increment, arrayUnion,
   collection, onSnapshot, query, addDoc, serverTimestamp,
   runTransaction, where, orderBy, limit, Timestamp, deleteDoc
 } from 'firebase/firestore';
@@ -674,11 +674,21 @@ const App: React.FC = () => {
       snap.forEach(d => {
         const data = d.data() as Room;
         if (!data.roomId) data.roomId = d.id;
-        // クライアント側: 10分以上前のwaitingルームをフィルタ（ゾンビ除去）
+        // クライアント側ゾンビ除去: 10分以上前のwaitingルーム
         if (data.status === 'waiting' && data.createdAt) {
           const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : 0;
           if (createdMs > 0 && now - createdMs > 10 * 60 * 1000) {
-            // 古いwaitingルームを自動クリーンアップ
+            updateDoc(doc(db, 'rooms', d.id), { status: 'finished', winnerId: 'abandoned' }).catch(() => {});
+            return;
+          }
+        }
+        // クライアント側ゾンビ除去: playing状態で両者とも5分以上不活性
+        if (data.status === 'playing') {
+          const hostActive = data.hostLastActive?.toDate ? data.hostLastActive.toDate().getTime() : 0;
+          const guestActive = data.guestLastActive?.toDate ? data.guestLastActive.toDate().getTime() : 0;
+          const staleMs = 5 * 60 * 1000;
+          if (hostActive > 0 && guestActive > 0
+            && now - hostActive > staleMs && now - guestActive > staleMs) {
             updateDoc(doc(db, 'rooms', d.id), { status: 'finished', winnerId: 'abandoned' }).catch(() => {});
             return;
           }
@@ -844,9 +854,56 @@ const App: React.FC = () => {
       return;
     }
     cleanupGameSession(false);
+    const uid = user.uid.trim();
+
+    try {
+      // ゾンビ部屋防止: 自分がホストの未終了ルームを自動クリーンアップ
+      const myHostRoomsSnap = await getDocs(
+        query(
+          collection(db, 'rooms'),
+          where('hostId', '==', uid),
+          where('status', 'in', ['waiting', 'playing']),
+        )
+      );
+      const cleanupPromises: Promise<void>[] = [];
+      myHostRoomsSnap.forEach(d => {
+        if (d.id !== roomId) {
+          cleanupPromises.push(
+            updateDoc(doc(db, 'rooms', d.id), {
+              status: 'finished',
+              winnerId: 'abandoned',
+            }).catch(() => {})
+          );
+        }
+      });
+      // 自分がゲストの未終了ルームも同様にクリーンアップ
+      const myGuestRoomsSnap = await getDocs(
+        query(
+          collection(db, 'rooms'),
+          where('guestId', '==', uid),
+          where('status', 'in', ['waiting', 'playing']),
+        )
+      );
+      myGuestRoomsSnap.forEach(d => {
+        if (d.id !== roomId) {
+          cleanupPromises.push(
+            updateDoc(doc(db, 'rooms', d.id), {
+              status: 'finished',
+              winnerId: 'abandoned',
+            }).catch(() => {})
+          );
+        }
+      });
+      if (cleanupPromises.length > 0) {
+        await Promise.all(cleanupPromises);
+        console.log(`Cleaned up ${cleanupPromises.length} zombie room(s) for user ${uid}`);
+      }
+    } catch (cleanupErr) {
+      console.warn('Zombie room cleanup failed (non-blocking):', cleanupErr);
+    }
+
     try {
       const roomRef = doc(db, 'rooms', roomId);
-      const uid = user.uid.trim();
       const result = await runTransaction(db, async (tx) => {
         const roomDoc = await tx.get(roomRef);
         const base = {
