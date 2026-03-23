@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Room } from '../types';
+import type { Room, BattleType } from '../types';
 import type { User } from 'firebase/auth';
 
 interface MatchmakingProps {
@@ -9,9 +9,10 @@ interface MatchmakingProps {
   currentRoomId: string | null;
   user: User | null;
   connectionError?: string | null;
+  battleType?: BattleType;
 }
 
-const Matchmaking: React.FC<MatchmakingProps> = ({ rooms, onJoinRoom, onCancel, currentRoomId, user, connectionError }) => {
+const Matchmaking: React.FC<MatchmakingProps> = ({ rooms, onJoinRoom, onCancel, currentRoomId, user, connectionError, battleType }) => {
   const [customRoomId, setCustomRoomId] = useState('');
 
   const waitingRooms = rooms.filter(r => r.status === 'waiting');
@@ -44,8 +45,8 @@ const Matchmaking: React.FC<MatchmakingProps> = ({ rooms, onJoinRoom, onCancel, 
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold text-hologram tracking-wide">対戦マッチング</h2>
-            <p className="text-xs text-cyan-400 font-bold mt-1">
-              オンライン対戦
+            <p className={`text-xs font-bold mt-1 ${battleType === 'speed_duel' ? 'text-orange-400' : 'text-cyan-400'}`}>
+              {battleType === 'speed_duel' ? '⚡ スピードデュエル' : 'オンライン対戦'}
             </p>
           </div>
           <button
