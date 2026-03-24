@@ -182,8 +182,9 @@ const SpeedDuelBoard: React.FC<SpeedDuelBoardProps> = ({
         {(problemType === 'text' || !problemType) && (
           <div className="w-full min-h-[4rem] bg-slate-900/50 border border-orange-500/10 rounded-xl p-3 sm:p-5 flex flex-col items-center justify-center text-center text-white text-base sm:text-xl font-mono">
             <p>{problemData?.question || problemData?.questionText || "問題"}</p>
+            {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-40 sm:max-h-52 mx-auto rounded-lg shadow-xl border border-orange-500/10 p-1 bg-slate-900 my-2" />}
             {problemData?.svg && (
-              <div className="svg-container w-full max-w-xs h-auto my-3 p-2 bg-slate-950 rounded-lg border border-orange-500/10 max-h-[180px] flex items-center justify-center" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
+              <div className="svg-container w-full max-w-xs mx-auto my-2 p-1.5 bg-slate-950 rounded-lg border border-orange-500/10 max-h-[180px] sm:max-h-[220px] flex items-center justify-center" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
             )}
             {problemData?.options && renderOptions(problemData.options)}
           </div>
@@ -216,7 +217,7 @@ const SpeedDuelBoard: React.FC<SpeedDuelBoardProps> = ({
       <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white">
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">
-            {gameResult === 'win' ? '&#127942;' : gameResult === 'lose' ? '&#128546;' : '&#129309;'}
+            {gameResult === 'win' ? '🏆' : gameResult === 'lose' ? '😢' : '🤝'}
           </div>
           <h2 className="text-4xl font-black mb-2">
             {gameResult === 'win' ? '勝利！' : gameResult === 'lose' ? '敗北...' : '引き分け'}
@@ -257,16 +258,16 @@ const SpeedDuelBoard: React.FC<SpeedDuelBoardProps> = ({
             <p className="text-3xl font-black text-white font-mono">{playerScore}</p>
           </div>
           {isPlayerAnswered && phase === 'answering' && (
-            <span className="text-xs text-green-400 font-bold animate-pulse">&#10003; 解答済</span>
+            <span className="text-xs text-green-400 font-bold animate-pulse">✓ 解答済</span>
           )}
         </div>
 
         {/* Round Info */}
         <div className="text-center">
           <div className="flex items-center gap-2">
-            <span className="text-orange-400 text-lg">&#9889;</span>
+            <span className="text-orange-400 text-lg">⚡</span>
             <span className="text-xs text-gray-400 font-bold tracking-widest">SPEED DUEL</span>
-            <span className="text-orange-400 text-lg">&#9889;</span>
+            <span className="text-orange-400 text-lg">⚡</span>
           </div>
           <p className="text-sm font-bold text-white mt-0.5">
             {isBestOf
@@ -280,7 +281,7 @@ const SpeedDuelBoard: React.FC<SpeedDuelBoardProps> = ({
         {/* Opponent Score */}
         <div className="flex items-center gap-3">
           {isOpponentAnswered && phase === 'answering' && (
-            <span className="text-xs text-red-400 font-bold animate-pulse">&#10003; 解答済</span>
+            <span className="text-xs text-red-400 font-bold animate-pulse">✓ 解答済</span>
           )}
           <div className="text-center">
             <p className="text-[10px] text-gray-400 font-bold">{opponentName}</p>
@@ -312,7 +313,7 @@ const SpeedDuelBoard: React.FC<SpeedDuelBoardProps> = ({
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-xl text-orange-400 font-bold mb-4">Round {round}</p>
-            <p className="text-8xl font-black text-white animate-pulse">&#8987;</p>
+            <p className="text-8xl font-black text-white animate-pulse">⏳</p>
             <p className="text-lg text-gray-400 mt-4">問題が出題されます...</p>
           </div>
         </div>
@@ -357,7 +358,7 @@ const SpeedDuelBoard: React.FC<SpeedDuelBoardProps> = ({
                     disabled={isPlayerAnswered}
                     className="w-full mt-4 bg-orange-600 text-white font-bold py-3 px-10 rounded-xl hover:bg-orange-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-lg border border-orange-400/30 shadow-xl"
                   >
-                    {isPlayerAnswered ? '解答済み &#10003;' : '解答する'}
+                    {isPlayerAnswered ? '解答済み ✓' : '解答する'}
                   </button>
                 </div>
               )}
@@ -371,7 +372,7 @@ const SpeedDuelBoard: React.FC<SpeedDuelBoardProps> = ({
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="text-6xl mb-4">
-              {roundWinner === 'player' ? '&#128526;' : roundWinner === 'opponent' ? '&#128169;' : '&#128528;'}
+              {roundWinner === 'player' ? '😎' : roundWinner === 'opponent' ? '💩' : '😐'}
             </div>
             <h3 className="text-2xl font-black mb-2">
               {roundWinner === 'player' ? '先に正解！' : roundWinner === 'opponent' ? '相手が先に正解...' : '両者不正解'}

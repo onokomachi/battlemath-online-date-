@@ -1120,8 +1120,10 @@ const App: React.FC = () => {
   // ============================
   // Speed Duel Logic
   // ============================
-  const generateSpeedProblems = useCallback((categories: string[], count: number): Problem[] => {
-    const eligible = CARD_DEFINITIONS.filter(c => categories.includes(c.mainCategory));
+  const generateSpeedProblems = useCallback((subtopics: string[], count: number): Problem[] => {
+    // Support both subtopic names (granular) and main category names (legacy)
+    const subtopicSet = new Set(subtopics);
+    const eligible = CARD_DEFINITIONS.filter(c => subtopicSet.has(c.category) || subtopicSet.has(c.mainCategory));
     const shuffled = [...eligible].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, Math.min(count, shuffled.length)).map(c => c.problem);
   }, []);
