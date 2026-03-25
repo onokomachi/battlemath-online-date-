@@ -14,6 +14,21 @@ interface LoginScreenProps {
   onStudentProfileSet: (profile: StudentProfile) => void;
 }
 
+const SCHOOLS = [
+  { name: '第一中学校', area: '茂呂町一丁目' },
+  { name: '第二中学校', area: '堀口町' },
+  { name: '第三中学校', area: '波志江町' },
+  { name: '第四中学校', area: '下道寺町' },
+  { name: '殖蓮中学校', area: '上植木本町' },
+  { name: '宮郷中学校', area: '田中島町' },
+  { name: '赤堀中学校', area: '西久保町二丁目' },
+  { name: 'あずま中学校', area: '東町' },
+  { name: '境北中学校', area: '境下渕名' },
+  { name: '境西中学校', area: '境下武士' },
+  { name: '境南中学校', area: '境' },
+  { name: '四ツ葉学園中等教育学校', area: '上植木本町' },
+];
+
 const GRADES = [1, 2, 3];
 const CLASSES = Array.from({ length: 10 }, (_, i) => i + 1);
 const NUMBERS = Array.from({ length: 45 }, (_, i) => i + 1);
@@ -29,11 +44,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   studentProfile,
   onStudentProfileSet,
 }) => {
-  // ログイン済みだがプロフィール未設定の場合はプロフィール入力画面を表示
   const [showProfileSetup, setShowProfileSetup] = useState(false);
-  const [selectedGrade, setSelectedGrade] = useState<number>(2);
-  const [selectedClass, setSelectedClass] = useState<number>(1);
-  const [selectedNumber, setSelectedNumber] = useState<number>(1);
+  const [selectedSchool, setSelectedSchool] = useState<string>(studentProfile?.school || '第三中学校');
+  const [selectedGrade, setSelectedGrade] = useState<number>(studentProfile?.grade || 2);
+  const [selectedClass, setSelectedClass] = useState<number>(studentProfile?.classNum || 1);
+  const [selectedNumber, setSelectedNumber] = useState<number>(studentProfile?.number || 1);
 
   useEffect(() => {
     if (currentUser && !studentProfile) {
@@ -43,31 +58,55 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
   const handleProfileSubmit = () => {
     const profile: StudentProfile = {
+      school: selectedSchool,
       grade: selectedGrade,
       classNum: selectedClass,
       number: selectedNumber,
-      displayLabel: `${selectedGrade}年${selectedClass}組${selectedNumber}番`,
+      displayLabel: `${selectedSchool} ${selectedGrade}年${selectedClass}組${selectedNumber}番`,
     };
     onStudentProfileSet(profile);
     setShowProfileSetup(false);
   };
 
-  // 学年・組・番号の選択UI
+  // 学校・学年・組・番号の選択UI
   if (currentUser && (showProfileSetup || !studentProfile)) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
         <div className="absolute inset-0 bg-gradient-radial from-cyan-900/20 via-transparent to-transparent pointer-events-none" />
 
-        <div className="text-center mb-10 relative">
-          <h1 className="text-4xl md:text-5xl font-black text-hologram mb-2 tracking-[0.15em]">
+        <div className="text-center mb-6 relative">
+          <h1 className="text-3xl md:text-5xl font-black text-hologram mb-2 tracking-[0.15em]">
             STUDENT ID
           </h1>
           <p className="text-xs text-cyan-400 tracking-[0.3em] uppercase">
-            学年・組・番号を入力してください
+            学校・学年・組・番号を入力してください
           </p>
         </div>
 
-        <div className="w-full max-w-lg hud-panel rounded-2xl p-8 shadow-2xl space-y-6">
+        <div className="w-full max-w-lg hud-panel rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5 max-h-[85vh] overflow-y-auto">
+          {/* 学校 */}
+          <div>
+            <label className="block text-xs text-cyan-400 tracking-widest uppercase font-bold mb-3">
+              学校 (School)
+            </label>
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+              {SCHOOLS.map(s => (
+                <button
+                  key={s.name}
+                  onClick={() => setSelectedSchool(s.name)}
+                  className={`py-2.5 px-3 rounded-lg text-left transition-all ${
+                    selectedSchool === s.name
+                      ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(0,200,255,0.3)] scale-[1.02]'
+                      : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-cyan-600 hover:text-white'
+                  }`}
+                >
+                  <span className="text-sm font-bold block leading-tight">{s.name}</span>
+                  <span className="text-[10px] text-gray-500 block">{s.area}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 学年 */}
           <div>
             <label className="block text-xs text-cyan-400 tracking-widest uppercase font-bold mb-3">
@@ -138,7 +177,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
           <div className="pt-4 border-t border-gray-700">
             <div className="text-center mb-4">
               <p className="text-xs text-gray-500 mb-1">選択中</p>
-              <p className="text-2xl font-bold text-cyan-300 tracking-widest">
+              <p className="text-lg font-bold text-cyan-300 tracking-wide">
+                {selectedSchool}
+              </p>
+              <p className="text-xl font-bold text-cyan-300 tracking-widest">
                 {selectedGrade}年{selectedClass}組{selectedNumber}番
               </p>
             </div>
@@ -200,7 +242,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                   <p className="text-xs text-amber-400 mt-1">
                     {studentProfile.displayLabel}
                     <button
-                      onClick={() => setShowProfileSetup(true)}
+                      onClick={() => {
+                        if (studentProfile) {
+                          setSelectedSchool(studentProfile.school || '第三中学校');
+                          setSelectedGrade(studentProfile.grade);
+                          setSelectedClass(studentProfile.classNum);
+                          setSelectedNumber(studentProfile.number);
+                        }
+                        setShowProfileSetup(true);
+                      }}
                       className="ml-2 text-gray-500 hover:text-cyan-400 transition-colors"
                       title="変更"
                     >

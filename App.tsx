@@ -99,7 +99,15 @@ const App: React.FC = () => {
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(() => {
     try {
       const s = localStorage.getItem('battleMathStudentProfile');
-      return s ? JSON.parse(s) : null;
+      if (!s) return null;
+      const sp = JSON.parse(s);
+      // 既存プロフィールに school がない場合はデフォルト設定
+      if (sp && !sp.school) {
+        sp.school = '第三中学校';
+        sp.displayLabel = `第三中学校 ${sp.grade}年${sp.classNum}組${sp.number}番`;
+        localStorage.setItem('battleMathStudentProfile', JSON.stringify(sp));
+      }
+      return sp;
     } catch { return null; }
   });
 
@@ -307,10 +315,18 @@ const App: React.FC = () => {
             // ゲーミフィケーションデータ読み込み
             if (d.earnedBadgeIds) setEarnedBadgeIds(new Set(d.earnedBadgeIds));
             if (d.totalCorrectAnswers !== undefined) setTotalCorrectAnswers(d.totalCorrectAnswers);
-            // 学年・組・番号情報をFirestoreから復元 (ローカルになければ)
+            // 学校・学年・組・番号情報をFirestoreから復元
+            // school フィールドがない既存ユーザーは第三中学校をデフォルト設定
             if (d.studentProfile) {
-              setStudentProfile(d.studentProfile);
-              localStorage.setItem('battleMathStudentProfile', JSON.stringify(d.studentProfile));
+              const sp = d.studentProfile;
+              if (!sp.school) {
+                sp.school = '第三中学校';
+                sp.displayLabel = `第三中学校 ${sp.grade}年${sp.classNum}組${sp.number}番`;
+                // Firestoreにも反映
+                updateDoc(ref, { studentProfile: sp }).catch(() => {});
+              }
+              setStudentProfile(sp);
+              localStorage.setItem('battleMathStudentProfile', JSON.stringify(sp));
             }
             // ログインストリーク計算
             const today = getTodayStr();
@@ -2093,8 +2109,7 @@ const App: React.FC = () => {
           <ClassBattleBoard
             db={db}
             onClose={() => setShowClassBattle(false)}
-            currentGrade={studentProfile?.grade}
-            currentClass={studentProfile?.classNum}
+            currentSchool={studentProfile?.school}
           />
         )}
         {showWeaknessPanel && (
