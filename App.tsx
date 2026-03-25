@@ -709,14 +709,23 @@ const App: React.FC = () => {
             return;
           }
         }
-        // クライアント側ゾンビ除去: playing状態で両者とも5分以上不活性
+        // クライアント側ゾンビ除去: playing状態で片方でも3分以上不活性、
+        // または両者とも2分以上不活性の場合はゾンビと判定
         if (data.status === 'playing') {
           const hostActive = data.hostLastActive?.toDate ? data.hostLastActive.toDate().getTime() : 0;
           const guestActive = data.guestLastActive?.toDate ? data.guestLastActive.toDate().getTime() : 0;
-          const staleMs = 5 * 60 * 1000;
-          if (hostActive > 0 && guestActive > 0
-            && now - hostActive > staleMs && now - guestActive > staleMs) {
-            updateDoc(doc(db, 'rooms', d.id), { status: 'finished', winnerId: 'abandoned' }).catch(() => {});
+          const singleStaleMs = 3 * 60 * 1000; // 片方が3分不活性
+          const bothStaleMs = 2 * 60 * 1000;   // 両方が2分不活性
+          const hostStale = hostActive > 0 && now - hostActive > singleStaleMs;
+          const guestStale = guestActive > 0 && now - guestActive > singleStaleMs;
+          const bothInactive = hostActive > 0 && guestActive > 0
+            && now - hostActive > bothStaleMs && now - guestActive > bothStaleMs;
+          if (hostStale || guestStale || bothInactive) {
+            // 片方だけ不活性なら、活性側を勝者にする
+            let winnerId: string = 'abandoned';
+            if (hostStale && !guestStale) winnerId = 'guest';
+            else if (guestStale && !hostStale) winnerId = 'host';
+            updateDoc(doc(db, 'rooms', d.id), { status: 'finished', winnerId }).catch(() => {});
             return;
           }
         }
@@ -776,22 +785,65 @@ const App: React.FC = () => {
     setTurnPhase('selecting_card');
   }, []);
 
-  // エビデンスA: MDN beforeunload + visibilitychange
-  // ブラウザ閉じ/タブ閉じ時にルームをクリーンアップ
+  // ブラウザ閉じ/タブ閉じ/iPad切替時のルームクリーンアップ
+  // pagehide: iOS Safari で beforeunload より信頼性が高い
+  // visibilitychange: iPad のホーム画面切替やアプリ切替を検知
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const markRoomFinished = () => {
       const rid = currentRoomIdRef.current;
       if (!rid || !db) return;
-      // sendBeacon で非同期的にクリーンアップ（信頼性は低いが最善策）
-      // Firestore REST APIへのbeaconは複雑なため、updateDocを試みる
       const roomRef = doc(db, 'rooms', rid);
       updateDoc(roomRef, {
         status: 'finished',
         winnerId: isHostRef.current ? 'guest' : 'host',
       }).catch(() => {});
     };
+
+    // pagehide は iOS Safari でページ離脱時に発火する（beforeunloadより信頼性高）
+    const handlePageHide = (e: PageTransitionEvent) => {
+      // persisted=true (bfcache) の場合は戻ってくる可能性があるのでスキップ
+      if (!e.persisted) {
+        markRoomFinished();
+      }
+    };
+
+    // visibilitychange で iPad のアプリ切替/ホーム画面移動を検知
+    // hidden になってから一定時間戻らない場合のための保険タイマー
+    let hiddenTimer: NodeJS.Timeout | null = null;
+    const handleVisibilityChange = () => {
+      const rid = currentRoomIdRef.current;
+      if (!rid || !db) return;
+      if (document.hidden) {
+        // hidden になったら即座に lastActive を更新（最後の生存信号）
+        const field = isHostRef.current ? 'hostLastActive' : 'guestLastActive';
+        updateDoc(doc(db, 'rooms', rid), { [field]: serverTimestamp() }).catch(() => {});
+        // 60秒後もまだ hidden ならルームを終了（長時間離脱対策）
+        hiddenTimer = setTimeout(() => {
+          if (document.hidden && currentRoomIdRef.current === rid) {
+            markRoomFinished();
+          }
+        }, 60000);
+      } else {
+        // visible に戻ったらタイマーをキャンセル
+        if (hiddenTimer) { clearTimeout(hiddenTimer); hiddenTimer = null; }
+        // 復帰時にハートビートを即時送信
+        const field = isHostRef.current ? 'hostLastActive' : 'guestLastActive';
+        updateDoc(doc(db, 'rooms', rid), { [field]: serverTimestamp() }).catch(() => {});
+      }
+    };
+
+    // beforeunload も残す（デスクトップブラウザ用）
+    const handleBeforeUnload = () => markRoomFinished();
+
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (hiddenTimer) clearTimeout(hiddenTimer);
+    };
   }, []);
 
   const listenToRoom = (roomId: string) => {
@@ -806,14 +858,24 @@ const App: React.FC = () => {
       const data = snap.data() as Room;
       const isHostVal = isHostRef.current;
 
-      // エビデンスB: 相手の切断検知（lastActiveが90秒以上古い場合）
+      // 相手の切断検知（lastActiveが60秒以上古い場合）
+      // ハートビート30秒に合わせてしきい値を60秒に短縮
       if (data.status === 'playing') {
         const opponentLastActive = isHostVal ? data.guestLastActive : data.hostLastActive;
         if (opponentLastActive) {
           const lastActiveMs = opponentLastActive.toDate ? opponentLastActive.toDate().getTime() : 0;
-          const staleThreshold = 180000; // 180秒（ハートビート120秒に合わせて余裕を持たせる）
+          const staleThreshold = 60000; // 60秒（ハートビート30秒 × 2回分）
+          const autoEndThreshold = 120000; // 120秒で自動終了
           if (lastActiveMs > 0 && Date.now() - lastActiveMs > staleThreshold) {
             setOpponentDisconnected(true);
+            // 120秒以上応答がなければ自動的にルームを終了（勝利宣言不要）
+            if (Date.now() - lastActiveMs > autoEndThreshold) {
+              const roomRef = doc(db!, 'rooms', roomId);
+              updateDoc(roomRef, {
+                status: 'finished',
+                winnerId: isHostVal ? 'host' : 'guest',
+              }).catch(() => {});
+            }
           } else {
             setOpponentDisconnected(false);
           }
@@ -1050,7 +1112,7 @@ const App: React.FC = () => {
 
   useEffect(() => { if (currentRoomId) listenToRoom(currentRoomId); }, [currentRoomId]);
 
-  // エビデンスB: ハートビートパターン - 120秒ごとにlastActiveを更新（Firestore無料枠節約）
+  // ハートビートパターン - 30秒ごとにlastActiveを更新（切断を素早く検知）
   useEffect(() => {
     if (!currentRoomId || !db || !user) return;
     const field = isHostRef.current ? 'hostLastActive' : 'guestLastActive';
@@ -1058,7 +1120,7 @@ const App: React.FC = () => {
       updateDoc(doc(db, 'rooms', currentRoomId), {
         [field]: serverTimestamp(),
       }).catch(() => {});
-    }, 120000);
+    }, 30000);
     // 初回も即時更新
     updateDoc(doc(db, 'rooms', currentRoomId), {
       [field]: serverTimestamp(),
@@ -1915,7 +1977,10 @@ const App: React.FC = () => {
             {opponentDisconnected && gameMode === 'pvp' && (
               <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-900/90 border border-red-500 rounded-xl px-6 py-3 flex items-center gap-4 shadow-2xl">
                 <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-red-200 text-sm font-bold">相手の接続が切れました</span>
+                <div className="flex flex-col">
+                  <span className="text-red-200 text-sm font-bold">相手の接続が切れました</span>
+                  <span className="text-red-300/60 text-[10px]">しばらくすると自動的に勝利になります</span>
+                </div>
                 <button
                   onClick={async () => {
                     if (currentRoomId && db) {
@@ -1927,7 +1992,7 @@ const App: React.FC = () => {
                   }}
                   className="bg-red-700 hover:bg-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-colors"
                 >
-                  勝利を宣言
+                  今すぐ勝利を宣言
                 </button>
               </div>
             )}
