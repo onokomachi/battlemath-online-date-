@@ -191,7 +191,7 @@ const ProblemSolver: React.FC<ProblemSolverProps> = ({ problemCard, onAnswerSubm
           <p>{problemData?.question || problemData?.questionText || "数式を解析せよ"}</p>
           {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-32 sm:max-h-48 mx-auto rounded-lg border border-cyan-500/10 p-1 bg-slate-900 my-2 sm:my-4" />}
           {problemData?.svg && (
-            <div className="svg-container w-full max-w-xs sm:max-w-sm h-auto my-3 sm:my-6 p-2 sm:p-4 bg-slate-950 rounded-lg border border-cyan-500/10 max-h-[160px] sm:max-h-[220px] md:max-h-[240px] flex items-center justify-center" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
+            <div className="svg-container w-full max-w-xs sm:max-w-sm h-auto my-3 sm:my-6 p-2 sm:p-4 bg-slate-950 rounded-lg border border-cyan-500/10 overflow-visible" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
           )}
           {problemData?.options && (
             <div className="grid gap-2 w-full max-w-lg mt-4 text-lg">

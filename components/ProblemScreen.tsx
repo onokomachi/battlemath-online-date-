@@ -474,7 +474,7 @@ const ProblemScreen: React.FC<ProblemScreenProps> = ({ category, subTopic, onBac
                         <p className="text-base sm:text-lg lg:text-xl leading-snug mb-2 sm:mb-3 font-mono tracking-tight">{problemData?.question || problemData?.questionText || "問題文の解析に失敗しました"}</p>
                         {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-40 sm:max-h-52 mx-auto rounded-lg shadow-xl border border-cyan-500/10 p-1 bg-slate-900 mb-2" />}
                         {problemData?.svg && (
-                          <div className="svg-container w-full max-w-xs mx-auto my-2 p-1.5 bg-slate-950 rounded-lg border border-cyan-500/10 max-h-[180px] sm:max-h-[220px] flex items-center justify-center" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
+                          <div className="svg-container w-full max-w-xs mx-auto my-2 p-1.5 bg-slate-950 rounded-lg border border-cyan-500/10 overflow-visible" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
                         )}
                         {problemData?.options && (
                           <div className="grid gap-2 max-w-lg mx-auto mt-2">
