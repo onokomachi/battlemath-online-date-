@@ -194,8 +194,12 @@ const App: React.FC = () => {
   const unsubscribeRoomRef = useRef<(() => void) | null>(null);
   const isHostRef = useRef(isHost);
   const processedMatchIdRef = useRef<string | null>(null);
+  const pvpDeckRef = useRef<ProblemCard[]>([]);
   const currentRoomIdRef = useRef<string | null>(null);
   const gameModeRef = useRef<BattleMode>('cpu');
+  const gameStateRef = useRef<GameState>(gameState);
+  const speedPhaseRef = useRef(speedPhase);
+  const battleTypeRef = useRef<BattleType>(battleType);
 
   // --- UI Overlays ---
   const [showRanking, setShowRanking] = useState(false);
@@ -245,6 +249,9 @@ const App: React.FC = () => {
   useEffect(() => { isHostRef.current = isHost; }, [isHost]);
   useEffect(() => { currentRoomIdRef.current = currentRoomId; }, [currentRoomId]);
   useEffect(() => { gameModeRef.current = gameMode; }, [gameMode]);
+  useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
+  useEffect(() => { speedPhaseRef.current = speedPhase; }, [speedPhase]);
+  useEffect(() => { battleTypeRef.current = battleType; }, [battleType]);
 
   // ============================
   // localStorage sync
@@ -814,13 +821,13 @@ const App: React.FC = () => {
       }
 
       // ルームが外部要因で finished になった場合（相手離脱・管理者終了等）
-      if (data.status === 'finished' && data.winnerId === 'abandoned') {
+      if (data.status === 'finished' && (data.winnerId === 'abandoned' || data.winnerId === 'admin_terminated')) {
         cleanupGameSession();
-        setGameState(battleType === 'speed_duel' ? 'speed_duel_setup' : 'deck_building');
+        setGameState(battleTypeRef.current === 'speed_duel' ? 'speed_duel_setup' : 'deck_building');
         return;
       }
 
-      if (data.status === 'playing' && gameState === 'matchmaking') {
+      if (data.status === 'playing' && gameStateRef.current === 'matchmaking') {
         setCurrentRound(1);
         processedMatchIdRef.current = null;
 
@@ -845,14 +852,15 @@ const App: React.FC = () => {
           }, 2000);
         } else {
           setTimeout(() => {
-            startGame(playerDeck, false, data);
+            const deckToUse = pvpDeckRef.current.length > 0 ? pvpDeckRef.current : playerDeck;
+            startGame(deckToUse, false, data);
             setGameState('in_game');
           }, 500);
         }
       }
 
       // Speed Duel PvP: sync round results from Firestore
-      if (gameState === 'speed_duel' && data.battleType === 'speed_duel') {
+      if (gameStateRef.current === 'speed_duel' && data.battleType === 'speed_duel') {
         const myScore = isHostVal ? (data.speedP1Score || 0) : (data.speedP2Score || 0);
         const oppScore = isHostVal ? (data.speedP2Score || 0) : (data.speedP1Score || 0);
         setSpeedPlayerScore(myScore);
@@ -862,7 +870,7 @@ const App: React.FC = () => {
         if (oppAnswer) setSpeedOpponentAnswered(true);
 
         // Round resolved by opponent's correct answer
-        if (data.speedRoundWinner && speedPhase === 'answering') {
+        if (data.speedRoundWinner && speedPhaseRef.current === 'answering') {
           if (speedTimerRef.current) clearInterval(speedTimerRef.current);
           const winner = data.speedRoundWinner;
           if ((winner === 'host' && isHostVal) || (winner === 'guest' && !isHostVal)) {
@@ -883,7 +891,7 @@ const App: React.FC = () => {
         }
       }
 
-      if (gameState === 'in_game') {
+      if (gameStateRef.current === 'in_game') {
         setPlayerHP(isHostVal ? data.p1Hp : data.p2Hp);
         setPcHP(isHostVal ? data.p2Hp : data.p1Hp);
 
@@ -1773,6 +1781,8 @@ const App: React.FC = () => {
               setBattleFormat(format);
               setBattleType('card_battle');
               if (bmode === 'pvp') {
+                pvpDeckRef.current = deck;
+                setPlayerDeck(deck);
                 setGameState('matchmaking');
               } else {
                 startGame(deck, true, undefined, format);
