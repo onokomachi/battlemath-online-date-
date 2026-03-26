@@ -1,29 +1,22 @@
 /**
- * ClassBattleBoard.tsx — 月間クラス対抗ランキング「MATH WARS」
+ * ClassBattleBoard.tsx — 月間学校対抗ランキング「MATH WARS」
  *
- * エビデンスベース設計:
- *   - エビデンスA: グループ内協力＋グループ間競争（Johnson et al. 1981, 122研究メタ分析, d=0.49）
- *   - エビデンスA: STAD型 — 1人あたり改善度でチーム貢献（Slavin 1995）
- *   - エビデンスB: 月単位リセット + 週次サブ集計（Landers & Landers 2015）
- *   - エビデンスB: 敗者動機維持 — 学習フレーミング + 参加賞（Hanus & Fox 2015）
+ * 伊勢崎市立中学校11校 + 四ツ葉学園 の学校対抗ランキング。
  *
  * スコア計算式:
  *   総合スコア = (1人あたり平均MP × 0.4) + (平均正答率 × 0.3) + (参加率 × 0.3)
  *
- * Firestore最適化 (Phase 1):
- *   - classStats/{monthKey} コレクションにキャッシュ済み集計を保存
- *   - 表示時: キャッシュがあれば1 read、なければ全ユーザーscan + キャッシュ書き込み
- *   - キャッシュTTL: 1時間（同日内の再表示は0 read）
+ * Firestore最適化:
+ *   - classStatsCache/{monthKey} コレクションにキャッシュ済み集計を保存
+ *   - キャッシュTTL: 1時間
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   collection, getDocs, doc, getDoc, setDoc, query, where, type Firestore,
 } from 'firebase/firestore';
 
-interface ClassStats {
-  grade: number;
-  classNum: number;
-  label: string;
+interface SchoolStats {
+  school: string;
   memberCount: number;
   activeCount: number;
   totalMpEarned: number;
@@ -38,8 +31,7 @@ interface ClassStats {
 interface ClassBattleBoardProps {
   db: Firestore;
   onClose: () => void;
-  currentGrade?: number;
-  currentClass?: number;
+  currentSchool?: string;
 }
 
 const getMonthLabel = (): string => {
@@ -63,21 +55,20 @@ const calcCompositeScore = (avgMp: number, avgAccuracy: number, participationRat
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
-  db, onClose, currentGrade, currentClass,
+  db, onClose, currentSchool,
 }) => {
-  const [classStats, setClassStats] = useState<ClassStats[]>([]);
+  const [schoolStats, setSchoolStats] = useState<SchoolStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGrade, setSelectedGrade] = useState<number>(currentGrade || 0);
   const [dataSource, setDataSource] = useState<'cache' | 'live' | ''>('');
 
   useEffect(() => {
-    const fetchClassData = async () => {
+    const fetchSchoolData = async () => {
       setLoading(true);
       const monthKey = getMonthKey();
 
       try {
         // Step 1: キャッシュ確認（1 read）
-        const cacheRef = doc(db, 'classStatsCache', monthKey);
+        const cacheRef = doc(db, 'classStatsCache', `school-${monthKey}`);
         try {
           const cacheSnap = await getDoc(cacheRef);
 
@@ -87,26 +78,22 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
             const age = Date.now() - cachedAt;
 
             if (age < CACHE_TTL_MS && cached.stats) {
-              // キャッシュが新鮮 → そのまま使用（0 additional reads）
-              setClassStats(cached.stats as ClassStats[]);
+              setSchoolStats(cached.stats as SchoolStats[]);
               setDataSource('cache');
               setLoading(false);
               return;
             }
           }
         } catch (cacheErr) {
-          // キャッシュ読み取り失敗（権限エラー等）→ ライブデータにフォールバック
-          console.warn('ClassBattle cache read failed, falling back to live scan:', cacheErr);
+          console.warn('SchoolBattle cache read failed, falling back to live scan:', cacheErr);
         }
 
-        // Step 2: キャッシュなし or 期限切れ or キャッシュ読み取り失敗 → 全ユーザーscan
+        // Step 2: 全ユーザーscan
         const usersSnap = await getDocs(
           query(collection(db, 'users'), where('studentProfile', '!=', null))
         );
 
-        const classMap = new Map<string, {
-          grade: number;
-          classNum: number;
+        const schoolMap = new Map<string, {
           members: number;
           active: number;
           totalMp: number;
@@ -117,13 +104,13 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
         usersSnap.forEach(docSnap => {
           const d = docSnap.data();
           const sp = d.studentProfile;
-          if (!sp || !sp.grade || !sp.classNum) return;
+          if (!sp) return;
 
-          const key = `${sp.grade}-${sp.classNum}`;
-          if (!classMap.has(key)) {
-            classMap.set(key, {
-              grade: sp.grade,
-              classNum: sp.classNum,
+          // school フィールドがない既存ユーザーは第三中学校扱い
+          const school: string = sp.school || '第三中学校';
+
+          if (!schoolMap.has(school)) {
+            schoolMap.set(school, {
               members: 0,
               active: 0,
               totalMp: 0,
@@ -132,7 +119,7 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
             });
           }
 
-          const entry = classMap.get(key)!;
+          const entry = schoolMap.get(school)!;
           entry.members++;
 
           const lastLogin: string = d.lastLoginDate || '';
@@ -142,15 +129,14 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
 
           entry.totalMp += (d.mathPoints || 0);
           entry.totalCorrect += (d.totalCorrectAnswers || 0);
-          // totalAnsweredフィールドがあればそれを使用、なければ推定
           const answered = d.totalAnswered
             ? d.totalAnswered
             : Math.max((d.totalCorrectAnswers || 0), (d.totalMatches || 0) * 5);
           entry.totalAnswered += answered;
         });
 
-        const stats: ClassStats[] = [];
-        classMap.forEach((data) => {
+        const stats: SchoolStats[] = [];
+        schoolMap.forEach((data, school) => {
           const avgMp = data.members > 0 ? Math.round(data.totalMp / data.members) : 0;
           const avgAccuracy = data.totalAnswered > 0
             ? Math.round((data.totalCorrect / data.totalAnswered) * 100)
@@ -160,9 +146,7 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
             : 0;
 
           stats.push({
-            grade: data.grade,
-            classNum: data.classNum,
-            label: `${data.grade}年${data.classNum}組`,
+            school,
             memberCount: data.members,
             activeCount: data.active,
             totalMpEarned: data.totalMp,
@@ -176,33 +160,23 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
         });
 
         stats.sort((a, b) => b.compositeScore - a.compositeScore);
-        setClassStats(stats);
+        setSchoolStats(stats);
         setDataSource('live');
 
-        // Step 3: キャッシュに書き込み（次回は1 readで済む）
+        // Step 3: キャッシュに書き込み
         setDoc(cacheRef, {
           stats,
           updatedAt: Date.now(),
           month: monthKey,
-        }).catch(() => {}); // fire-and-forget
+        }).catch(() => {});
       } catch (e) {
-        console.error('ClassBattle fetch error:', e);
+        console.error('SchoolBattle fetch error:', e);
       }
       setLoading(false);
     };
 
-    fetchClassData();
+    fetchSchoolData();
   }, [db]);
-
-  const filteredStats = useMemo(() => {
-    if (selectedGrade === 0) return classStats;
-    return classStats.filter(s => s.grade === selectedGrade);
-  }, [classStats, selectedGrade]);
-
-  const grades = useMemo(() => {
-    const set = new Set(classStats.map(s => s.grade));
-    return Array.from(set).sort();
-  }, [classStats]);
 
   const getRankIcon = (rank: number): string => {
     if (rank === 1) return '🥇';
@@ -229,7 +203,7 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
                 <span className="text-amber-400">⚔</span> MATH WARS
               </h2>
               <p className="text-xs text-amber-400 mt-1 font-bold">
-                {getMonthLabel()} クラス対抗ランキング
+                {getMonthLabel()} 伊勢崎市 学校対抗ランキング
               </p>
             </div>
             <button
@@ -249,56 +223,29 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
           </div>
         </div>
 
-        {/* Grade filter */}
-        <div className="p-3 border-b border-amber-900/20 flex gap-2 flex-shrink-0">
-          <button
-            onClick={() => setSelectedGrade(0)}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-              selectedGrade === 0
-                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                : 'text-gray-500 border border-transparent hover:text-gray-300'
-            }`}
-          >
-            全学年
-          </button>
-          {grades.map(g => (
-            <button
-              key={g}
-              onClick={() => setSelectedGrade(g)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                selectedGrade === g
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                  : 'text-gray-500 border border-transparent hover:text-gray-300'
-              }`}
-            >
-              {g}年生
-            </button>
-          ))}
-        </div>
-
         {/* Rankings */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {loading ? (
             <div className="text-center text-gray-500 py-12 font-mono text-sm">
               データ集計中...
             </div>
-          ) : filteredStats.length === 0 ? (
+          ) : schoolStats.length === 0 ? (
             <div className="text-center text-gray-500 py-12">
               <p className="text-lg mb-2">まだデータがありません</p>
-              <p className="text-xs">学年・組を設定して問題を解くとクラスに貢献できます</p>
+              <p className="text-xs">学校を設定して問題を解くと学校に貢献できます</p>
             </div>
           ) : (
-            filteredStats.map((cls, idx) => {
+            schoolStats.map((sch, idx) => {
               const rank = idx + 1;
-              const isMyClass = cls.grade === currentGrade && cls.classNum === currentClass;
+              const isMySchool = sch.school === currentSchool;
               const isTop3 = rank <= 3;
 
               return (
                 <div
-                  key={`${cls.grade}-${cls.classNum}`}
+                  key={sch.school}
                   className={`
                     rounded-xl p-4 border-2 transition-all
-                    ${isMyClass
+                    ${isMySchool
                       ? 'border-cyan-400/50 bg-cyan-900/10 shadow-[0_0_20px_rgba(6,182,212,0.1)]'
                       : isTop3
                         ? 'border-amber-500/30 bg-amber-900/5'
@@ -312,19 +259,19 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
                       {getRankIcon(rank)}
                     </div>
 
-                    {/* Class info */}
+                    {/* School info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`font-black text-lg ${isMyClass ? 'text-cyan-300' : 'text-white'}`}>
-                          {cls.label}
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className={`font-black text-lg ${isMySchool ? 'text-cyan-300' : 'text-white'}`}>
+                          {sch.school}
                         </span>
-                        {isMyClass && (
+                        {isMySchool && (
                           <span className="text-[9px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full font-bold border border-cyan-500/30">
-                            MY CLASS
+                            MY SCHOOL
                           </span>
                         )}
                         <span className="text-[10px] text-gray-600 ml-auto">
-                          {cls.activeCount}/{cls.memberCount}人参加
+                          {sch.activeCount}/{sch.memberCount}人参加
                         </span>
                       </div>
 
@@ -334,12 +281,12 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
                         <div>
                           <div className="flex justify-between text-[9px] mb-0.5">
                             <span className="text-amber-400 font-bold">1人あたりMP</span>
-                            <span className="text-gray-400">{cls.avgMp.toLocaleString()}</span>
+                            <span className="text-gray-400">{sch.avgMp.toLocaleString()}</span>
                           </div>
                           <div className="w-full bg-slate-800 rounded-full h-1.5">
                             <div
                               className="bg-amber-500/70 h-full rounded-full transition-all duration-1000"
-                              style={{ width: `${Math.min(100, (cls.avgMp / Math.max(...filteredStats.map(s => s.avgMp), 1)) * 100)}%` }}
+                              style={{ width: `${Math.min(100, (sch.avgMp / Math.max(...schoolStats.map(s => s.avgMp), 1)) * 100)}%` }}
                             />
                           </div>
                         </div>
@@ -348,12 +295,12 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
                         <div>
                           <div className="flex justify-between text-[9px] mb-0.5">
                             <span className="text-green-400 font-bold">正答率</span>
-                            <span className="text-gray-400">{cls.avgAccuracy}%</span>
+                            <span className="text-gray-400">{sch.avgAccuracy}%</span>
                           </div>
                           <div className="w-full bg-slate-800 rounded-full h-1.5">
                             <div
                               className="bg-green-500/70 h-full rounded-full transition-all duration-1000"
-                              style={{ width: `${cls.avgAccuracy}%` }}
+                              style={{ width: `${sch.avgAccuracy}%` }}
                             />
                           </div>
                         </div>
@@ -362,12 +309,12 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
                         <div>
                           <div className="flex justify-between text-[9px] mb-0.5">
                             <span className="text-blue-400 font-bold">参加率</span>
-                            <span className="text-gray-400">{cls.participationRate}%</span>
+                            <span className="text-gray-400">{sch.participationRate}%</span>
                           </div>
                           <div className="w-full bg-slate-800 rounded-full h-1.5">
                             <div
                               className="bg-blue-500/70 h-full rounded-full transition-all duration-1000"
-                              style={{ width: `${cls.participationRate}%` }}
+                              style={{ width: `${sch.participationRate}%` }}
                             />
                           </div>
                         </div>
@@ -377,7 +324,7 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
                     {/* Score */}
                     <div className="text-right flex-shrink-0 ml-2">
                       <div className={`text-2xl font-black font-mono ${isTop3 ? 'text-amber-400' : 'text-gray-300'}`}>
-                        {Math.round(cls.compositeScore)}
+                        {Math.round(sch.compositeScore)}
                       </div>
                       <div className="text-[9px] text-gray-600 font-bold">SCORE</div>
                     </div>
@@ -390,8 +337,8 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
 
         {/* Footer: Rewards info */}
         <div className="p-4 border-t border-amber-900/20 bg-slate-900/40 flex-shrink-0">
-          <p className="text-[10px] text-gray-500 font-bold mb-2">月末報酬（クラス全員に配布）</p>
-          <div className="flex gap-3 text-[10px]">
+          <p className="text-[10px] text-gray-500 font-bold mb-2">月末報酬（学校全員に配布）</p>
+          <div className="flex gap-3 text-[10px] flex-wrap">
             <span className="text-amber-400">🥇 {getRankReward(1)}</span>
             <span className="text-gray-400">🥈 {getRankReward(2)}</span>
             <span className="text-gray-400">🥉 {getRankReward(3)}</span>

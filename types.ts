@@ -187,12 +187,13 @@ export interface HistogramProblemData {
   options?: string[];
 }
 
-// --- Student Profile (学年・組・番号) ---
+// --- Student Profile (学校・学年・組・番号) ---
 export interface StudentProfile {
-  grade: number;    // 学年 (1, 2, 3)
-  classNum: number; // 組 (1〜10)
-  number: number;   // 出席番号 (1〜45)
-  displayLabel: string; // e.g. "2年3組12番"
+  school: string;     // 学校名 (e.g. "第三中学校")
+  grade: number;      // 学年 (1, 2, 3)
+  classNum: number;   // 組 (1〜10)
+  number: number;     // 出席番号 (1〜45)
+  displayLabel: string; // e.g. "第三中学校 2年3組12番"
 }
 
 // --- Auth / Online Types ---

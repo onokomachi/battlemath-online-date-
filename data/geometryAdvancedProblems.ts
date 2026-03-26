@@ -189,6 +189,7 @@ export const geometryAdvancedProblems: ProblemSet = {
       type: 'text',
       data: {
         question: '右の図で、∠BAC=90°の直角三角形ABCにおいて、AB=3, AC=4である。∠Aの二等分線がBCと交わる点をDとする。ADの長さを求めよ。',
+        svg: '<svg viewBox="0 0 280 240" preserveAspectRatio="xMidYMid meet"><polygon points="50,30 50,210 230,210" fill="none" stroke="white" stroke-width="1.5"/><rect x="50" y="200" width="10" height="10" fill="none" stroke="white" stroke-width="1"/><line x1="50" y1="30" x2="127" y2="210" stroke="#facc15" stroke-width="1.5" stroke-dasharray="5,3"/><text x="38" y="25" font-size="14" fill="white">A</text><text x="38" y="225" font-size="14" fill="white">B</text><text x="233" y="225" font-size="14" fill="white">C</text><text x="120" y="228" font-size="14" fill="#facc15">D</text><text x="25" y="125" font-size="12" fill="white">3</text><text x="130" y="128" font-size="12" fill="white">4</text><text x="130" y="228" font-size="12" fill="white">5</text><path d="M 50,45 A 15,15 0 0,1 55,30" fill="none" stroke="#facc15" stroke-width="1"/><path d="M 55,30 A 15,15 0 0,1 65,33" fill="none" stroke="#facc15" stroke-width="1"/></svg>',
         hint: 'BD:DC=AB:AC=3:4。BC=5だからBD=15/7, DC=20/7。△ABDの面積=(1/2)(AB)(AD)sin45°... 別解：△ABCの面積=6。AD=2S/(BD sin(∠ADB)+DC sin(∠ADC))... 最も簡単：角の二等分線の長さの公式 AD²=AB·AC-BD·DC=12-300/49=(588-300)/49=288/49'
       },
       answer: '12√2/7'
