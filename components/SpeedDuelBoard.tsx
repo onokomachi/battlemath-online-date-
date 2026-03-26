@@ -182,10 +182,11 @@ const SpeedDuelBoard: React.FC<SpeedDuelBoardProps> = ({
         {(problemType === 'text' || !problemType) && (
           <div className="w-full min-h-[4rem] bg-slate-900/50 border border-orange-500/10 rounded-xl p-3 sm:p-5 flex flex-col items-center justify-center text-center text-white text-base sm:text-xl font-mono">
             <p>{problemData?.question || problemData?.questionText || "問題"}</p>
-            {problemData?.imageUrl && <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-40 sm:max-h-52 mx-auto rounded-lg shadow-xl border border-orange-500/10 p-1 bg-slate-900 my-2" />}
-            {problemData?.svg && (
+            {problemData?.svg ? (
               <div className="svg-container w-full max-w-xs mx-auto my-2 p-1.5 bg-slate-950 rounded-lg border border-orange-500/10 max-h-[180px] sm:max-h-[220px] flex items-center justify-center" dangerouslySetInnerHTML={{ __html: problemData.svg }} />
-            )}
+            ) : problemData?.imageUrl ? (
+              <img src={problemData.imageUrl} alt="DOC" className="max-w-full max-h-40 sm:max-h-52 mx-auto rounded-lg shadow-xl border border-orange-500/10 p-1 bg-slate-900 my-2" />
+            ) : null}
             {problemData?.options && renderOptions(problemData.options)}
           </div>
         )}
