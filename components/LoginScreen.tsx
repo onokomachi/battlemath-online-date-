@@ -71,7 +71,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   // 学校・学年・組・番号の選択UI
   if (currentUser && (showProfileSetup || !studentProfile)) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
+      <div className="w-full h-full flex flex-col items-center justify-start sm:justify-center p-4 pt-8 sm:pt-4 text-white relative overflow-y-auto">
         <div className="absolute inset-0 bg-gradient-radial from-cyan-900/20 via-transparent to-transparent pointer-events-none" />
 
         <div className="text-center mb-6 relative">
@@ -197,12 +197,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
+    <div className="w-full h-full flex flex-col items-center justify-start sm:justify-center p-4 pt-8 sm:pt-4 text-white relative overflow-y-auto">
       {/* Background glow */}
       <div className="absolute inset-0 bg-gradient-radial from-cyan-900/20 via-transparent to-transparent pointer-events-none" />
 
       {/* Title */}
-      <div className="text-center mb-16 relative">
+      <div className="text-center mb-8 sm:mb-16 relative">
         <div className="absolute -inset-20 bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
         <h1 className="text-7xl md:text-9xl font-black text-hologram mb-4 tracking-[0.2em]">
           BATTLE-MATH

@@ -165,7 +165,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
   onOpenClassBattle, hasStudentProfile, srsReviewCount, onOpenWeakness, onOpenItemShop, equippedTitleName,
 }) => {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white relative">
+    <div className="w-full h-full flex flex-col items-center justify-start sm:justify-center p-4 pt-20 sm:pt-4 text-white relative overflow-y-auto">
       <PlayerStatus
         playerLevel={playerLevel}
         playerExp={playerExp}

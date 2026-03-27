@@ -52,7 +52,7 @@ const PackOpeningView: React.FC<{
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 text-white bg-black/90 backdrop-blur-2xl z-[100]">
+    <div className="w-full h-full flex flex-col items-center justify-start sm:justify-center p-4 pt-8 sm:pt-4 text-white bg-black/90 backdrop-blur-2xl z-[100] overflow-y-auto">
       <h2 className="text-4xl font-bold text-cyan-300 mb-12 tracking-wide">新しいカードを入手！</h2>
       <div className="flex flex-wrap justify-center items-center gap-10 h-96">
         {pack.map((card, index) => (
@@ -106,14 +106,14 @@ const CardShop: React.FC<CardShopProps> = ({ mathPoints, onBuyPack, onExit }) =>
   }
   
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-white font-['Inter']">
+    <div className="w-full h-full flex flex-col items-center justify-start sm:justify-center p-6 pt-24 sm:pt-6 text-white font-['Inter'] overflow-y-auto">
       <div className="absolute top-8 left-8 hud-panel p-5 rounded-xl border-l-4 border-cyan-500 shadow-2xl">
         <span className="text-xs text-cyan-400 font-bold block mb-1">所持ポイント</span>
         <span className="text-cyan-300 text-3xl font-bold font-mono">{mathPoints.toLocaleString()} <span className="text-sm text-cyan-500/60">MP</span></span>
       </div>
 
-      <header className="text-center mb-16">
-        <h1 className="text-6xl md:text-8xl font-black text-hologram tracking-[0.1em] mb-4">カードショップ</h1>
+      <header className="text-center mb-6 sm:mb-16">
+        <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-hologram tracking-[0.1em] mb-4">カードショップ</h1>
         <p className="text-sm text-cyan-400 font-bold opacity-70">MPを使ってカードパックを購入しよう</p>
       </header>
 
@@ -141,7 +141,7 @@ const CardShop: React.FC<CardShopProps> = ({ mathPoints, onBuyPack, onExit }) =>
           </div>
         ))}
       </div>
-       <button onClick={onExit} className="mt-16 btn-tactical px-10 py-3 rounded-lg flex items-center gap-3 text-sm font-bold opacity-70 hover:opacity-100">
+       <button onClick={onExit} className="mt-6 sm:mt-16 mb-6 btn-tactical px-10 py-3 rounded-lg flex items-center gap-3 text-sm font-bold opacity-70 hover:opacity-100 flex-shrink-0">
         <BackIcon className="w-4 h-4" /> メニューに戻る
       </button>
     </div>
