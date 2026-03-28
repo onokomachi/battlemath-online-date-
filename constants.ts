@@ -13,6 +13,14 @@ import { geometryProofFigures } from './data/geometryProofFigures';
 // Merge all SVG maps for enriching card problems with inline SVGs
 const ALL_SVG: Record<string, string> = { ...SVG_MAP, ...svgMap, ...geometryProofFigures };
 
+export const DEFAULT_SCHOOL_YEAR = 2025;
+
+export const getCurrentSchoolYear = (): number => {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  return month >= 4 ? now.getFullYear() : now.getFullYear() - 1;
+};
+
 export const MAX_SCORE = 5;
 export const DECK_SIZE = 20;
 export const HAND_SIZE = 5;

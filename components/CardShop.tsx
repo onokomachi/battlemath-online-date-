@@ -52,35 +52,37 @@ const PackOpeningView: React.FC<{
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-start sm:justify-center p-4 pt-8 sm:pt-4 text-white bg-black/90 backdrop-blur-2xl z-[100] overflow-y-auto">
-      <h2 className="text-4xl font-bold text-cyan-300 mb-12 tracking-wide">新しいカードを入手！</h2>
-      <div className="flex flex-wrap justify-center items-center gap-10 h-96">
-        {pack.map((card, index) => (
-          <div
-            key={index}
-            className="card-container animate-math-fade-in"
-            style={{ animationDelay: `${index * 200}ms` }}
-            onClick={() => handleRevealCard(index)}
-          >
-            <div className={`card-inner ${revealed[index] ? 'is-flipped' : ''}`}>
-              <div className="card-back">
-                <CardBack />
-              </div>
-              <div className="card-front">
-                <Card card={card} />
+    <div className="w-full h-full overflow-y-auto text-white bg-black/90 backdrop-blur-2xl z-[100]">
+      <div className="min-h-full flex flex-col items-center justify-center p-4 pt-8 sm:pt-4">
+        <h2 className="text-4xl font-bold text-cyan-300 mb-12 tracking-wide">新しいカードを入手！</h2>
+        <div className="flex flex-wrap justify-center items-center gap-6 py-4">
+          {pack.map((card, index) => (
+            <div
+              key={index}
+              className="card-container animate-math-fade-in"
+              style={{ animationDelay: `${index * 200}ms` }}
+              onClick={() => handleRevealCard(index)}
+            >
+              <div className={`card-inner ${revealed[index] ? 'is-flipped' : ''}`}>
+                <div className="card-back">
+                  <CardBack />
+                </div>
+                <div className="card-front">
+                  <Card card={card} />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+        {allRevealed && (
+           <button
+            onClick={onFinish}
+            className="mt-16 btn-tactical px-12 py-4 rounded-xl text-xl font-bold text-cyan-400 animate-level-up-reveal"
+          >
+            ショップに戻る
+          </button>
+        )}
       </div>
-      {allRevealed && (
-         <button
-          onClick={onFinish}
-          className="mt-16 btn-tactical px-12 py-4 rounded-xl text-xl font-bold text-cyan-400 animate-level-up-reveal"
-        >
-          ショップに戻る
-        </button>
-      )}
     </div>
   );
 };
