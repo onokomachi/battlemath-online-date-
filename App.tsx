@@ -555,6 +555,63 @@ const App: React.FC = () => {
   }, [user]);
 
   // ============================
+  // 称号システム
+  // ============================
+  const earnTitle = useCallback((titleId: string) => {
+    setEarnedTitleIds(prev => {
+      if (prev.has(titleId)) return prev;
+      if (!TITLE_DEFS.find(t => t.id === titleId)) return prev;
+      if (user && db) {
+        updateDoc(doc(db, 'users', user.uid), {
+          earnedTitleIds: arrayUnion(titleId),
+        }).catch(() => {});
+      }
+      return new Set(prev).add(titleId);
+    });
+  }, [user]);
+
+  const checkTitleConditions = useCallback((snapshot: {
+    totalCorrectAnswers: number;
+    totalWins: number;
+    loginStreak: number;
+    playerLevel: number;
+    earnedBadgeIds: Set<string>;
+  }) => {
+    TITLE_DEFS.filter(t => !t.isMonthly).forEach(title => {
+      const { type, value = 0, badgeId } = title.condition;
+      let satisfied = false;
+      switch (type) {
+        case 'any': satisfied = true; break;
+        case 'total_correct': satisfied = snapshot.totalCorrectAnswers >= value; break;
+        case 'total_wins': satisfied = snapshot.totalWins >= value; break;
+        case 'login_streak': satisfied = snapshot.loginStreak >= value; break;
+        case 'level': satisfied = snapshot.playerLevel >= value; break;
+        case 'badge_owned': satisfied = !!badgeId && snapshot.earnedBadgeIds.has(badgeId); break;
+      }
+      if (satisfied) earnTitle(title.id);
+    });
+  }, [earnTitle]);
+
+  const checkMonthlyChampion = useCallback(async () => {
+    if (!db || !user) return;
+    try {
+      const monthKey = new Date().toISOString().slice(0, 7);
+      const snap = await getDoc(doc(db, 'config', `monthly_champion_${monthKey}`));
+      const isChampion = snap.exists() && snap.data()?.winnerUid === user.uid;
+      if (isChampion) {
+        earnTitle('title_monthly_champion');
+      } else {
+        setEarnedTitleIds(prev => {
+          const next = new Set(prev);
+          next.delete('title_monthly_champion');
+          return next;
+        });
+        if (equippedTitle === 'title_monthly_champion') setEquippedTitle(null);
+      }
+    } catch {}
+  }, [user, equippedTitle, earnTitle]);
+
+  // ============================
   // 正解イベント統合処理
   // チェイン・バッジ・クエスト・クラス蓄積
   // ============================
@@ -747,63 +804,6 @@ const App: React.FC = () => {
       updateDoc(doc(db, 'users', user.uid), { hasStreakShield: true }).catch(() => {});
     }
   }, [ownedShopItems, mathPoints, user]);
-
-  // ============================
-  // 称号システム
-  // ============================
-  const earnTitle = useCallback((titleId: string) => {
-    setEarnedTitleIds(prev => {
-      if (prev.has(titleId)) return prev;
-      if (!TITLE_DEFS.find(t => t.id === titleId)) return prev;
-      if (user && db) {
-        updateDoc(doc(db, 'users', user.uid), {
-          earnedTitleIds: arrayUnion(titleId),
-        }).catch(() => {});
-      }
-      return new Set(prev).add(titleId);
-    });
-  }, [user]);
-
-  const checkTitleConditions = useCallback((snapshot: {
-    totalCorrectAnswers: number;
-    totalWins: number;
-    loginStreak: number;
-    playerLevel: number;
-    earnedBadgeIds: Set<string>;
-  }) => {
-    TITLE_DEFS.filter(t => !t.isMonthly).forEach(title => {
-      const { type, value = 0, badgeId } = title.condition;
-      let satisfied = false;
-      switch (type) {
-        case 'any': satisfied = true; break;
-        case 'total_correct': satisfied = snapshot.totalCorrectAnswers >= value; break;
-        case 'total_wins': satisfied = snapshot.totalWins >= value; break;
-        case 'login_streak': satisfied = snapshot.loginStreak >= value; break;
-        case 'level': satisfied = snapshot.playerLevel >= value; break;
-        case 'badge_owned': satisfied = !!badgeId && snapshot.earnedBadgeIds.has(badgeId); break;
-      }
-      if (satisfied) earnTitle(title.id);
-    });
-  }, [earnTitle]);
-
-  const checkMonthlyChampion = useCallback(async () => {
-    if (!db || !user) return;
-    try {
-      const monthKey = new Date().toISOString().slice(0, 7);
-      const snap = await getDoc(doc(db, 'config', `monthly_champion_${monthKey}`));
-      const isChampion = snap.exists() && snap.data()?.winnerUid === user.uid;
-      if (isChampion) {
-        earnTitle('title_monthly_champion');
-      } else {
-        setEarnedTitleIds(prev => {
-          const next = new Set(prev);
-          next.delete('title_monthly_champion');
-          return next;
-        });
-        if (equippedTitle === 'title_monthly_champion') setEquippedTitle(null);
-      }
-    } catch {}
-  }, [user, equippedTitle, earnTitle]);
 
   // 分野マスターバッジチェック
   const checkCategoryMasterBadges = useCallback(() => {
