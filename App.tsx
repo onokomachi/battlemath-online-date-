@@ -26,7 +26,7 @@ import {
   CARD_DEFINITIONS, HAND_SIZE, DECK_SIZE,
   INITIAL_HP, calcDamage, ADMIN_EMAILS, GAMEMASTER_PASSWORD,
   BADGE_DEFS, DAILY_QUEST_DEFS, WEEKLY_QUEST_DEFS, getTodayStr, getWeekStart,
-  SHOP_ITEMS,
+  SHOP_ITEMS, DEFAULT_SCHOOL_YEAR, getCurrentSchoolYear,
 } from './constants';
 import GameBoard from './components/GameBoard';
 import DeckBuilder from './components/DeckBuilder';
@@ -50,6 +50,7 @@ import ItemShop from './components/ItemShop';
 import TutorialBattle from './components/TutorialBattle';
 import SpeedDuelSetup from './components/SpeedDuelSetup';
 import SpeedDuelBoard from './components/SpeedDuelBoard';
+import NewYearPrompt from './components/NewYearPrompt';
 import type { ShopItemDef, BattleType, Problem } from './types';
 import { getCategoryStats } from './services/weaknessAnalysisService';
 
@@ -105,11 +106,19 @@ const App: React.FC = () => {
       if (sp && !sp.school) {
         sp.school = '第三中学校';
         sp.displayLabel = `第三中学校 ${sp.grade}年${sp.classNum}組${sp.number}番`;
-        localStorage.setItem('battleMathStudentProfile', JSON.stringify(sp));
       }
+      // 既存プロフィールに schoolYear がない場合はデフォルト設定
+      if (sp && !sp.schoolYear) {
+        sp.schoolYear = DEFAULT_SCHOOL_YEAR;
+      }
+      localStorage.setItem('battleMathStudentProfile', JSON.stringify(sp));
       return sp;
     } catch { return null; }
   });
+
+  // --- New Year Prompt ---
+  const [showNewYearPrompt, setShowNewYearPrompt] = useState(false);
+  const newYearCheckedRef = useRef(false);
 
   // --- Game State ---
   const [gameState, setGameState] = useState<GameState>('login_screen');
@@ -319,10 +328,17 @@ const App: React.FC = () => {
             // school フィールドがない既存ユーザーは第三中学校をデフォルト設定
             if (d.studentProfile) {
               const sp = d.studentProfile;
+              let needsSync = false;
               if (!sp.school) {
                 sp.school = '第三中学校';
                 sp.displayLabel = `第三中学校 ${sp.grade}年${sp.classNum}組${sp.number}番`;
-                // Firestoreにも反映
+                needsSync = true;
+              }
+              if (!sp.schoolYear) {
+                sp.schoolYear = DEFAULT_SCHOOL_YEAR;
+                needsSync = true;
+              }
+              if (needsSync) {
                 updateDoc(ref, { studentProfile: sp }).catch(() => {});
               }
               setStudentProfile(sp);
@@ -594,6 +610,34 @@ const App: React.FC = () => {
       } catch (e) { console.error('Student profile sync error:', e); }
     }
   }, [user]);
+
+  // 新年度チェック（studentProfile が初めてセットされた時に1回のみ）
+  useEffect(() => {
+    if (!studentProfile || newYearCheckedRef.current) return;
+    newYearCheckedRef.current = true;
+
+    const currentSchoolYear = getCurrentSchoolYear();
+    if ((studentProfile.schoolYear ?? DEFAULT_SCHOOL_YEAR) < currentSchoolYear) {
+      const lastSkipped = parseInt(localStorage.getItem('beng_newYearSkippedAt') || '0', 10);
+      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+      if (!lastSkipped || Date.now() - lastSkipped > threeDaysMs) {
+        setShowNewYearPrompt(true);
+      }
+    }
+  }, [studentProfile]);
+
+  // 新年度更新確定ハンドラー
+  const handleNewYearConfirm = async (updated: StudentProfile) => {
+    setShowNewYearPrompt(false);
+    localStorage.removeItem('beng_newYearSkippedAt');
+    await handleStudentProfileSet(updated);
+  };
+
+  // 新年度スキップハンドラー（3日後に再表示）
+  const handleNewYearSkip = () => {
+    localStorage.setItem('beng_newYearSkippedAt', String(Date.now()));
+    setShowNewYearPrompt(false);
+  };
 
   const handleGuestPlay = () => {
     setGameState(tutorialDone ? 'main_menu' : 'tutorial');
@@ -2123,6 +2167,14 @@ const App: React.FC = () => {
             onPurchase={handleShopPurchase}
             onEquipTitle={setEquippedTitle}
             onClose={() => setShowItemShop(false)}
+          />
+        )}
+        {showNewYearPrompt && studentProfile && (
+          <NewYearPrompt
+            profile={studentProfile}
+            currentSchoolYear={getCurrentSchoolYear()}
+            onConfirm={handleNewYearConfirm}
+            onSkip={handleNewYearSkip}
           />
         )}
       </div>

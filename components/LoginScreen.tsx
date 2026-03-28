@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { User } from 'firebase/auth';
 import type { StudentProfile } from '../types';
+import { getCurrentSchoolYear } from '../constants';
 
 interface LoginScreenProps {
   currentUser: User | null;
@@ -63,6 +64,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       classNum: selectedClass,
       number: selectedNumber,
       displayLabel: `${selectedSchool} ${selectedGrade}年${selectedClass}組${selectedNumber}番`,
+      schoolYear: getCurrentSchoolYear(),
     };
     onStudentProfileSet(profile);
     setShowProfileSetup(false);

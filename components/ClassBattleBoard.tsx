@@ -14,6 +14,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   collection, getDocs, doc, getDoc, setDoc, query, where, type Firestore,
 } from 'firebase/firestore';
+import { getCurrentSchoolYear } from '../constants';
 
 interface SchoolStats {
   school: string;
@@ -101,10 +102,18 @@ const ClassBattleBoard: React.FC<ClassBattleBoardProps> = ({
           totalAnswered: number;
         }>();
 
+        const currentSchoolYear = getCurrentSchoolYear();
+
         usersSnap.forEach(docSnap => {
           const d = docSnap.data();
           const sp = d.studentProfile;
           if (!sp) return;
+
+          // 新年度未更新ユーザーを除外
+          if ((sp.schoolYear ?? 0) < currentSchoolYear) return;
+
+          // 卒業生を除外
+          if ((sp.grade ?? 1) > 3) return;
 
           // school フィールドがない既存ユーザーは第三中学校扱い
           const school: string = sp.school || '第三中学校';
