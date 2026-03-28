@@ -243,13 +243,53 @@ export interface UserProfile {
 }
 
 /** MPシンク: 購入可能アイテム定義 */
+export type ShopItemType = 'title' | 'streak_shield' | 'theme' | 'mp_booster' | 'hint_token' | 'exp_booster';
+
 export interface ShopItemDef {
   id: string;
   name: string;
   description: string;
   cost: number;
   icon: string;
-  type: 'title' | 'streak_shield' | 'theme';
+  type: ShopItemType;
+  durationMs?: number;   // mp_booster / exp_booster の有効時間(ms)
+  usesPerBattle?: number; // hint_token のバトルあたり使用回数
+}
+
+// ============================
+// 称号システム（条件達成で付与）
+// ============================
+
+export type TitleConditionType =
+  | 'total_correct'   // totalCorrectAnswers >= value
+  | 'total_wins'      // totalWins >= value
+  | 'login_streak'    // loginStreak >= value
+  | 'level'           // playerLevel >= value
+  | 'badge_owned'     // earnedBadgeIds に badgeId が含まれる
+  | 'monthly_top1'    // 月次チャンピオンDoc の winnerUid が自分
+  | 'any';            // 常に満たす（スターター）
+
+export interface TitleCondition {
+  type: TitleConditionType;
+  value?: number;
+  badgeId?: string;
+}
+
+export interface TitleDef {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  condition: TitleCondition;
+  isMonthly?: boolean;
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary';
+}
+
+// アクティブブースター状態（localStorage + メモリ）
+export interface ActiveBooster {
+  type: 'mp_booster' | 'exp_booster';
+  expiresAt: number; // Date.now() timestamp
+  multiplier: number;
 }
 
 export type BattleMode = 'cpu' | 'pvp';
