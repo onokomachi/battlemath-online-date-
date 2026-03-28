@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { ProblemCard, TurnPhase, ProblemViewRef, TurnInitiative } from '../types';
+import { THEME_CONFIGS } from '../constants';
 import { generateBattleKeypadLayout } from '../utils/keypadLayoutGenerator';
 import Card, { CardBack } from './Card';
 import GameLog from './GameLog';
@@ -326,6 +327,8 @@ interface GameBoardProps {
   playerRoundWins?: number;
   pcRoundWins?: number;
   currentRound?: number;
+  /** バトルテーマ */
+  battleTheme?: string | null;
 }
 
 const ScoreDisplay: React.FC<{ score: number; label: string; maxScore: number; isPlayer: boolean }> = ({ score, label, maxScore, isPlayer }) => (
@@ -372,6 +375,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   playerRoundWins = 0,
   pcRoundWins = 0,
   currentRound = 1,
+  battleTheme,
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -382,8 +386,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
     ? playerHand.some(c => c.difficulty === pcPlayedCard.difficulty)
     : false;
 
+  const themeConfig = battleTheme ? THEME_CONFIGS[battleTheme] : null;
+
   return (
-    <div className="w-full h-full flex flex-col justify-between items-center p-3 sm:p-4 md:p-6 relative overflow-y-auto">
+    <div
+      className={`w-full h-full flex flex-col justify-between items-center p-3 sm:p-4 md:p-6 relative overflow-y-auto ${themeConfig?.bgClass || ''}`}
+      style={themeConfig ? { boxShadow: `inset 0 0 120px ${themeConfig.accentColor}18` } : {}}
+    >
       {/* Star Field Decorations */}
       <div className="absolute top-10 left-10 w-20 h-20 bg-blue-500/5 blur-[60px] rounded-full"></div>
       <div className="absolute bottom-20 right-20 w-32 h-32 bg-cyan-500/5 blur-[80px] rounded-full"></div>

@@ -221,7 +221,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
             学校対抗
           </button>
         )}
-        {canAccessGameMaster && onOpenGameMaster && (
+        {onOpenGameMaster && (
           <button
             onClick={onOpenGameMaster}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-gray-700/50 text-gray-500 hover:text-cyan-400 hover:border-cyan-500/30 transition-colors"

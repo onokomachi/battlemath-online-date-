@@ -1,17 +1,17 @@
 /**
- * useGamification.ts — バッジ・チェイン・クエスト・ショップ統合
+ * useGamification.ts — バッジ・チェイン・クエスト・ショップ・称号統合
  *
  * エビデンスB: 自己決定理論（Deci & Ryan 1985）— 有能感フィードバック
  * エビデンスA: 目標設定理論（Locke & Latham 1990, d=0.48）
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { doc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { User } from 'firebase/auth';
-import type { BadgeDef, ShopItemDef } from '../types';
+import type { BadgeDef, ShopItemDef, TitleDef } from '../types';
 import {
   BADGE_DEFS, DAILY_QUEST_DEFS, WEEKLY_QUEST_DEFS,
-  getTodayStr, getWeekStart, SHOP_ITEMS,
+  getTodayStr, getWeekStart, SHOP_ITEMS, TITLE_DEFS,
 } from '../constants';
 
 export const useGamification = (user: User | null) => {
@@ -42,6 +42,14 @@ export const useGamification = (user: User | null) => {
     catch { return null; }
   });
 
+  // --- 称号システム ---
+  const [earnedTitleIds, setEarnedTitleIds] = useState<Set<string>>(() => {
+    try {
+      const s = localStorage.getItem('bm_earned_titles');
+      return s ? new Set(JSON.parse(s)) : new Set(['title_newcomer']);
+    } catch { return new Set(['title_newcomer']); }
+  });
+
   // --- セッション蓄積 ---
   const sessionCorrectRef = useRef(0);
 
@@ -66,6 +74,11 @@ export const useGamification = (user: User | null) => {
     else localStorage.removeItem('bm_equipped_title');
   }, [ownedShopItems, equippedTitle]);
 
+  // 称号のlocalStorage永続化
+  useEffect(() => {
+    localStorage.setItem('bm_earned_titles', JSON.stringify(Array.from(earnedTitleIds)));
+  }, [earnedTitleIds]);
+
   // 正解ヒント自動クリア
   useEffect(() => {
     if (!wrongAnswerText) return;
@@ -77,6 +90,13 @@ export const useGamification = (user: User | null) => {
   const initFromFirestore = useCallback((data: Record<string, any>) => {
     if (data.earnedBadgeIds) setEarnedBadgeIds(new Set(data.earnedBadgeIds));
     if (data.totalCorrectAnswers !== undefined) setTotalCorrectAnswers(data.totalCorrectAnswers);
+    if (data.earnedTitleIds) {
+      setEarnedTitleIds(prev => {
+        const merged = new Set([...prev, ...data.earnedTitleIds]);
+        merged.add('title_newcomer'); // 常にスターター付与
+        return merged;
+      });
+    }
     // クエスト進捗をlocalStorageから復元
     const dqKey = `bm_dq_${getTodayStr()}`;
     const wqKey = `bm_wq_${getWeekStart()}`;
@@ -105,6 +125,81 @@ export const useGamification = (user: User | null) => {
       return new Set(prev).add(badgeId);
     });
   }, [user, addMp]);
+
+  // 称号付与
+  const earnTitle = useCallback((titleId: string) => {
+    setEarnedTitleIds(prev => {
+      if (prev.has(titleId)) return prev;
+      if (!TITLE_DEFS.find(t => t.id === titleId)) return prev;
+      if (user && db) {
+        updateDoc(doc(db, 'users', user.uid), {
+          earnedTitleIds: arrayUnion(titleId),
+        }).catch(() => {});
+      }
+      return new Set(prev).add(titleId);
+    });
+  }, [user]);
+
+  // 称号条件チェック（バトル終了・バッジ獲得・レベルアップ後に呼ぶ）
+  const checkTitleConditions = useCallback((snapshot: {
+    totalCorrectAnswers: number;
+    totalWins: number;
+    loginStreak: number;
+    playerLevel: number;
+    earnedBadgeIds: Set<string>;
+  }) => {
+    TITLE_DEFS
+      .filter(t => !t.isMonthly)
+      .forEach(title => {
+        // 既に取得済みならスキップ（earnedTitleIdsは最新を参照するためclosure経由）
+        const { type, value = 0, badgeId } = title.condition;
+        let satisfied = false;
+        switch (type) {
+          case 'any':
+            satisfied = true;
+            break;
+          case 'total_correct':
+            satisfied = snapshot.totalCorrectAnswers >= value;
+            break;
+          case 'total_wins':
+            satisfied = snapshot.totalWins >= value;
+            break;
+          case 'login_streak':
+            satisfied = snapshot.loginStreak >= value;
+            break;
+          case 'level':
+            satisfied = snapshot.playerLevel >= value;
+            break;
+          case 'badge_owned':
+            satisfied = !!badgeId && snapshot.earnedBadgeIds.has(badgeId);
+            break;
+        }
+        if (satisfied) earnTitle(title.id);
+      });
+  }, [earnTitle]);
+
+  // 月次チャンピオン称号チェック（ログイン時に1回だけFirestore読み取り）
+  const checkMonthlyChampion = useCallback(async () => {
+    if (!db || !user) return;
+    try {
+      const monthKey = new Date().toISOString().slice(0, 7);
+      const snap = await getDoc(doc(db, 'config', `monthly_champion_${monthKey}`));
+      const isChampion = snap.exists() && snap.data()?.winnerUid === user.uid;
+      if (isChampion) {
+        earnTitle('title_monthly_champion');
+      } else {
+        // チャンピオンでなければ月次称号を解除
+        setEarnedTitleIds(prev => {
+          const next = new Set(prev);
+          next.delete('title_monthly_champion');
+          return next;
+        });
+        if (equippedTitle === 'title_monthly_champion') {
+          setEquippedTitle(null);
+        }
+      }
+    } catch {}
+  }, [user, equippedTitle, earnTitle]);
 
   // クエスト進捗
   const handleQuestProgress = useCallback((type: 'correct' | 'pvp_match') => {
@@ -208,9 +303,12 @@ export const useGamification = (user: User | null) => {
 
   // ショップ購入
   const handleShopPurchase = useCallback((item: ShopItemDef, currentMp: number) => {
-    if (ownedShopItems.has(item.id) || currentMp < item.cost) return false;
+    if (item.type !== 'hint_token' && ownedShopItems.has(item.id)) return false;
+    if (currentMp < item.cost) return false;
     addMp(-item.cost);
-    setOwnedShopItems(prev => new Set([...prev, item.id]));
+    if (item.type !== 'hint_token' && item.type !== 'mp_booster' && item.type !== 'exp_booster') {
+      setOwnedShopItems(prev => new Set([...prev, item.id]));
+    }
     if (user && db) {
       updateDoc(doc(db, 'users', user.uid), {
         mathPoints: increment(-item.cost),
@@ -219,13 +317,20 @@ export const useGamification = (user: User | null) => {
     return true;
   }, [ownedShopItems, user, addMp]);
 
-  const equippedTitleName = equippedTitle ? SHOP_ITEMS.find(i => i.id === equippedTitle)?.name || null : null;
+  // equippedTitleNameの解決（TITLE_DEFSとSHOP_ITEMS両方を参照 — 後方互換）
+  const equippedTitleName = equippedTitle
+    ? (TITLE_DEFS.find(t => t.id === equippedTitle)?.name
+      || SHOP_ITEMS.find(i => i.id === equippedTitle)?.name
+      || null)
+    : null;
 
   return {
     // チェイン
     chainCount, setChainCount, wrongAnswerText,
     // バッジ
     earnedBadgeIds, pendingBadge, setPendingBadge, totalCorrectAnswers, earnBadge,
+    // 称号
+    earnedTitleIds, earnTitle, checkTitleConditions, checkMonthlyChampion,
     // クエスト
     dailyQuestProgress, dailyQuestDone, weeklyQuestProgress, weeklyQuestDone, handleQuestProgress,
     // ショップ
