@@ -71,6 +71,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
   const [userSearch, setUserSearch] = useState('');
 
   // Class management state
+  const [selectedSchool, setSelectedSchool] = useState<string>('');
   const [selectedGrade, setSelectedGrade] = useState<number>(1);
   const [selectedClassNum, setSelectedClassNum] = useState<number>(1);
   const [classDetailUser, setClassDetailUser] = useState<UserData | null>(null);
@@ -137,13 +138,27 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
   }, [users, userSearch]);
 
   // --- Class-based data ---
-  // 学年・組で生徒をグループ化
+  // ユーザーに登録された学校名リスト（重複排除・ソート済み）
+  const schoolList = useMemo(() => {
+    const names = users
+      .map(u => u.studentProfile?.school)
+      .filter((s): s is string => !!s);
+    return [...new Set(names)].sort();
+  }, [users]);
+
+  // selectedSchool が未設定のとき最初の学校を自動選択
+  const effectiveSchool = selectedSchool || schoolList[0] || '';
+
+  // 学校・学年・組で生徒をグループ化
   const classStudents = useMemo(() => {
     return users.filter(u => {
       const sp = u.studentProfile;
-      return sp && sp.grade === selectedGrade && sp.classNum === selectedClassNum;
+      return sp
+        && (!effectiveSchool || sp.school === effectiveSchool)
+        && sp.grade === selectedGrade
+        && sp.classNum === selectedClassNum;
     }).sort((a, b) => (a.studentProfile?.number || 0) - (b.studentProfile?.number || 0));
-  }, [users, selectedGrade, selectedClassNum]);
+  }, [users, effectiveSchool, selectedGrade, selectedClassNum]);
 
   // クラス全体の統計
   const classStats = useMemo(() => {
@@ -162,17 +177,18 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
     return { totalStudents, avgLevel, totalCorrect, totalMatches, totalWins, avgMP, activeLast7d };
   }, [classStudents]);
 
-  // 全学年・全組に存在する生徒数のサマリー
+  // 選択中の学校内で学年・組ごとの生徒数サマリー
   const gradeClassSummary = useMemo(() => {
     const summary: Record<number, Record<number, number>> = {};
     users.forEach(u => {
       const sp = u.studentProfile;
       if (!sp) return;
+      if (effectiveSchool && sp.school !== effectiveSchool) return;
       if (!summary[sp.grade]) summary[sp.grade] = {};
       summary[sp.grade][sp.classNum] = (summary[sp.grade][sp.classNum] || 0) + 1;
     });
     return summary;
-  }, [users]);
+  }, [users, effectiveSchool]);
 
   // --- User Actions ---
   const handleResetUserStats = async (userId: string, name: string) => {
@@ -301,14 +317,30 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
       </div>
 
       {/* Content */}
-      <div className="flex-grow overflow-hidden p-6">
+      <div className="flex-grow overflow-y-auto p-6">
 
         {/* ===== CLASS MANAGEMENT TAB ===== */}
         {activeTab === 'class' && (
-          <div className="h-full flex flex-col gap-4 overflow-hidden">
+          <div className="flex flex-col gap-4" style={{ minHeight: 'calc(100vh - 120px)' }}>
             {/* Class selector */}
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
               <div className="flex items-center gap-6 flex-wrap">
+                {/* School selector */}
+                {schoolList.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-purple-400 font-bold tracking-widest">学校:</span>
+                    <select
+                      value={effectiveSchool}
+                      onChange={e => setSelectedSchool(e.target.value)}
+                      className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:border-purple-500 outline-none"
+                    >
+                      {schoolList.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Grade selector */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-purple-400 font-bold tracking-widest">学年:</span>
@@ -452,7 +484,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
             )}
 
             {/* Student list */}
-            <div className="flex-grow bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col">
+            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col" style={{ minHeight: '300px', maxHeight: '60vh' }}>
               <div className="p-4 border-b border-gray-800 flex items-center justify-between">
                 <h2 className="font-bold text-purple-400">
                   {selectedGrade}年{selectedClassNum}組 ({classStudents.length}名)
@@ -530,7 +562,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
 
         {/* ===== USERS TAB ===== */}
         {activeTab === 'users' && (
-          <div className="h-full flex flex-col bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+          <div className="flex flex-col bg-gray-900 rounded-xl border border-gray-800 overflow-hidden" style={{ minHeight: 'calc(100vh - 120px)' }}>
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
               <h2 className="font-bold text-amber-400">ユーザー ({filteredUsers.length} / {users.length})</h2>
               <input
@@ -596,7 +628,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
 
         {/* ===== ROOMS TAB ===== */}
         {activeTab === 'rooms' && (
-          <div className="h-full flex flex-col bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+          <div className="flex flex-col bg-gray-900 rounded-xl border border-gray-800 overflow-hidden" style={{ minHeight: 'calc(100vh - 120px)' }}>
             <div className="p-4 border-b border-gray-800 flex justify-between items-center">
               <h2 className="font-bold text-green-400">
                 ルーム ({rooms.filter(r => r.status !== 'finished').length} アクティブ / {rooms.length} 総計)
@@ -668,7 +700,7 @@ const GameMaster: React.FC<GameMasterProps> = ({ db, onClose }) => {
 
         {/* ===== STATS TAB ===== */}
         {activeTab === 'stats' && (
-          <div className="h-full overflow-auto space-y-6">
+          <div className="space-y-6">
             {/* Summary cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
